@@ -1,0 +1,157 @@
+import type { VagaCategoria, NivelExperiencia } from "@/lib/types/vaga.types"
+
+export interface SalaryRange {
+  min: number
+  avg: number
+  max: number
+}
+
+export const SALARY_BENCHMARKS: Record<
+  VagaCategoria,
+  Record<NivelExperiencia, SalaryRange>
+> = {
+  DESENVOLVIMENTO_SOFTWARE: {
+    ESTAGIO: { min: 1800, avg: 2200, max: 2800 },
+    JUNIOR: { min: 4000, avg: 5200, max: 6500 },
+    PLENO: { min: 7000, avg: 8500, max: 10500 },
+    SENIOR: { min: 11000, avg: 14000, max: 18000 },
+    ESPECIALISTA: { min: 16000, avg: 19500, max: 25000 },
+    LIDERANCA: { min: 15000, avg: 20000, max: 28000 },
+  },
+  DESIGN_UX_UI: {
+    ESTAGIO: { min: 1500, avg: 1900, max: 2400 },
+    JUNIOR: { min: 3500, avg: 4500, max: 5800 },
+    PLENO: { min: 6000, avg: 7500, max: 9500 },
+    SENIOR: { min: 9500, avg: 12000, max: 15500 },
+    ESPECIALISTA: { min: 13500, avg: 16000, max: 20000 },
+    LIDERANCA: { min: 14000, avg: 17500, max: 23000 },
+  },
+  CIENCIA_DE_DADOS_IA: {
+    ESTAGIO: { min: 2000, avg: 2500, max: 3000 },
+    JUNIOR: { min: 4500, avg: 5800, max: 7200 },
+    PLENO: { min: 8000, avg: 10000, max: 12500 },
+    SENIOR: { min: 13000, avg: 16000, max: 21000 },
+    ESPECIALISTA: { min: 18000, avg: 22000, max: 30000 },
+    LIDERANCA: { min: 17000, avg: 22500, max: 32000 },
+  },
+  INFRAESTRUTURA_DEVOPS: {
+    ESTAGIO: { min: 1800, avg: 2200, max: 2700 },
+    JUNIOR: { min: 4200, avg: 5300, max: 6800 },
+    PLENO: { min: 7500, avg: 9200, max: 11500 },
+    SENIOR: { min: 12000, avg: 15000, max: 19000 },
+    ESPECIALISTA: { min: 16500, avg: 20000, max: 26000 },
+    LIDERANCA: { min: 16000, avg: 21000, max: 28000 },
+  },
+  MARKETING_DIGITAL: {
+    ESTAGIO: { min: 1400, avg: 1700, max: 2200 },
+    JUNIOR: { min: 3000, avg: 3800, max: 4800 },
+    PLENO: { min: 5000, avg: 6200, max: 8000 },
+    SENIOR: { min: 8000, avg: 10000, max: 13500 },
+    ESPECIALISTA: { min: 11000, avg: 13500, max: 17000 },
+    LIDERANCA: { min: 12000, avg: 15500, max: 21000 },
+  },
+  VENDAS: {
+    ESTAGIO: { min: 1400, avg: 1800, max: 2400 },
+    JUNIOR: { min: 2800, avg: 3600, max: 4800 },
+    PLENO: { min: 4800, avg: 6200, max: 8500 },
+    SENIOR: { min: 7500, avg: 9800, max: 14000 },
+    ESPECIALISTA: { min: 10000, avg: 13000, max: 18000 },
+    LIDERANCA: { min: 12000, avg: 16500, max: 24000 },
+  },
+  RECURSOS_HUMANOS: {
+    ESTAGIO: { min: 1300, avg: 1600, max: 2000 },
+    JUNIOR: { min: 2800, avg: 3500, max: 4500 },
+    PLENO: { min: 4600, avg: 5800, max: 7500 },
+    SENIOR: { min: 7500, avg: 9200, max: 12000 },
+    ESPECIALISTA: { min: 10000, avg: 12500, max: 16000 },
+    LIDERANCA: { min: 11500, avg: 15000, max: 20000 },
+  },
+  FINANCEIRO: {
+    ESTAGIO: { min: 1500, avg: 1900, max: 2400 },
+    JUNIOR: { min: 3200, avg: 4100, max: 5200 },
+    PLENO: { min: 5500, avg: 7000, max: 9000 },
+    SENIOR: { min: 9000, avg: 11500, max: 15000 },
+    ESPECIALISTA: { min: 12500, avg: 15500, max: 20000 },
+    LIDERANCA: { min: 14000, avg: 18000, max: 25000 },
+  },
+  CONTABILIDADE: {
+    ESTAGIO: { min: 1300, avg: 1600, max: 2000 },
+    JUNIOR: { min: 2800, avg: 3500, max: 4400 },
+    PLENO: { min: 4800, avg: 6000, max: 7800 },
+    SENIOR: { min: 7800, avg: 9800, max: 13000 },
+    ESPECIALISTA: { min: 10500, avg: 13000, max: 17000 },
+    LIDERANCA: { min: 12000, avg: 15000, max: 21000 },
+  },
+  JURIDICO: {
+    ESTAGIO: { min: 1500, avg: 1900, max: 2500 },
+    JUNIOR: { min: 3800, avg: 4800, max: 6200 },
+    PLENO: { min: 6500, avg: 8200, max: 11000 },
+    SENIOR: { min: 10500, avg: 13500, max: 18000 },
+    ESPECIALISTA: { min: 14500, avg: 18000, max: 24000 },
+    LIDERANCA: { min: 16000, avg: 21000, max: 29000 },
+  },
+  MEDICINA: {
+    ESTAGIO: { min: 2500, avg: 3500, max: 5000 },
+    JUNIOR: { min: 9000, avg: 12000, max: 15000 },
+    PLENO: { min: 14000, avg: 18000, max: 24000 },
+    SENIOR: { min: 20000, avg: 26000, max: 35000 },
+    ESPECIALISTA: { min: 24000, avg: 32000, max: 45000 },
+    LIDERANCA: { min: 25000, avg: 35000, max: 50000 },
+  },
+  ENFERMAGEM: {
+    ESTAGIO: { min: 1200, avg: 1500, max: 1900 },
+    JUNIOR: { min: 3500, avg: 4200, max: 5000 },
+    PLENO: { min: 4800, avg: 5600, max: 6800 },
+    SENIOR: { min: 6500, avg: 7800, max: 9500 },
+    ESPECIALISTA: { min: 8500, avg: 10500, max: 13500 },
+    LIDERANCA: { min: 9000, avg: 12000, max: 16000 },
+  },
+  DOCENCIA: {
+    ESTAGIO: { min: 1100, avg: 1400, max: 1800 },
+    JUNIOR: { min: 2600, avg: 3400, max: 4300 },
+    PLENO: { min: 4200, avg: 5400, max: 6900 },
+    SENIOR: { min: 6500, avg: 8200, max: 10800 },
+    ESPECIALISTA: { min: 8800, avg: 11000, max: 14500 },
+    LIDERANCA: { min: 10000, avg: 13000, max: 18000 },
+  },
+  ENGENHARIA_CIVIL: {
+    ESTAGIO: { min: 1600, avg: 2000, max: 2600 },
+    JUNIOR: { min: 5500, avg: 6800, max: 8200 },
+    PLENO: { min: 8500, avg: 10500, max: 13500 },
+    SENIOR: { min: 13000, avg: 16500, max: 21500 },
+    ESPECIALISTA: { min: 17000, avg: 21000, max: 28000 },
+    LIDERANCA: { min: 18000, avg: 23500, max: 32000 },
+  },
+  LOGISTICA: {
+    ESTAGIO: { min: 1200, avg: 1500, max: 1900 },
+    JUNIOR: { min: 2600, avg: 3300, max: 4200 },
+    PLENO: { min: 4400, avg: 5500, max: 7000 },
+    SENIOR: { min: 7200, avg: 8900, max: 11500 },
+    ESPECIALISTA: { min: 9500, avg: 12000, max: 15500 },
+    LIDERANCA: { min: 11000, avg: 14500, max: 19500 },
+  },
+  GASTRONOMIA: {
+    ESTAGIO: { min: 1100, avg: 1400, max: 1700 },
+    JUNIOR: { min: 2200, avg: 2800, max: 3600 },
+    PLENO: { min: 3800, avg: 4800, max: 6200 },
+    SENIOR: { min: 5800, avg: 7200, max: 9500 },
+    ESPECIALISTA: { min: 8000, avg: 10200, max: 13500 },
+    LIDERANCA: { min: 9000, avg: 12000, max: 16500 },
+  },
+  AGRONEGOCIO: {
+    ESTAGIO: { min: 1500, avg: 1900, max: 2400 },
+    JUNIOR: { min: 3800, avg: 4800, max: 6000 },
+    PLENO: { min: 6200, avg: 7800, max: 10000 },
+    SENIOR: { min: 10000, avg: 12800, max: 16500 },
+    ESPECIALISTA: { min: 13500, avg: 17000, max: 22000 },
+    LIDERANCA: { min: 15000, avg: 19500, max: 26000 },
+  },
+  OUTRO: {
+    ESTAGIO: { min: 1300, avg: 1600, max: 2100 },
+    JUNIOR: { min: 2800, avg: 3600, max: 4600 },
+    PLENO: { min: 4800, avg: 6200, max: 8000 },
+    SENIOR: { min: 7800, avg: 9800, max: 13000 },
+    ESPECIALISTA: { min: 10500, avg: 13500, max: 17500 },
+    LIDERANCA: { min: 12000, avg: 15500, max: 21000 },
+  },
+}

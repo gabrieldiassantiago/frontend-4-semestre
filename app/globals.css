@@ -1,0 +1,276 @@
+@import "tailwindcss";
+
+/*
+  Selecta design tokens.
+  Os valores abaixo são exatamente a paleta que já era usada no projeto
+  (violeta 600/700, escala zinc e a superfície #f7f7f5), apenas centralizada
+  em tokens para que os componentes parem de repetir cores hardcoded.
+*/
+:root {
+  /* Superfícies */
+  --surface: #f7f7f5;
+  --background: #ffffff;
+  --card: #ffffff;
+  --foreground: #09090b;
+
+  /* Marca (violeta) */
+  --primary: #7c3aed;
+  --primary-hover: #6d28d9;
+  --primary-foreground: #ffffff;
+  --primary-subtle: #f5f3ff;
+  --primary-subtle-foreground: #6d28d9;
+  --primary-ring: rgba(124, 58, 237, 0.1);
+
+  /* Neutros */
+  --muted: #fafafa;
+  --muted-foreground: #71717a;
+  --subtle-foreground: #a1a1aa;
+  --strong-foreground: #3f3f46;
+  --strong: #18181b;
+  /* Texto sobre superfícies sólidas escuras/coloridas */
+  --strong-contrast: #ffffff;
+  --border: #e4e4e7;
+  --border-subtle: #f4f4f5;
+  --border-strong: #d4d4d8;
+
+  /* Estados */
+  --success: #059669;
+  --success-foreground: #047857;
+  --success-subtle: #ecfdf5;
+  --success-border: #a7f3d0;
+  --danger: #e11d48;
+  --danger-foreground: #be123c;
+  --danger-subtle: #fff1f2;
+  --danger-border: #fecdd3;
+  --warning: #d97706;
+  --warning-foreground: #b45309;
+  --warning-subtle: #fffbeb;
+  --info: #0284c7;
+  --info-subtle: #f0f9ff;
+
+  /* Forma e elevação */
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --shadow-card: 0 1px 2px rgba(9, 9, 11, 0.04);
+  --shadow-raised: 0 4px 16px -4px rgba(9, 9, 11, 0.08);
+  --shadow-overlay: 0 16px 45px rgba(9, 9, 11, 0.12);
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-subtle-foreground: var(--primary-subtle-foreground);
+  --color-ring: var(--primary);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-strong-foreground: var(--strong-foreground);
+  --color-strong: var(--strong);
+  --color-strong-contrast: var(--strong-contrast);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-border: var(--success-border);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-border: var(--danger-border);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+
+  --radius-card: var(--radius-lg);
+  --radius-panel: var(--radius-xl);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
+
+  --font-sans: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Foco consistente e visível em toda a aplicação */
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /*
+    Campo de formulário único para toda a aplicação.
+    Substitui as classes duplicadas .auth-input e .account-input.
+  */
+  /* .auth-input e .account-input são aliases legados do mesmo campo. */
+  .field-input,
+  .auth-input,
+  .account-input {
+    width: 100%;
+    min-height: 48px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background-color: var(--background);
+    padding: 0.75rem 0.875rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--foreground);
+    outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  .field-input::placeholder,
+  .auth-input::placeholder,
+  .account-input::placeholder {
+    color: var(--subtle-foreground);
+  }
+
+  .field-input:hover:not(:disabled),
+  .auth-input:hover:not(:disabled),
+  .account-input:hover:not(:disabled) {
+    border-color: var(--border-strong);
+  }
+
+  .field-input:focus,
+  .auth-input:focus,
+  .account-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-ring);
+  }
+
+  .field-input:disabled,
+  .auth-input:disabled,
+  .account-input:disabled {
+    background-color: var(--muted);
+    color: var(--muted-foreground);
+    cursor: not-allowed;
+  }
+
+  .field-input[aria-invalid="true"] {
+    border-color: var(--danger);
+  }
+
+  .field-input[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+  }
+
+  textarea.field-input {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  /*
+    Botões. Centralizam o que antes eram longas listas de classes
+    repetidas (e divergentes) em cada tela.
+  */
+  .btn-base,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    border-radius: var(--radius);
+    padding: 0.625rem 1.125rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      transform 150ms ease;
+  }
+
+  .btn-base:active:not(:disabled),
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled),
+  .btn-ghost:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .btn-base:disabled,
+  .btn-primary:disabled,
+  .btn-secondary:disabled,
+  .btn-ghost:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+  }
+
+  .btn-secondary {
+    border: 1px solid var(--border);
+    background-color: var(--background);
+    color: var(--strong-foreground);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--muted);
+    border-color: var(--border-strong);
+  }
+
+  .btn-ghost {
+    color: var(--muted-foreground);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background-color: var(--muted);
+    color: var(--foreground);
+  }
+}
+
+@layer utilities {
+  /* Esconde a scrollbar em faixas de navegação/filtros roláveis */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
