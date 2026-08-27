@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://projeto-para-processos-seletivos-mais.onrender.com"
 
 export type UserRole = "CANDIDATE" | "COMPANY" | "ADMIN"
 

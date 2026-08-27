@@ -130,14 +130,7 @@ export function CandidateProfileScreen() {
         eyebrow="Sua conta"
         title="Meu perfil"
         description="É este perfil que a empresa vê quando você se candidata a uma vaga."
-        actions={
-          !completion.complete ? (
-            <Link href="/profile/candidato/completar" className="btn-primary">
-              Completar perfil
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
-          ) : undefined
-        }
+        
       />
 
       <div className="mt-8 grid items-start gap-6 lg:grid-cols-[300px_1fr]">
@@ -200,14 +193,9 @@ export function CandidateProfileScreen() {
                 <ul className="mt-3.5 flex flex-col gap-1.5">
                   {completion.missing.slice(0, 4).map((item) => (
                     <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => setSection(item.step as SectionId)}
-                        className="flex w-full items-center justify-between gap-2 text-left text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-                      >
+                      <div className="flex items-center justify-between gap-2 text-xs font-semibold text-muted-foreground">
                         <span className="min-w-0 truncate">{item.label}</span>
-                        <span className="shrink-0 text-primary">Preencher</span>
-                      </button>
+                      </div>
                     </li>
                   ))}
                   {completion.missing.length > 4 && (
@@ -215,6 +203,12 @@ export function CandidateProfileScreen() {
                       +{completion.missing.length - 4} pendentes
                     </li>
                   )}
+                  <li className="pt-2">
+                    <Link href="/profile/candidato/completar" className="btn-primary w-full">
+                      Completar perfil
+                      <ArrowRight className="size-4" aria-hidden />
+                    </Link>
+                  </li>
                 </ul>
               )}
             </div>

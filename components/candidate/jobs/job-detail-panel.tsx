@@ -22,9 +22,7 @@ import { StatusBadge } from "@/components/candidatura/candidatura-ui"
 import { ETAPA_LABELS, type Candidatura } from "@/lib/types/candidatura.types"
 
 /**
- * Detalhe da vaga selecionada. Usado como coluna fixa no desktop e dentro da
- * gaveta no mobile — nesse caso `onClose` é omitido, porque a própria gaveta
- * já oferece o botão de fechar.
+ * Detalhe da vaga selecionada, exibido dentro de uma janela lateral sobreposta.
  */
 export function JobDetailPanel({
   vaga,

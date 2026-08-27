@@ -74,12 +74,13 @@ export function JobsDashboardScreen() {
     if (!vagaParam || vagas.length === 0) return
     if (!vagas.some((vaga) => vaga.id === vagaParam)) return
     setSelectedId(vagaParam)
-    setDetailOpen(true)
   }, [vagaParam, vagas])
 
   const results = useMemo(() => {
     const term = search.query.trim().toLowerCase()
-    const local = search.local.trim().toLowerCase()
+    const outro = search.outro.trim().toLowerCase()
+    const cidade = search.cidade.trim().toLowerCase()
+    const estado = search.estado.trim().toLowerCase()
 
     const matched = vagas.filter((vaga) => {
       if (!vaga.ativa) return false
@@ -90,7 +91,15 @@ export function JobsDashboardScreen() {
         (vaga.companyName ?? "").toLowerCase().includes(term) ||
         CATEGORIA_LABELS[vaga.categoria].toLowerCase().includes(term)
 
-      const matchesLocal = !local || `${vaga.cidade} ${vaga.estado}`.toLowerCase().includes(local)
+      const matchesOutro =
+        search.categoria !== "OUTRO" ||
+        !outro ||
+        [vaga.titulo, vaga.companyName, vaga.descricao, vaga.beneficios]
+          .filter(Boolean)
+          .some((field) => field!.toLowerCase().includes(outro))
+
+      const matchesCidade = !cidade || vaga.cidade.toLowerCase() === cidade
+      const matchesEstado = !estado || vaga.estado.toLowerCase() === estado
 
       const matchesCategoria = search.categoria === "TODAS" || vaga.categoria === search.categoria
 
@@ -104,7 +113,9 @@ export function JobsDashboardScreen() {
 
       return (
         matchesTerm &&
-        matchesLocal &&
+          matchesOutro &&
+        matchesCidade &&
+        matchesEstado &&
         matchesCategoria &&
         matchesModalidade &&
         matchesNivel &&
@@ -206,7 +217,7 @@ export function JobsDashboardScreen() {
           )}
 
           {loading && (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2" aria-busy="true">
+            <div className="grid gap-4 sm:grid-cols-2" aria-busy="true">
               <span className="sr-only">Carregando vagas</span>
               {Array.from({ length: 6 }).map((_, index) => (
                 <JobCardSkeleton key={index} />
@@ -215,7 +226,7 @@ export function JobsDashboardScreen() {
           )}
 
           {!loading && !error && results.length > 0 && (
-            <ul className="grid list-none gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+            <ul className="grid list-none gap-4 sm:grid-cols-2">
               {results.map((vaga) => (
                 <li key={vaga.id}>
                   <JobCard
@@ -245,20 +256,6 @@ export function JobsDashboardScreen() {
           )}
         </div>
 
-        {/* Detalhe: coluna fixa a partir de xl, gaveta nas telas menores */}
-        {selected && (
-          <div className="hidden xl:sticky xl:top-24 xl:block xl:w-[26rem] xl:shrink-0">
-            <JobDetailPanel
-              vaga={selected}
-              saved={savedIds.includes(selected.id)}
-              candidatura={candidaturasPorVaga.get(selected.id) ?? null}
-              onToggleSave={() => toggleSave(selected.id)}
-              onApply={() => setApplyVagaId(selected.id)}
-              onClose={() => setSelectedId(null)}
-              className="max-h-[calc(100vh-8rem)] rounded-panel border border-border shadow-card"
-            />
-          </div>
-        )}
       </div>
 
       <Sheet
@@ -276,7 +273,6 @@ export function JobsDashboardScreen() {
         onClose={() => setDetailOpen(false)}
         side="right"
         title="Detalhes da vaga"
-        className="xl:hidden"
       >
         {selected && (
           <JobDetailPanel
@@ -288,6 +284,7 @@ export function JobsDashboardScreen() {
               setDetailOpen(false)
               setApplyVagaId(selected.id)
             }}
+            onClose={() => setDetailOpen(false)}
             className="h-full"
           />
         )}
