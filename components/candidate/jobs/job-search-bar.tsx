@@ -13,6 +13,11 @@ import { AnimatePresence, motion } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 import {
+  getEstadosIBGE,
+  getMunicipiosPorEstadoIBGE,
+  type EstadoIBGE,
+} from "@/lib/services/ibge.service"
+import {
   CATEGORIA_LABELS,
   type VagaCategoria,
 } from "@/lib/types/vaga.types"
@@ -20,13 +25,17 @@ import {
 export interface JobSearchState {
   query: string
   categoria: VagaCategoria | "TODAS"
-  local: string
+  outro: string
+  cidade: string
+  estado: string
 }
 
 export const EMPTY_SEARCH: JobSearchState = {
   query: "",
   categoria: "TODAS",
-  local: "",
+  outro: "",
+  cidade: "",
+  estado: "",
 }
 
 const SUGGESTIONS = [
@@ -37,10 +46,134 @@ const SUGGESTIONS = [
   "Vendas",
 ]
 
-const CATEGORIAS = Object.entries(CATEGORIA_LABELS) as [
-  VagaCategoria,
-  string,
-][]
+const CATEGORIAS = (
+  Object.entries(CATEGORIA_LABELS) as [VagaCategoria, string][]
+).filter(([categoryValue]) => categoryValue !== "OUTRO")
+
+function LocationSelect({
+  id,
+  label,
+  value,
+  options,
+  placeholder,
+  disabled = false,
+  onChange,
+}: {
+  id: string
+  label: string
+  value: string
+  options: { value: string; label: string }[]
+  placeholder: string
+  disabled?: boolean
+  onChange: (value: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const selectRef = useRef<HTMLDivElement>(null)
+  const selectedLabel = options.find((option) => option.value === value)?.label
+
+  useEffect(() => {
+    if (!open) return
+
+    function handleClickOutside(event: PointerEvent) {
+      if (!selectRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false)
+    }
+
+    document.addEventListener("pointerdown", handleClickOutside)
+    document.addEventListener("keydown", handleEscape)
+    return () => {
+      document.removeEventListener("pointerdown", handleClickOutside)
+      document.removeEventListener("keydown", handleEscape)
+    }
+  }, [open])
+
+  return (
+    <div ref={selectRef} className="relative min-w-0 flex-1">
+      <button
+        id={id}
+        type="button"
+        disabled={disabled}
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className={cn(
+          "flex h-12 w-full items-center gap-2 rounded-xl border px-3 text-left outline-none transition-colors duration-200",
+          open
+            ? "border-border-strong bg-background shadow-sm ring-2 ring-primary/20"
+            : "border-transparent bg-surface hover:bg-muted",
+          disabled && "cursor-not-allowed opacity-60 hover:bg-surface",
+        )}
+      >
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+          {selectedLabel || placeholder}
+        </span>
+        <ChevronDown
+          className={cn(
+            "size-4 shrink-0 text-muted-foreground transition-transform",
+            open && "rotate-180",
+          )}
+          aria-hidden
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && !disabled && (
+          <motion.div
+            role="listbox"
+            aria-label={label}
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            className="absolute left-0 top-[calc(100%+10px)] z-50 max-h-72 w-full min-w-[180px] overflow-y-auto rounded-2xl border border-border bg-background p-2 shadow-[0_18px_50px_rgba(0,0,0,0.14)]"
+          >
+            <button
+              type="button"
+              role="option"
+              aria-selected={!value}
+              onClick={() => {
+                onChange("")
+                setOpen(false)
+              }}
+              className={cn(
+                "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted",
+                !value && "bg-primary-subtle font-semibold text-primary",
+              )}
+            >
+              {placeholder}
+              {!value && <Check className="size-4" aria-hidden />}
+            </button>
+            {options.map((option) => {
+              const selected = option.value === value
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => {
+                    onChange(option.value)
+                    setOpen(false)
+                  }}
+                  className={cn(
+                    "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted",
+                    selected && "bg-primary-subtle font-semibold text-primary",
+                  )}
+                >
+                  <span className="truncate">{option.label}</span>
+                  {selected && <Check className="size-4 shrink-0" aria-hidden />}
+                </button>
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 export function JobSearchBar({
   value,
@@ -55,16 +188,28 @@ export function JobSearchBar({
 }) {
   const [draft, setDraft] = useState(value)
   const [categoryOpen, setCategoryOpen] = useState(false)
+  const [categoryQuery, setCategoryQuery] = useState("")
+  const [estados, setEstados] = useState<EstadoIBGE[]>([])
+  const [municipios, setMunicipios] = useState<string[]>([])
 
   const categoryRef = useRef<HTMLDivElement>(null)
 
   const queryId = useId()
   const categoriaId = useId()
-  const localId = useId()
 
   useEffect(() => {
     setDraft(value)
   }, [value])
+
+  useEffect(() => {
+    void getEstadosIBGE().then(setEstados)
+  }, [])
+
+  useEffect(() => {
+    setMunicipios([])
+    if (!draft.estado) return
+    void getMunicipiosPorEstadoIBGE(draft.estado).then(setMunicipios)
+  }, [draft.estado])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -104,7 +249,13 @@ export function JobSearchBar({
   const selectedCategoryLabel =
     draft.categoria === "TODAS"
       ? "Todas as áreas"
+      : draft.categoria === "OUTRO"
+        ? draft.outro || "Digite a área"
       : CATEGORIA_LABELS[draft.categoria]
+
+  const filteredCategories = CATEGORIAS.filter(([, label]) =>
+    label.toLowerCase().includes(categoryQuery.trim().toLowerCase()),
+  )
 
   return (
     <section
@@ -158,7 +309,10 @@ export function JobSearchBar({
             aria-haspopup="listbox"
             aria-expanded={categoryOpen}
             onClick={() =>
-              setCategoryOpen((current) => !current)
+              setCategoryOpen((current) => {
+                if (!current) setCategoryQuery(draft.categoria === "OUTRO" ? draft.outro : "")
+                return !current
+              })
             }
             whileTap={{ scale: 0.985 }}
             transition={{
@@ -294,6 +448,20 @@ export function JobSearchBar({
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     Escolha a categoria das vagas
                   </p>
+                  <div className="relative mt-3">
+                    <Search
+                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle-foreground"
+                      aria-hidden
+                    />
+                    <input
+                      type="search"
+                      value={categoryQuery}
+                      onChange={(event) => setCategoryQuery(event.target.value)}
+                      placeholder="Digite a área"
+                      aria-label="Buscar ou digitar outra área"
+                      className="h-10 w-full rounded-xl bg-surface pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-subtle-foreground focus:bg-background focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
                 </motion.div>
 
                 <div className="border-t border-border-subtle pt-2">
@@ -391,7 +559,7 @@ export function JobSearchBar({
                   </motion.button>
 
                   <div className="mt-1 max-h-72 space-y-1 overflow-y-auto">
-                    {CATEGORIAS.map(
+                    {filteredCategories.map(
                       ([categoryValue, label], index) => {
                         const selected =
                           draft.categoria === categoryValue
@@ -425,6 +593,7 @@ export function JobSearchBar({
                                 "categoria",
                                 categoryValue,
                               )
+                              if (categoryValue !== "OUTRO") update("outro", "")
                               setCategoryOpen(false)
                             }}
                             className={cn(
@@ -494,33 +663,57 @@ export function JobSearchBar({
                         )
                       },
                     )}
+                    {categoryQuery.trim() && filteredCategories.length === 0 && (
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={draft.categoria === "OUTRO"}
+                        onClick={() => {
+                          update("categoria", "OUTRO")
+                          update("outro", categoryQuery.trim())
+                          setCategoryOpen(false)
+                          setCategoryQuery("")
+                        }}
+                        className="flex w-full items-center gap-3 rounded-xl bg-primary-subtle px-3 py-3 text-left transition-colors hover:bg-primary/15"
+                      >
+                        <Search className="size-4 shrink-0 text-primary" aria-hidden />
+                        <span className="min-w-0 truncate text-sm font-semibold text-primary">
+                          Usar “{categoryQuery.trim()}”
+                        </span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-
         {/* Localização */}
-        <div className="relative lg:w-52">
-          <label htmlFor={localId} className="sr-only">
-            Cidade ou estado
-          </label>
-
-          <MapPin
-            className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-subtle-foreground"
-            aria-hidden
-          />
-
-          <input
-            id={localId}
-            type="text"
-            value={draft.local}
-            onChange={(event) =>
-              update("local", event.target.value)
+        <div className="flex gap-2 lg:w-[360px]">
+          <LocationSelect
+            id={`${categoriaId}-estado`}
+            label="Estado"
+            value={draft.estado}
+            options={estados.map((estado) => ({
+              value: estado.sigla,
+              label: `${estado.nome} (${estado.sigla})`,
+            }))}
+            placeholder="Estado"
+            onChange={(estado) =>
+              setDraft((current) => ({ ...current, estado, cidade: "" }))
             }
-            placeholder="Cidade ou estado"
-            className="h-12 w-full rounded-xl bg-surface pl-12 pr-4 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-subtle-foreground focus:bg-background focus:ring-2 focus:ring-primary/30"
+          />
+          <LocationSelect
+            id={`${categoriaId}-cidade`}
+            label="Cidade"
+            value={draft.cidade}
+            options={municipios.map((municipio) => ({
+              value: municipio,
+              label: municipio,
+            }))}
+            placeholder={!draft.estado ? "Selecione o estado" : municipios.length === 0 ? "Carregando..." : "Cidade"}
+            disabled={!draft.estado || municipios.length === 0}
+            onChange={(cidade) => update("cidade", cidade)}
           />
         </div>
 

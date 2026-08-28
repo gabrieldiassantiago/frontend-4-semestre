@@ -1,7 +1,7 @@
 import "server-only"
 import type { Vaga } from "@/lib/types/vaga.types"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://projeto-para-processos-seletivos-mais.onrender.com"
 
 /**
  * Busca uma vaga no servidor, sem depender do token do navegador.

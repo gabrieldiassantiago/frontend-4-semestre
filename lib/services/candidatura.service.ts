@@ -12,7 +12,7 @@ import type {
   EtapaProcesso,
 } from "@/lib/types/candidatura.types"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://projeto-para-processos-seletivos-mais.onrender.com"
 
 function getHeaders(): HeadersInit {
   const headers: Record<string, string> = {

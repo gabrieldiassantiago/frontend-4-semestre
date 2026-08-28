@@ -30,7 +30,7 @@ export function JobCard({
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col rounded-card border bg-card p-5 transition-[box-shadow,border-color] duration-200",
+        "group relative flex flex-col rounded-card border bg-card p-5 transition-[box-shadow,border-color] duration-200",
         selected
           ? "border-primary shadow-raised"
           : "border-border hover:border-border-strong hover:shadow-raised",
