@@ -30,6 +30,7 @@ import { MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
 import type { Vaga } from "@/lib/types/vaga.types"
 import type { Candidatura } from "@/lib/types/candidatura.types"
 import { cn } from "@/lib/utils"
+import { Lottie } from "lottie-react"
 
 const STEPS = [
   { id: 1, label: "Perfil", icon: UserRound },
@@ -133,7 +134,7 @@ export function ApplyModal({
 
   if (!vaga) return null
 
-  const company = vaga.companyName ?? "Empresa confidencial"
+  const company = vaga.nomeEmpresa ?? "Empresa confidencial"
 
   const avancar = () => {
     if (step === 2) {
@@ -177,7 +178,6 @@ export function ApplyModal({
     }
   }
 
-  // ── Sucesso ──
   if (criada) {
     return (
       <Modal
@@ -197,11 +197,18 @@ export function ApplyModal({
           </>
         }
       >
-        <div className="flex flex-col items-center py-4 text-center">
-          <span className="grid size-14 place-items-center rounded-2xl bg-success-subtle text-success-foreground">
-            <PartyPopper className="size-6" aria-hidden />
-          </span>
-          <h3 className="mt-4 text-lg font-bold tracking-tight text-foreground text-balance">
+        <div className="flex flex-col items-center py-2 text-center">
+          {/* Subsituição do ícone pela animação Lottie em JSON */}
+          <div className="size-36 flex items-center justify-center -my-2">
+            <Lottie
+              animationData={successAnimation}
+              loop={true}
+              autoplay={true}
+              className="w-full h-full"
+            />
+          </div>
+
+          <h3 className="mt-2 text-lg font-bold tracking-tight text-foreground text-balance">
             Candidatura enviada para {company}
           </h3>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground text-pretty">

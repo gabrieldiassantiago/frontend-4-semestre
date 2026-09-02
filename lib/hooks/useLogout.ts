@@ -3,7 +3,6 @@
 import { useCallback } from "react"
 import { useRouter } from "next/navigation"
 
-/** Limpa o token e redireciona. Compartilhado pelos dois app shells. */
 export function useLogout(redirectTo: string) {
   const router = useRouter()
 

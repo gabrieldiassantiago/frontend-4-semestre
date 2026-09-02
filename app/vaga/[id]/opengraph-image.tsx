@@ -15,23 +15,23 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const { id } = await params
   const vaga = await getVagaPublic(id)
 
-  const company = vaga?.companyName ?? "Empresa confidencial"
+  const company = vaga?.nomeEmpresa ?? "Empresa confidencial"
   const titulo = vaga?.titulo ?? "Vaga não encontrada"
 
   const tags = vaga
     ? [
-        NIVEL_LABELS[vaga.nivelExperiencia],
-        MODALIDADE_LABELS[vaga.modalidade],
-        CATEGORIA_LABELS[vaga.categoria],
-      ]
+      NIVEL_LABELS[vaga.nivelExperiencia],
+      MODALIDADE_LABELS[vaga.modalidade],
+      CATEGORIA_LABELS[vaga.categoria],
+    ]
     : []
 
   const salario = vaga
     ? vaga.salario.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-        maximumFractionDigits: 0,
-      })
+      style: "currency",
+      currency: "BRL",
+      maximumFractionDigits: 0,
+    })
     : null
 
   return new ImageResponse(

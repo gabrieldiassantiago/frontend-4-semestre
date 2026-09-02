@@ -78,7 +78,7 @@ export interface Vaga {
   descricao: string
   beneficios?: string
   companyProfileId: string
-  companyName?: string
+  nomeEmpresa?: string
   cidade: string
   estado: string
   categoria: VagaCategoria

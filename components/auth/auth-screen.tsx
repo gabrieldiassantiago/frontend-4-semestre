@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Loader2 } from "lucide-react"
 
 import { getLinkedInAuthorizationUrl, loginUser, registerUser } from "@/lib/services/auth.service"
 import type { UserRole } from "@/lib/types/auth.types"
@@ -49,6 +49,8 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+
+
 
   const apiRole: Exclude<UserRole, "ADMIN"> = role === "candidato" ? "CANDIDATE" : "COMPANY"
   const isWideForm = role === "recrutador" && mode === "register"
@@ -222,8 +224,15 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                   </a>
                 </div>
 
-                <button type="submit" disabled={loading} className="btn-primary w-full">
-                  {loading ? "Entrando..." : "Entrar"}
+                <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
+                  {loading ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                      <span>Entrando...</span>
+                    </>
+                  ) : (
+                    "Entrar"
+                  )}
                 </button>
 
                 <div className="relative py-1 text-center">

@@ -25,27 +25,33 @@ export function JobCard({
   onSelect: () => void
   onToggleSave: () => void
 }) {
-  const company = vaga.companyName ?? "Empresa confidencial"
+  const company = vaga.nomeEmpresa ?? "Empresa confidencial"
+  const isNew = vaga.createdAt
+    ? Date.now() - new Date(vaga.createdAt).getTime() < 1000 * 60 * 60 * 24 * 3
+    : false
 
   return (
     <article
       className={cn(
-        "group relative flex flex-col rounded-card border bg-card p-5 transition-[box-shadow,border-color] duration-200",
+        "group relative flex flex-col rounded-card border bg-card p-5 transition-all duration-200 ease-out sm:p-6",
         selected
           ? "border-primary shadow-raised"
-          : "border-border hover:border-border-strong hover:shadow-raised",
+          : "border-border hover:-translate-y-1 hover:border-border-strong hover:shadow-raised",
       )}
     >
-      <header className="flex items-start gap-3">
-        <EntityAvatar name={company} size="md" />
+      <header className="flex items-start gap-3.5">
+        <EntityAvatar name={company} size="lg" className="shrink-0" />
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold text-muted-foreground">{company}</p>
-          <h3 className="mt-1 text-base font-bold leading-snug tracking-tight text-foreground">
-            {/*
-              O botão do título é o alvo de clique de todo o card (after:inset-0),
-              mantendo um único controle focável em vez de aninhar interativos.
-            */}
+          <div className="flex items-center gap-2">
+            <p className="truncate text-xs font-semibold text-muted-foreground">{company}</p>
+            {isNew && (
+              <span className="shrink-0 rounded-full bg-primary-subtle px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                Novo
+              </span>
+            )}
+          </div>
+          <h3 className="mt-1 line-clamp-2 text-base font-bold leading-snug tracking-tight text-foreground">
             <button
               type="button"
               onClick={onSelect}
@@ -59,11 +65,14 @@ export function JobCard({
 
         <button
           type="button"
-          onClick={onToggleSave}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleSave()
+          }}
           aria-pressed={saved}
           aria-label={saved ? `Remover ${vaga.titulo} dos salvos` : `Salvar ${vaga.titulo}`}
           className={cn(
-            "relative z-10 -mr-1 -mt-1 grid size-9 shrink-0 place-items-center rounded-full transition-colors",
+            "relative z-10 -mr-1 -mt-1 grid size-9 shrink-0 place-items-center rounded-full transition-all duration-150 hover:scale-110",
             saved
               ? "text-primary"
               : "text-subtle-foreground hover:bg-muted hover:text-strong-foreground",
@@ -88,8 +97,8 @@ export function JobCard({
             Selecionada
           </Badge>
         ) : (
-          <span className="text-sm font-semibold text-primary group-hover:underline">
-            Ver detalhes
+          <span className="text-sm font-semibold text-primary transition-colors group-hover:underline">
+            Ver detalhes →
           </span>
         )}
 

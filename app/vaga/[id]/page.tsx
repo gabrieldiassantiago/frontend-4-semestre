@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Vaga não encontrada", robots: { index: false, follow: false } }
   }
 
-  const company = vaga.companyName ?? "Empresa confidencial"
+  const company = vaga.nomeEmpresa ?? "Empresa confidencial"
   const title = `${vaga.titulo} — ${company}`
   const description =
     toPlainText(vaga.descricao) ||
@@ -93,7 +93,7 @@ export default async function VagaPublicaPage({ params }: PageProps) {
 
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-muted-foreground">{company}</p>
-              <h1 className="mt-1.5 text-2xl font-bold leading-tight tracking-tight text-foreground text-balance sm:text-3xl">
+              <h1 className="mt-1.5 text-3xl font-bold leading-tight tracking-tight text-foreground text-balance sm:text-4xl">
                 {vaga.titulo}
               </h1>
 

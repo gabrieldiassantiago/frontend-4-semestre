@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { getVagas } from "@/lib/services/vagas.service"
 import type { Vaga, VagaFilters } from "@/lib/types/vaga.types"
 
@@ -11,35 +11,61 @@ interface UseVagasState {
   refetch: () => void
 }
 
-/**
- * Hook para listar vagas com filtros opcionais.
- * Refetch automático quando os filtros mudam.
- */
-export function useVagas(filters?: VagaFilters): UseVagasState {
+interface UseVagasOptions {
+  /** Delay do debounce em ms (padrão: 400ms). Use 0 para desativar. */
+  debounceMs?: number
+}
+
+export function useVagas(
+  filters?: VagaFilters,
+  options?: UseVagasOptions
+): UseVagasState {
+  const debounceMs = options?.debounceMs ?? 400
+
   const [vagas, setVagas] = useState<Vaga[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Serialize filters to a stable string for the effect dependency
   const filtersKey = JSON.stringify(filters ?? {})
 
-  const fetch = useCallback(async () => {
+  const requestIdRef = useRef(0)
+
+  const fetchVagas = useCallback(async () => {
+    const currentRequestId = ++requestIdRef.current
     setLoading(true)
     setError(null)
     try {
       const data = await getVagas(filters)
-      setVagas(data)
+      if (currentRequestId === requestIdRef.current) {
+        setVagas(data)
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar vagas.")
+      if (currentRequestId === requestIdRef.current) {
+        setError(err instanceof Error ? err.message : "Erro ao carregar vagas.")
+      }
     } finally {
-      setLoading(false)
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false)
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersKey])
 
   useEffect(() => {
-    void fetch()
-  }, [fetch])
+    if (debounceMs <= 0) {
+      void fetchVagas()
+      return
+    }
 
-  return { vagas, loading, error, refetch: fetch }
+    const timeoutId = setTimeout(() => {
+      void fetchVagas()
+    }, debounceMs)
+
+    return () => clearTimeout(timeoutId)
+  }, [fetchVagas, debounceMs])
+
+  const refetch = useCallback(() => {
+    void fetchVagas()
+  }, [fetchVagas])
+
+  return { vagas, loading, error, refetch }
 }

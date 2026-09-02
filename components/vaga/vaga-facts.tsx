@@ -11,8 +11,6 @@ import {
 
 /**
  * "Plano de saúde, VR, Gympass" -> ["Plano de saúde", "VR", "Gympass"]
- * A empresa digita livremente, então aceitamos vírgula, ponto e vírgula,
- * barra vertical ou uma linha por benefício (com ou sem marcador).
  */
 export function parseBeneficios(value?: string | null): string[] {
   if (!value) return []
@@ -81,7 +79,6 @@ function Highlight({
 
 /**
  * Linhas de destaque (salário, local, área) com o ícone em chip colorido.
- * Compartilhado pelo card, pelo painel de detalhe e pela página pública.
  */
 export function VagaHighlights({
   vaga,
