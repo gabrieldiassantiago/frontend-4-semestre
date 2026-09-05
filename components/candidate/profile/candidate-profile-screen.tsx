@@ -7,6 +7,7 @@ import {
   BriefcaseBusiness,
   Check,
   Code2,
+  FileText,
   GraduationCap,
   Link2,
   LoaderCircle,
@@ -25,6 +26,7 @@ import { cn } from "@/lib/utils"
 import { EducationFields, LinksFields, ProfileFields } from "./profile-sections"
 import { ExperienceEditor } from "./experience-editor"
 import { ProjectEditor } from "./project-editor"
+import { ResumeUpload } from "./resume-upload"
 import { SkillsInput } from "./skills-input"
 import { messageFrom, toForm } from "./profile-form.utils"
 
@@ -38,6 +40,7 @@ const SECTIONS = [
   { id: "formacao", label: "Formação", icon: GraduationCap, editavel: true },
   { id: "skills", label: "Habilidades", icon: Sparkles, editavel: true },
   { id: "links", label: "Links", icon: Link2, editavel: true },
+  { id: "curriculo", label: "Currículo", icon: FileText, editavel: false },
   { id: "experiencias", label: "Experiências", icon: BriefcaseBusiness, editavel: false },
   { id: "projetos", label: "Projetos", icon: Code2, editavel: false },
 ] as const
@@ -293,6 +296,10 @@ export function CandidateProfileScreen() {
               )}
 
               {section === "links" && <LinksFields form={form} setForm={setForm} />}
+
+              {section === "curriculo" && (
+                <ResumeUpload profile={profile} onProfileChange={aplicarPerfil} />
+              )}
 
               {section === "experiencias" && (
                 <ExperienceEditor

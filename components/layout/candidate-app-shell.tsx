@@ -32,10 +32,16 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
   const { profile } = useCandidateProfile()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const [greeting, setGreeting] = useState("Olá")
   const logout = useLogout("/auth")
 
   const displayName = profile?.userName?.trim() || "Candidato"
   const initials = getInitials(displayName)
+
+  useEffect(() => {
+    const hour = new Date().getHours()
+    setGreeting(hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite")
+  }, [])
 
   useEffect(() => {
     if (!mobileDrawerOpen) return
@@ -80,7 +86,7 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
             aria-label="Selecta - ir para o início"
             className={cn("flex items-center gap-2 overflow-hidden", collapsed && "justify-center")}
           >
-            <SelectaLogo />
+            <SelectaLogo solo={collapsed} />
             {!collapsed && (
               <span className="whitespace-nowrap rounded-full bg-primary-subtle px-2 py-0.5 text-[10px] font-bold text-primary">
                 Candidato
@@ -161,13 +167,13 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
             </Link>
             <div className="hidden min-w-0 flex-col leading-tight lg:flex">
               <span className="truncate text-[15px] font-bold text-foreground">
-                Olá, {displayName.split(" ")[0]}!
+                {greeting}, {displayName.split(" ")[0]}!
               </span>
-              <span className="truncate text-xs font-medium text-muted-foreground">Portal do Candidato</span>
             </div>
             <div className="hidden min-w-0 flex-col leading-tight md:flex lg:hidden">
-              <span className="truncate text-sm font-bold text-foreground">{displayName}</span>
-              <span className="truncate text-[11px] font-medium text-muted-foreground">Portal do Candidato</span>
+              <span className="truncate text-sm font-bold text-foreground">
+                {greeting}, {displayName.split(" ")[0]}!
+              </span>
             </div>
           </div>
 

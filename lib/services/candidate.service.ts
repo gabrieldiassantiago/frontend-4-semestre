@@ -4,6 +4,8 @@
 export {
   getCandidateProfileMe,
   updateCandidateProfileMe,
+  uploadCandidateAvatar,
+  uploadCandidateResume,
   addCandidateExperience,
   updateCandidateExperience,
   deleteCandidateExperience,

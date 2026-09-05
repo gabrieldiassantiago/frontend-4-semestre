@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { Lottie } from "lottie-react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -30,7 +31,7 @@ import { MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
 import type { Vaga } from "@/lib/types/vaga.types"
 import type { Candidatura } from "@/lib/types/candidatura.types"
 import { cn } from "@/lib/utils"
-import { Lottie } from "lottie-react"
+import sucessoVagaAnimation from "../../public/images/sucesso_vaga.json"
 
 const STEPS = [
   { id: 1, label: "Perfil", icon: UserRound },
@@ -118,7 +119,6 @@ export function ApplyModal({
   const [error, setError] = useState<string | null>(null)
   const [criada, setCriada] = useState<Candidatura | null>(null)
 
-  // Cada abertura começa do zero: reaproveitar o rascunho de outra vaga confunde.
   useEffect(() => {
     if (!open) return
     setStep(1)
@@ -198,13 +198,13 @@ export function ApplyModal({
         }
       >
         <div className="flex flex-col items-center py-2 text-center">
-          {/* Subsituição do ícone pela animação Lottie em JSON */}
-          <div className="size-36 flex items-center justify-center -my-2">
+          <div className="-my-2 flex size-36 items-center justify-center">
             <Lottie
-              animationData={successAnimation}
-              loop={true}
-              autoplay={true}
-              className="w-full h-full"
+              animationData={sucessoVagaAnimation}
+              loop
+              autoplay
+              aria-label="Candidatura enviada com sucesso"
+              className="size-full"
             />
           </div>
 

@@ -529,19 +529,22 @@ export function JobSearchBar({
   }
 
   return (
-    <section
+    <motion.section
       aria-label="Buscar vagas"
-      className="rounded-2xl border border-border bg-card p-3 shadow-card sm:p-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="rounded-[1.75rem] bg-card p-2 shadow-[0_8px_30px_rgba(0,0,0,0.07)] sm:p-2"
     >
       <form
         onSubmit={(event) => {
           event.preventDefault()
           onSubmit(draft)
         }}
-        className="flex flex-col gap-2.5 lg:flex-row lg:items-center"
+        className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-1"
       >
         {/* Campo de Busca Livre (Cargo, Empresa ou Palavra-chave) */}
-        <div className="relative flex-1">
+        <div className="relative min-w-0 flex-[1.25] lg:pl-2">
           <label htmlFor={queryId} className="sr-only">
             Cargo, empresa ou palavra-chave
           </label>
@@ -557,9 +560,11 @@ export function JobSearchBar({
             value={draft.query}
             onChange={(event) => update("query", event.target.value)}
             placeholder="Cargo, especialidade, empresa ou termo..."
-            className="h-12 w-full rounded-xl bg-surface pl-11 pr-4 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground focus:bg-background focus:ring-2 focus:ring-primary/20"
+            className="h-12 w-full rounded-2xl bg-surface pl-11 pr-4 text-sm text-foreground outline-none transition-none placeholder:text-muted-foreground focus:bg-surface focus:ring-0 focus:outline-none lg:bg-transparent lg:focus:bg-transparent"
           />
         </div>
+
+        <span className="hidden h-8 w-px bg-border-subtle lg:block" aria-hidden />
 
         {/* Seletor de Categoria/Área com animação refinada e suporte geral */}
         <CategorySelect
@@ -588,13 +593,31 @@ export function JobSearchBar({
         />
 
         {/* Botão Principal de Busca */}
-        <button
+        <motion.button
           type="submit"
-          className="h-12 shrink-0 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-xs transition-all duration-150 hover:bg-primary-hover active:scale-[0.98]"
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-[0_5px_14px_rgba(124,58,237,0.25)] transition-colors hover:bg-primary-hover lg:ml-1 lg:rounded-full"
         >
-          Buscar vagas
-        </button>
+          <Search className="size-4" aria-hidden />
+          <span>Buscar</span>
+        </motion.button>
+
+        <motion.button
+          type="button"
+          onClick={onOpenFilters}
+          whileTap={{ scale: 0.96 }}
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted lg:ml-1 lg:h-10 lg:rounded-full"
+        >
+          <SlidersHorizontal className="size-4" aria-hidden />
+          <span>Filtros</span>
+          {activeFilterCount > 0 && (
+            <span className="grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          )}
+        </motion.button>
       </form>
-    </section>
+    </motion.section>
   )
 }

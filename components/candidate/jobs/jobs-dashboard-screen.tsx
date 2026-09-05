@@ -203,25 +203,15 @@ export function JobsDashboardScreen() {
 
   return (
     <PageShell className="max-w-[1560px]">
-      <header className="flex flex-col gap-2">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Oportunidades</p>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground text-balance sm:text-4xl">
-          Encontre uma vaga para você
-        </h1>
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Explore oportunidades reais, filtre pelo que importa para você e candidate-se em poucos cliques.
-        </p>
-      </header>
+      <header className="flex flex-col gap-4">
 
-      {/* Barra de Pesquisa */}
-      <div className="mt-6">
         <JobSearchBar
           value={search}
           onSubmit={setSearch}
           onOpenFilters={() => setFiltersOpen(true)}
           activeFilterCount={activeFilterCount}
         />
-      </div>
+      </header>
 
       {/* Categorias rápidas */}
       <div className="mt-5 flex gap-2 overflow-x-auto pb-1 no-scrollbar">

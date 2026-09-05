@@ -193,7 +193,7 @@ export function NovaVagaForm() {
           <CheckCircle2 className="size-7" aria-hidden />
         </span>
         <h1 className="mt-5 text-2xl font-bold tracking-tight text-foreground text-balance">
-          Vaga publicada
+          Vaga publicada com sucesso!
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">
           <strong className="font-semibold text-strong-foreground">{titulo}</strong> já está no ar e

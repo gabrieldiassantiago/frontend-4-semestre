@@ -23,6 +23,8 @@ export interface CandidateProfile {
   userId: string
   userName?: string
   userEmail?: string
+  profileImageUrl?: string
+  resumeUrl?: string
   headline?: string
   summary?: string
   phone?: string

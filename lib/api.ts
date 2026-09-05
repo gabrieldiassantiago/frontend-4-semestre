@@ -16,7 +16,7 @@ export interface CompanyRegistrationPayload {
   companyName: string
   cnpj: string
   industry: string
-  website?: string
+  website?: stringgit
   city: string
   state: string
   description?: string
@@ -337,6 +337,36 @@ export async function getCompanyProfileMe(): Promise<CompanyProfile> {
     credentials: "include",
   })
   return handleResponse<CompanyProfile>(res)
+}
+
+export async function uploadCandidateAvatar(file: File): Promise<CandidateProfile> {
+  const formData = new FormData()
+  formData.append("file", file)
+
+  const res = await fetch(`${API_BASE_URL}/candidate-profile/me/avatar`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${getAuthToken()}`,
+    },
+    credentials: "include",
+    body: formData,
+  })
+  return handleResponse<CandidateProfile>(res)
+}
+
+export async function uploadCandidateResume(file: File): Promise<CandidateProfile> {
+  const formData = new FormData()
+  formData.append("file", file)
+
+  const res = await fetch(`${API_BASE_URL}/candidate-profile/me/resume`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${getAuthToken()}`,
+    },
+    credentials: "include",
+    body: formData,
+  })
+  return handleResponse<CandidateProfile>(res)
 }
 
 export async function updateCompanyProfileMe(dto: UpdateCompanyProfileDto): Promise<CompanyProfile> {

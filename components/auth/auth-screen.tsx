@@ -100,6 +100,20 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
     }
   }
 
+  //toast de erro
+  const toastError = (message: string) => {
+    setError(message)
+    setTimeout(() => {
+      setError(null)
+    }, 5000)
+
+    return (
+      <div className="fixed bottom-4 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 rounded-lg bg-danger px-4 py-3 text-sm text-white shadow-lg">
+        {message}
+      </div>
+    )
+  }
+
   const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault()
     setError(null)

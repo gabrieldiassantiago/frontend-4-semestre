@@ -16,7 +16,6 @@ function useIsActive() {
   return (href: string) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`))
 }
 
-/** Navegação vertical em barra lateral (desktop / sidebar). */
 export function SidebarNav({
   items,
   collapsed = false,
@@ -55,7 +54,7 @@ export function SidebarNav({
                 className={cn(
                   "grid shrink-0 place-items-center rounded-lg transition-all duration-200",
                   collapsed ? "size-6" : "size-7",
-                  active ? "bg-primary-foreground/15" : "bg-transparent group-hover:bg-background/60",
+                  active ? "" : "bg-transparent group-hover:bg-background/60",
                 )}
               >
                 <Icon
@@ -88,7 +87,6 @@ export function SidebarNav({
 }
 
 
-/** Navegação horizontal do header (desktop fallback). */
 export function AppNav({ items, className }: { items: NavItem[]; className?: string }) {
   const isActive = useIsActive()
 
@@ -125,7 +123,6 @@ export function AppNav({ items, className }: { items: NavItem[]; className?: str
   )
 }
 
-/** Barra de navegação inferior fixa (mobile), padrão de app nativo. */
 export function AppTabBar({ items }: { items: NavItem[] }) {
   const isActive = useIsActive()
 
