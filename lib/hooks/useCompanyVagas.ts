@@ -22,6 +22,7 @@ export function useCompanyVagas(): UseCompanyVagasState {
 
   const [vagas, setVagas] = useState<Vaga[]>([])
   const [loadingVagas, setLoadingVagas] = useState(false)
+  const [loadedCompanyId, setLoadedCompanyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const fetchVagas = useCallback(async () => {
@@ -40,6 +41,7 @@ export function useCompanyVagas(): UseCompanyVagasState {
           : "Erro ao carregar vagas da empresa."
       )
     } finally {
+      setLoadedCompanyId(profile.id)
       setLoadingVagas(false)
     }
   }, [profile?.id])
@@ -53,7 +55,7 @@ export function useCompanyVagas(): UseCompanyVagasState {
   return {
     vagas,
     companyProfileId: profile?.id ?? null,
-    loading: profileLoading || loadingVagas,
+    loading: profileLoading || loadingVagas || Boolean(profile?.id && loadedCompanyId !== profile.id),
     error:
       error ||
       (profileError instanceof Error

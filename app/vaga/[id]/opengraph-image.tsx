@@ -6,17 +6,12 @@ export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 export const alt = "Vaga publicada na Selecta"
 
-/**
- * Imagem de preview usada quando o link da vaga é compartilhado
- * (WhatsApp, LinkedIn, Slack...). Estilos inline: o ImageResponse
- * não processa Tailwind.
- */
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const vaga = await getVagaPublic(id)
 
   const company = vaga?.nomeEmpresa ?? "Empresa confidencial"
-  const titulo = vaga?.titulo ?? "Vaga não encontrada"
+  const titulo = vaga?.titulo ?? "Oportunidade na Selecta"
 
   const tags = vaga
     ? [
@@ -26,7 +21,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
     ]
     : []
 
-  const salario = vaga
+  const salario = vaga?.salario
     ? vaga.salario.toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
@@ -44,58 +39,63 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           flexDirection: "column",
           justifyContent: "space-between",
           backgroundColor: "#ffffff",
-          padding: "72px",
+          padding: "72px 80px",
           fontFamily: "sans-serif",
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
+          {/* Header da Empresa */}
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div
               style={{
-                width: "64px",
-                height: "64px",
-                borderRadius: "18px",
+                width: "56px",
+                height: "56px",
+                borderRadius: "16px",
                 backgroundColor: "#f5f3ff",
-                color: "#6d28d9",
+                color: "#7c3aed",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "28px",
+                fontSize: "26px",
                 fontWeight: 700,
               }}
             >
               {company.trim().charAt(0).toUpperCase() || "S"}
             </div>
-            <span style={{ fontSize: "30px", color: "#71717a", fontWeight: 600 }}>{company}</span>
+            <span style={{ fontSize: "24px", color: "#71717a", fontWeight: 600 }}>
+              {company}
+            </span>
           </div>
 
+          {/* Título Principal */}
           <div
             style={{
-              marginTop: "36px",
-              fontSize: "68px",
+              marginTop: "40px",
+              fontSize: "64px",
               fontWeight: 700,
               color: "#09090b",
-              lineHeight: 1.1,
-              letterSpacing: "-0.02em",
+              lineHeight: 1.15,
+              letterSpacing: "-0.03em",
               display: "flex",
             }}
           >
             {titulo}
           </div>
 
+          {/* Tags Pills */}
           {vaga && (
-            <div style={{ marginTop: "34px", display: "flex", gap: "12px" }}>
+            <div style={{ marginTop: "32px", display: "flex", gap: "10px" }}>
               {tags.map((tag) => (
                 <div
                   key={tag}
                   style={{
                     display: "flex",
-                    padding: "12px 24px",
+                    padding: "8px 20px",
                     borderRadius: "999px",
                     backgroundColor: "#fafafa",
                     border: "1px solid #e4e4e7",
-                    color: "#3f3f46",
-                    fontSize: "26px",
+                    color: "#52525b",
+                    fontSize: "22px",
                     fontWeight: 600,
                   }}
                 >
@@ -106,39 +106,46 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           )}
         </div>
 
+        {/* Rodapé com Remuneração e Assinatura */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            borderTop: "2px solid #f4f4f5",
+            borderTop: "1px solid #f4f4f5",
             paddingTop: "32px",
           }}
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {salario && (
-              <span style={{ fontSize: "40px", fontWeight: 700, color: "#09090b" }}>
-                {salario} <span style={{ fontSize: "26px", color: "#71717a" }}>/ mês</span>
+            {salario ? (
+              <span style={{ fontSize: "38px", fontWeight: 700, color: "#09090b" }}>
+                {salario} <span style={{ fontSize: "24px", color: "#71717a" }}>/ mês</span>
+              </span>
+            ) : (
+              <span style={{ fontSize: "28px", fontWeight: 600, color: "#09090b" }}>
+                Remuneração a combinar
               </span>
             )}
             {vaga && (
-              <span style={{ fontSize: "26px", color: "#71717a", marginTop: "6px" }}>
-                {vaga.cidade}, {vaga.estado}
+              <span style={{ fontSize: "22px", color: "#71717a", marginTop: "4px" }}>
+                {vaga.cidade} - {vaga.estado}
               </span>
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div
               style={{
-                width: "44px",
-                height: "44px",
-                borderRadius: "14px",
+                width: "36px",
+                height: "36px",
+                borderRadius: "10px",
                 backgroundColor: "#7c3aed",
                 display: "flex",
               }}
             />
-            <span style={{ fontSize: "32px", fontWeight: 700, color: "#09090b" }}>Selecta</span>
+            <span style={{ fontSize: "28px", fontWeight: 700, color: "#09090b", letterSpacing: "-0.02em" }}>
+              Selecta
+            </span>
           </div>
         </div>
       </div>

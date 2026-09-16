@@ -2,15 +2,20 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   Bell,
-  BriefcaseBusiness,
+  Briefcase,
   ChevronLeft,
   ChevronRight,
-  Compass,
+  FileText,
+  LayoutGrid,
   LogOut,
   Menu,
+  MessageSquare,
+  Settings,
+  ShoppingBag,
   UserRound,
   X,
 } from "lucide-react"
@@ -23,20 +28,31 @@ import { cn } from "@/lib/utils"
 import { useCandidateProfile } from "@/lib/hooks/useCandidateProfile"
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Buscar Vagas", icon: Compass },
-  { href: "/candidaturas", label: "Minhas Candidaturas", icon: BriefcaseBusiness },
-  { href: "/profile/candidato", label: "Meu Perfil", icon: UserRound },
+  { href: "/visao-geral", label: "Visão geral", icon: LayoutGrid },
+  { href: "/vagas", label: "Vagas", icon: Briefcase },
+  { href: "/candidaturas", label: "Candidaturas", icon: FileText },
+  { href: "/mensagens", label: "Mensagens", icon: MessageSquare, dotBadge: true },
+  { href: "/profile/candidato", label: "Meu perfil", icon: UserRound },
+  { href: "/notificacoes", label: "Notificações", icon: Bell },
+]
+
+const MOBILE_TAB_ITEMS: NavItem[] = [
+  { href: "/vagas", label: "Vagas", icon: Briefcase },
+  { href: "/candidaturas", label: "Candidaturas", icon: FileText },
+  { href: "/mensagens", label: "Mensagens", icon: MessageSquare, dotBadge: true },
+  { href: "/profile/candidato", label: "Meu perfil", icon: UserRound },
 ]
 
 export function CandidateAppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
   const { profile } = useCandidateProfile()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
-  const [greeting, setGreeting] = useState("Olá")
+  const [greeting, setGreeting] = useState("Boa noite")
   const logout = useLogout("/auth")
 
-  const displayName = profile?.userName?.trim() || "Candidato"
-  const initials = getInitials(displayName)
+  const displayName = profile?.userName?.trim() || "Gab"
+  const initials = getInitials(displayName) || "G"
 
   useEffect(() => {
     const hour = new Date().getHours()
@@ -66,32 +82,30 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
     return () => mq.removeEventListener("change", handleChange)
   }, [])
 
+  if (pathname === "/profile/candidato/completar") return <>{children}</>
+
   return (
-    <div className="min-h-screen bg-surface text-foreground">
+    <div className="min-h-screen bg-[#fafafc] text-foreground">
       {/* SIDEBAR ESQUERDA (DESKTOP) */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card transition-[width] duration-200 lg:flex",
-          collapsed ? "w-[72px]" : "w-64"
+          "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-slate-200/70 bg-card transition-[width] duration-200 lg:flex",
+          collapsed ? "w-[76px]" : "w-64"
         )}
       >
         <div
           className={cn(
-            "flex h-16 items-center border-b border-border-subtle px-3.5",
+            "flex h-20 items-center px-5",
             collapsed ? "justify-center" : "justify-between"
           )}
         >
           <Link
-            href="/dashboard"
+            href="/vagas"
             aria-label="Selecta - ir para o início"
-            className={cn("flex items-center gap-2 overflow-hidden", collapsed && "justify-center")}
+            className={cn("flex flex-col overflow-hidden", collapsed && "items-center justify-center")}
           >
             <SelectaLogo solo={collapsed} />
-            {!collapsed && (
-              <span className="whitespace-nowrap rounded-full bg-primary-subtle px-2 py-0.5 text-[10px] font-bold text-primary">
-                Candidato
-              </span>
-            )}
+
           </Link>
           {!collapsed && (
             <button
@@ -99,7 +113,7 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setCollapsed((prev) => !prev)}
               aria-label="Recolher menu lateral"
               title="Recolher menu"
-              className="grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="grid size-8 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -112,35 +126,58 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
             onClick={() => setCollapsed(false)}
             aria-label="Expandir menu lateral"
             title="Expandir menu"
-            className="mx-auto mt-2 grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="mx-auto mt-2 grid size-8 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
             <ChevronRight className="size-4" />
           </button>
         )}
 
-        <div className="flex-1 overflow-y-auto px-2.5 py-4">
-          {!collapsed && (
-            <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Navegação
-            </p>
-          )}
-          <SidebarNav items={NAV_ITEMS} collapsed={collapsed} className="mt-1" />
+        <div className="flex-1 overflow-y-auto px-3.5 py-4">
+          <SidebarNav items={NAV_ITEMS} collapsed={collapsed} />
         </div>
 
-        {/* Rodapé da Sidebar Refinada */}
-        <div className="border-t border-border-subtle/50 p-3">
-          <UserMenu
-            name={displayName}
-            secondary={profile?.userEmail || undefined}
-            avatar={
-              <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-primary to-purple-500 text-xs font-bold text-primary-foreground shadow-sm">
-                {initials}
-              </span>
-            }
-            links={[{ href: "/profile/candidato", label: "Meu perfil", icon: UserRound }]}
-            onLogout={logout}
-            collapsed={collapsed}
-          />
+        {/* Rodapé da Sidebar: Card 'Complete seu perfil' + Configurações */}
+        <div className="p-3.5 space-y-2">
+          {!collapsed && (
+            <Link
+              href="/profile/candidato"
+              className="group relative block rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs transition-all hover:border-[#7c3aed]/40 hover:shadow-sm"
+            >
+              <div className="flex items-start gap-2.5">
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-[#ede9fe] text-[#7c3aed]">
+                  <ShoppingBag className="size-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-xs font-bold text-slate-900">Complete seu perfil</p>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <div className="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full w-[70%] rounded-full bg-[#7c3aed]" />
+                    </div>
+                    <span className="text-[10px] font-bold text-[#7c3aed]">70%</span>
+                  </div>
+                  <p className="mt-1.5 text-[10px] leading-tight text-slate-500">
+                    Aumente suas chances de ser encontrado.
+                  </p>
+                </div>
+              </div>
+            </Link>
+          )}
+
+          {/* Link de Configurações */}
+          <Link
+            href="/configuracoes"
+            className={cn(
+              "flex items-center rounded-2xl text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100/70 hover:text-slate-900",
+              collapsed ? "size-11 justify-center mx-auto" : "gap-3 px-3.5 py-2.5",
+              pathname === "/configuracoes" && "bg-[#f3f0ff] font-semibold text-[#7c3aed]"
+            )}
+            title="Configurações"
+          >
+            <Settings className="size-[18px] shrink-0 text-slate-500" />
+            {!collapsed && <span>Configurações</span>}
+          </Link>
         </div>
       </aside>
 
@@ -148,53 +185,73 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
       <div
         className={cn(
           "flex min-h-screen flex-col transition-[padding] duration-200",
-          collapsed ? "lg:pl-[72px]" : "lg:pl-64"
+          collapsed ? "lg:pl-[76px]" : "lg:pl-64"
         )}
       >
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 sm:h-20 items-center justify-between border-b border-slate-200/60 bg-[#fafafc]/95 px-4 backdrop-blur-md sm:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileDrawerOpen(true)}
-              className="grid size-10 shrink-0 place-items-center rounded-xl border border-border text-foreground transition-colors hover:bg-muted active:scale-95 lg:hidden"
+              className="grid size-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-100 active:scale-95 lg:hidden"
               aria-label="Abrir menu"
               aria-expanded={mobileDrawerOpen}
             >
               <Menu className="size-5" />
             </button>
-            <Link href="/dashboard" className="shrink-0 lg:hidden">
+            <Link href="/vagas" className="shrink-0 lg:hidden">
               <SelectaLogo />
             </Link>
             <div className="hidden min-w-0 flex-col leading-tight lg:flex">
-              <span className="truncate text-[15px] font-bold text-foreground">
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">
                 {greeting}, {displayName.split(" ")[0]}!
-              </span>
-            </div>
-            <div className="hidden min-w-0 flex-col leading-tight md:flex lg:hidden">
-              <span className="truncate text-sm font-bold text-foreground">
-                {greeting}, {displayName.split(" ")[0]}!
-              </span>
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Encontre oportunidades que combinam com o seu perfil.
+              </p>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              className="relative grid size-10 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Link
+              href="/notificacoes"
+              className="relative hidden sm:grid size-10 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-200/60 hover:text-slate-800"
               aria-label="Notificações"
             >
-              <Bell className="size-[18px]" />
+              <Bell className="size-[20px]" />
               <span
-                className="absolute right-2.5 top-2.5 size-1.5 rounded-full bg-emerald-500 ring-2 ring-card"
+                className="absolute right-2.5 top-2.5 size-2 rounded-full bg-red-500 ring-2 ring-white"
                 aria-hidden
               />
-            </button>
+            </Link>
+
+            {/* Desktop User Menu (com nome, email e abrindo para baixo) */}
+            <div className="hidden lg:block">
+              <UserMenu
+                name={displayName}
+                secondary={profile?.userEmail || undefined}
+                side="bottom"
+                align="right"
+                avatar={
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#ede9fe] text-xs font-bold text-[#7c3aed] shadow-xs">
+                    {initials}
+                  </span>
+                }
+                links={[{ href: "/profile/candidato", label: "Meu perfil", icon: UserRound }]}
+                onLogout={logout}
+              />
+            </div>
+
+            {/* Mobile User Menu: apenas o círculo da foto de perfil */}
             <div className="lg:hidden">
               <UserMenu
                 name={displayName}
                 secondary={profile?.userEmail || undefined}
+                avatarOnly
+                side="bottom"
+                align="right"
                 avatar={
-                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-xs">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#ede9fe] text-sm font-bold text-[#7c3aed] shadow-xs">
                     {initials}
                   </span>
                 }
@@ -266,7 +323,7 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      <AppTabBar items={NAV_ITEMS} />
+      <AppTabBar items={MOBILE_TAB_ITEMS} />
     </div>
   )
 }

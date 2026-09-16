@@ -189,7 +189,7 @@ export function ProjectEditor({
                 className="field-input"
                 value={rascunho.title}
                 onChange={(event) => setRascunho({ ...rascunho, title: event.target.value })}
-                placeholder="Ex.: App de controle de gastos"
+                placeholder="Ex.: Campanha de arrecadação da comunidade"
               />
             </Field>
 
@@ -199,7 +199,7 @@ export function ProjectEditor({
                 className="field-input resize-y"
                 value={rascunho.description ?? ""}
                 onChange={(event) => setRascunho({ ...rascunho, description: event.target.value })}
-                placeholder="Ex.: App em React Native que categoriza gastos automaticamente."
+                placeholder="Ex.: Organizei uma equipe de voluntários e a distribuição de doações para 40 famílias."
               />
             </Field>
 
@@ -209,7 +209,7 @@ export function ProjectEditor({
                 className="field-input"
                 value={rascunho.projectUrl ?? ""}
                 onChange={(event) => setRascunho({ ...rascunho, projectUrl: event.target.value })}
-                placeholder="https://github.com/seu-usuario/projeto"
+                placeholder="https://seu-site.com/meu-trabalho"
               />
             </Field>
 

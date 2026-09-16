@@ -81,6 +81,9 @@ export interface Vaga {
   nomeEmpresa?: string
   cidade: string
   estado: string
+  latitude?: number
+  longitude?: number
+  distanciaKm?: number
   categoria: VagaCategoria
   modalidade: VagaModalidade
   nivelExperiencia: NivelExperiencia
@@ -96,8 +99,10 @@ export interface CreateVagaDto {
   descricao: string
   beneficios?: string
   companyProfileId: string
-  cidade: string
-  estado: string
+  latitude: number
+  longitude: number
+  cidade?: string
+  estado?: string
   categoria: VagaCategoria
   modalidade: VagaModalidade
   nivelExperiencia: NivelExperiencia
@@ -109,12 +114,21 @@ export interface UpdateVagaDto {
   salario?: number
   descricao?: string
   beneficios?: string
+  latitude?: number
+  longitude?: number
   cidade?: string
   estado?: string
   categoria?: VagaCategoria
   modalidade?: VagaModalidade
   nivelExperiencia?: NivelExperiencia
   ativa?: boolean
+}
+
+/** Parâmetros para buscar vagas por proximidade */
+export interface VagaProximasParams {
+  latitude: number
+  longitude: number
+  raioKm?: number
 }
 
 /** Filtros para a listagem de vagas */
@@ -127,4 +141,7 @@ export interface VagaFilters {
   estado?: string
   salarioMin?: number
   salarioMax?: number
+  latitude?: number
+  longitude?: number
+  raioKm?: number
 }

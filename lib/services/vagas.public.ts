@@ -1,16 +1,9 @@
 import "server-only"
 import type { Vaga } from "@/lib/types/vaga.types"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://projeto-para-processos-seletivos-mais.onrender.com"
+import { API_BASE_URL } from "@/lib/http/config"
 
-/**
- * Busca uma vaga no servidor, sem depender do token do navegador.
- *
- * A página pública de vaga precisa renderizar no servidor (para metadata e
- * compartilhamento), então ela não pode usar `vagas.service.ts`, que lê o
- * token do `localStorage`. Retorna `null` em qualquer falha para que a página
- * possa cair no `notFound()` em vez de estourar.
- */
+// Public metadata uses anonymous requests and a short server cache.
 export async function getVagaPublic(id: string): Promise<Vaga | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/vagas/${encodeURIComponent(id)}`, {

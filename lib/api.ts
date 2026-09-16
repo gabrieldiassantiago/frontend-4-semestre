@@ -1,5 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://projeto-para-processos-seletivos-mais.onrender.com"
-
+const API_BASE_URL = 'http://localhost:8080'
 export type UserRole = "CANDIDATE" | "COMPANY" | "ADMIN"
 
 export interface RegisterPayload {
@@ -16,7 +15,7 @@ export interface CompanyRegistrationPayload {
   companyName: string
   cnpj: string
   industry: string
-  website?: stringgit
+  website?: string
   city: string
   state: string
   description?: string
@@ -159,7 +158,7 @@ export function getAuthToken(): string | null {
   const nameEQ = "token="
   const ca = document.cookie.split(";")
   for (let i = 0; i < ca.length; i++) {
-    const c = ca[i].trim()
+    const c = ca[i].trim();
     if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length)
   }
   return null

@@ -1,6 +1,20 @@
 "use client"
 
-import { SlidersHorizontal } from "lucide-react"
+import { useState } from "react"
+import {
+  SlidersHorizontal,
+  ArrowUpDown,
+  Building2,
+  Laptop,
+  Globe,
+  DollarSign,
+  Briefcase,
+  Maximize2,
+  RotateCcw,
+  Check,
+  ChevronDown,
+} from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import {
@@ -29,14 +43,21 @@ export const EMPTY_FILTERS: JobFiltersState = {
 
 export const SALARIO_MAX = 30_000
 
-const SORT_OPTIONS: { value: JobSort; label: string }[] = [
-  { value: "recent", label: "Mais recentes primeiro" },
+export const SORT_OPTIONS: { value: JobSort; label: string }[] = [
+  { value: "recent", label: "Mais recentes" },
   { value: "salary-desc", label: "Maior salário" },
   { value: "salary-asc", label: "Menor salário" },
 ]
 
-const MODALIDADES = Object.keys(MODALIDADE_LABELS) as VagaModalidade[]
+const MODALIDADE_ITEMS: { value: VagaModalidade; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { value: "PRESENCIAL", label: "Presencial", icon: Building2 },
+  { value: "HIBRIDO", label: "Híbrido", icon: Laptop },
+  { value: "REMOTO", label: "Remoto", icon: Globe },
+]
+
 const NIVEIS = Object.keys(NIVEL_LABELS) as NivelExperiencia[]
+
+const QUICK_SALARY_PRESETS = [0, 3000, 5000, 8000, 12000]
 
 /** Quantos filtros o usuário aplicou (a ordenação padrão não conta). */
 export function countActiveFilters(filters: JobFiltersState) {
@@ -53,147 +74,259 @@ function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <fieldset className="border-t border-border-subtle px-4 py-4 sm:px-5">
-      <legend className="sr-only">{title}</legend>
-      <p aria-hidden className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </p>
-      <div className="flex flex-col gap-2.5">{children}</div>
-    </fieldset>
-  )
-}
-
 export function JobFiltersPanel({
   filters,
   onChange,
+  onOpenModal,
   className,
 }: {
   filters: JobFiltersState
   onChange: (next: JobFiltersState) => void
+  onOpenModal?: () => void
   className?: string
 }) {
   const activeCount = countActiveFilters(filters)
-
   const patch = (partial: Partial<JobFiltersState>) => onChange({ ...filters, ...partial })
 
   return (
-    <section
+    <motion.section
       aria-label="Filtrar vagas"
-      className={cn("rounded-2xl border border-border bg-card shadow-card", className)}
+      initial={{ opacity: 0, x: -12 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className={cn(
+        "rounded-3xl border border-border/80 bg-card/95 backdrop-blur-md shadow-card overflow-hidden",
+        className
+      )}
     >
-      <header className="flex items-center justify-between gap-2 px-4 py-3.5 sm:px-5 sm:py-4">
-        <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
-          <SlidersHorizontal className="size-4 text-primary" aria-hidden />
-          Filtros de Vagas
-        </h2>
+      {/* Header com visual moderno */}
+      <header className="flex items-center justify-between gap-2 border-b border-border-subtle bg-gradient-to-r from-card via-surface to-card px-4 py-3.5 sm:px-5">
+        <div className="flex items-center gap-2">
+          <div className="grid size-7 place-items-center rounded-lg bg-primary-subtle text-primary shadow-xs">
+            <SlidersHorizontal className="size-3.5" aria-hidden />
+          </div>
+          <h2 className="text-sm font-bold tracking-tight text-foreground">
+            Filtros
+          </h2>
+          <AnimatePresence>
+            {activeCount > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-xs"
+              >
+                {activeCount}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </div>
 
-        {activeCount > 0 && (
-          <button
-            type="button"
-            onClick={() => onChange(EMPTY_FILTERS)}
-            className="rounded-full border border-border px-2.5 py-0.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-subtle"
-          >
-            Limpar tudo
-          </button>
-        )}
+        <div className="flex items-center gap-1.5">
+          {activeCount > 0 && (
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.94 }}
+              onClick={() => onChange(EMPTY_FILTERS)}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <RotateCcw className="size-2.5" />
+              Limpar
+            </motion.button>
+          )}
+
+          {onOpenModal && (
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.94 }}
+              onClick={onOpenModal}
+              title="Abrir painel completo de filtros em modal"
+              className="grid size-7 place-items-center rounded-lg border border-border bg-surface text-muted-foreground hover:bg-primary-subtle hover:text-primary transition-colors"
+            >
+              <Maximize2 className="size-3.5" />
+            </motion.button>
+          )}
+        </div>
       </header>
 
-      <Section title="Ordenar resultados">
-        {SORT_OPTIONS.map((option) => (
-          <label
-            key={option.value}
-            className="flex cursor-pointer items-center gap-2.5 text-xs sm:text-sm text-foreground transition-colors hover:text-primary"
-          >
-            <input
-              type="radio"
-              name="job-sort"
-              checked={filters.sort === option.value}
-              onChange={() => patch({ sort: option.value })}
-              className="size-4 shrink-0 accent-primary"
-            />
-            <span>{option.label}</span>
-          </label>
-        ))}
-      </Section>
+      <div className="divide-y divide-border-subtle">
+        {/* 1. Ordenação */}
+        <div className="p-4 sm:p-5">
+          <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <ArrowUpDown className="size-3 text-primary" />
+            <span>Ordenar</span>
+          </div>
 
-      <Section title="Modalidade de trabalho">
-        {MODALIDADES.map((modalidade) => (
-          <label
-            key={modalidade}
-            className="flex cursor-pointer items-center justify-between gap-2 text-xs sm:text-sm text-foreground transition-colors hover:text-primary"
-          >
-            <div className="flex items-center gap-2.5">
-              <input
-                type="checkbox"
-                checked={filters.modalidades.includes(modalidade)}
-                onChange={() => patch({ modalidades: toggle(filters.modalidades, modalidade) })}
-                className="size-4 shrink-0 rounded accent-primary"
-              />
-              <span>{MODALIDADE_LABELS[modalidade]}</span>
+          <div className="space-y-1">
+            {SORT_OPTIONS.map((option) => {
+              const isSelected = filters.sort === option.value
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => patch({ sort: option.value })}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-xs sm:text-sm transition-all",
+                    isSelected
+                      ? "bg-primary-subtle font-bold text-primary shadow-xs"
+                      : "text-foreground hover:bg-muted font-medium"
+                  )}
+                >
+                  <span>{option.label}</span>
+                  {isSelected && <Check className="size-3.5 text-primary" />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 2. Modalidade */}
+        <div className="p-4 sm:p-5">
+          <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <Building2 className="size-3 text-primary" />
+            <span>Modalidade</span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-1.5">
+            {MODALIDADE_ITEMS.map(({ value, label, icon: Icon }) => {
+              const isSelected = filters.modalidades.includes(value)
+              return (
+                <motion.button
+                  key={value}
+                  type="button"
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => patch({ modalidades: toggle(filters.modalidades, value) })}
+                  className={cn(
+                    "flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition-all",
+                    isSelected
+                      ? "border-primary bg-primary-subtle text-primary font-bold shadow-xs ring-1 ring-primary/20"
+                      : "border-border bg-surface text-muted-foreground hover:bg-muted hover:text-foreground font-medium"
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" />
+                  <span className="text-[11px] leading-tight">{label}</span>
+                </motion.button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 3. Salário Mínimo */}
+        <div className="p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <DollarSign className="size-3 text-primary" />
+              <span>Salário Mínimo</span>
             </div>
-          </label>
-        ))}
-      </Section>
+            <span className="text-xs font-bold text-primary">
+              {filters.salarioMin > 0 ? formatCurrency(filters.salarioMin) : "Qualquer"}
+            </span>
+          </div>
 
-      <fieldset className="border-t border-border-subtle px-4 py-3.5 sm:px-5 sm:py-4">
-        <legend className="sr-only">Faixa salarial</legend>
-        <div className="flex items-baseline justify-between gap-2">
-          <p aria-hidden className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Salário a partir de
-          </p>
-          <span className="text-xs font-bold text-primary">
-            {filters.salarioMin > 0 ? formatCurrency(filters.salarioMin) : "Qualquer valor"}
-          </span>
+          <input
+            type="range"
+            min={0}
+            max={SALARIO_MAX}
+            step={500}
+            value={filters.salarioMin}
+            onChange={(e) => patch({ salarioMin: Number(e.target.value) })}
+            className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary"
+          />
+
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>R$ 0</span>
+            <span>{formatCurrency(SALARIO_MAX)}+</span>
+          </div>
+
+          {/* Chips rápidos de salário */}
+          <div className="flex flex-wrap gap-1 pt-1">
+            {QUICK_SALARY_PRESETS.map((val) => {
+              const active = filters.salarioMin === val
+              return (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => patch({ salarioMin: val })}
+                  className={cn(
+                    "rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all",
+                    active
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "bg-surface border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  {val === 0 ? "Todos" : `${formatCurrency(val)}+`}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        <input
-          type="range"
-          min={0}
-          max={SALARIO_MAX}
-          step={500}
-          value={filters.salarioMin}
-          onChange={(event) => patch({ salarioMin: Number(event.target.value) })}
-          aria-label="Salário mínimo"
-          aria-valuetext={
-            filters.salarioMin > 0 ? formatCurrency(filters.salarioMin) : "Qualquer salário"
-          }
-          className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary"
-        />
+        {/* 4. Nível de Experiência */}
+        <div className="p-4 sm:p-5">
+          <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <Briefcase className="size-3 text-primary" />
+            <span>Nível</span>
+          </div>
 
-        <div className="mt-1.5 flex justify-between text-[10px] text-muted-foreground">
-          <span>R$ 0</span>
-          <span>{formatCurrency(SALARIO_MAX)}+</span>
+          <div className="space-y-1">
+            {NIVEIS.map((nivel) => {
+              const isSelected = filters.niveis.includes(nivel)
+              const meta = NIVEL_METADATA[nivel]
+              return (
+                <button
+                  key={nivel}
+                  type="button"
+                  onClick={() => patch({ niveis: toggle(filters.niveis, nivel) })}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs transition-all",
+                    isSelected
+                      ? "bg-primary-subtle text-primary font-bold shadow-xs"
+                      : "text-foreground hover:bg-muted font-medium"
+                  )}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <span
+                      className={cn(
+                        "grid size-4 place-items-center rounded border transition-colors",
+                        isSelected
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card"
+                      )}
+                    >
+                      {isSelected && <Check className="size-3" />}
+                    </span>
+                    <span className="truncate">{NIVEL_LABELS[nivel]}</span>
+                  </div>
+
+                  <span
+                    className={cn(
+                      "rounded px-1.5 py-0.2 text-[10px] font-bold border",
+                      meta?.bgStyle
+                    )}
+                  >
+                    {meta?.tag}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </fieldset>
 
-      <Section title="Nível de experiência">
-        {NIVEIS.map((nivel) => {
-          const meta = NIVEL_METADATA[nivel]
-          const checked = filters.niveis.includes(nivel)
-          return (
-            <label
-              key={nivel}
-              className="flex cursor-pointer items-center justify-between gap-2 text-xs sm:text-sm text-foreground transition-colors hover:text-primary"
+        {/* Botão para abrir modal expandido */}
+        {onOpenModal && (
+          <div className="p-3 bg-surface/50 text-center">
+            <button
+              type="button"
+              onClick={onOpenModal}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline py-1"
             >
-              <div className="flex items-center gap-2.5">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => patch({ niveis: toggle(filters.niveis, nivel) })}
-                  className="size-4 shrink-0 rounded accent-primary"
-                />
-                <span>{meta?.label ?? NIVEL_LABELS[nivel]}</span>
-              </div>
-              <span className={cn("rounded px-1.5 py-0.2 text-[10px] font-semibold border", meta?.bgStyle)}>
-                {meta?.tag}
-              </span>
-            </label>
-          )
-        })}
-      </Section>
-    </section>
+              <SlidersHorizontal className="size-3.5" />
+              Abrir filtros avançados
+            </button>
+          </div>
+        )}
+      </div>
+    </motion.section>
   )
 }
-

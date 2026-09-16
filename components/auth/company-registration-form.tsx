@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, ArrowRight, Building2, Check, Loader2, MapPin, ShieldCheck } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
+import { rememberRegistration } from "@/lib/auth-flow"
 import { registerCompany } from "@/lib/services/auth.service"
 import { getErrorMessage } from "@/lib/errors"
 import { PasswordInput } from "@/components/ui/password-input"
@@ -140,7 +141,8 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
         state: form.state.trim().toUpperCase(),
         description: form.description.trim() || undefined,
       })
-      router.push(`/auth/verify-email?email=${encodeURIComponent(form.email.trim())}&role=COMPANY`)
+      rememberRegistration({ email: form.email.trim(), password: form.password, role: "COMPANY" })
+      router.replace(`/auth/verify-email?email=${encodeURIComponent(form.email.trim())}&role=COMPANY`)
     } catch (requestError: unknown) {
       setError(getErrorMessage(requestError, "Não foi possível criar a conta empresarial."))
     } finally {

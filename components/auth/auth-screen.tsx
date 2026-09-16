@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { ArrowLeft, Loader2 } from "lucide-react"
 
 import { getLinkedInAuthorizationUrl, loginUser, registerUser } from "@/lib/services/auth.service"
+import { rememberRegistration, loginDestination } from "@/lib/auth-flow"
 import type { UserRole } from "@/lib/types/auth.types"
 import { getErrorMessage } from "@/lib/errors"
 import { cn } from "@/lib/utils"
@@ -22,7 +23,7 @@ export type Role = "candidato" | "recrutador"
 type Mode = "register" | "login"
 
 const SUBTITLES: Record<Role, string> = {
-  candidato: "Procure vagas do mundo todo usando a plataforma",
+  candidato: "Seu próximo passo começa aqui. Crie sua conta e monte seu perfil.",
   recrutador: "Encontre os melhores talentos e monte o seu time",
 }
 
@@ -49,8 +50,6 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-
-
 
   const apiRole: Exclude<UserRole, "ADMIN"> = role === "candidato" ? "CANDIDATE" : "COMPANY"
   const isWideForm = role === "recrutador" && mode === "register"
@@ -88,30 +87,13 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
       })
 
       if (response.token) {
-        setSuccess("Login realizado com sucesso!")
-        setTimeout(() => {
-          router.push(response.role === "COMPANY" ? "/empresa/dashboard" : "/dashboard")
-        }, 800)
+        router.replace(await loginDestination(response.role, new URLSearchParams(window.location.search).get("setup") === "1"))
       }
     } catch (err) {
       setError(getErrorMessage(err, "E-mail ou senha incorretos."))
     } finally {
       setLoading(false)
     }
-  }
-
-  //toast de erro
-  const toastError = (message: string) => {
-    setError(message)
-    setTimeout(() => {
-      setError(null)
-    }, 5000)
-
-    return (
-      <div className="fixed bottom-4 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 rounded-lg bg-danger px-4 py-3 text-sm text-white shadow-lg">
-        {message}
-      </div>
-    )
   }
 
   const handleRegister = async (event: React.FormEvent) => {
@@ -138,12 +120,8 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
         role: apiRole,
       })
 
-      setSuccess("Conta criada com sucesso! Redirecionando para a verificação de e-mail...")
-      setTimeout(() => {
-        router.push(
-          `/auth/verify-email?email=${encodeURIComponent(form.email)}&role=${apiRole}`,
-        )
-      }, 1200)
+      rememberRegistration({ email: form.email, password: form.password, role: apiRole })
+      router.replace(`/auth/verify-email?email=${encodeURIComponent(form.email)}&role=${apiRole}`)
     } catch (err) {
       setError(getErrorMessage(err, "Erro ao realizar cadastro. Tente novamente."))
     } finally {

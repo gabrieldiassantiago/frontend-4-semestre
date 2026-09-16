@@ -1,38 +1,11 @@
-import { getAuthToken } from "@/lib/api"
+import { API_BASE_URL, getHeaders, handleResponse } from "@/lib/http/client"
 import type {
   Vaga,
   CreateVagaDto,
   UpdateVagaDto,
   VagaFilters,
+  VagaProximasParams,
 } from "@/lib/types/vaga.types"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://projeto-para-processos-seletivos-mais.onrender.com"
-
-function getHeaders(): HeadersInit {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
-  const token = getAuthToken()
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-  return headers
-}
-
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    let errorMessage = "Ocorreu um erro na requisição."
-    try {
-      const errorData = await res.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
-    } catch {
-      // Ignore JSON parse error
-    }
-    throw new Error(errorMessage)
-  }
-  const text = await res.text()
-  return text ? JSON.parse(text) : ({} as T)
-}
 
 /**
  * Busca todas as vagas, com filtros opcionais.
@@ -54,6 +27,31 @@ export async function getVagas(filters?: VagaFilters): Promise<Vaga[]> {
     credentials: "include",
   })
   return handleResponse<Vaga[]>(res)
+}
+
+/**
+ * Busca vagas próximas a uma coordenada geográfica.
+ * GET /vagas/proximas?latitude={lat}&longitude={lng}&raioKm={raio}
+ */
+export async function getVagasProximas(params: VagaProximasParams): Promise<Vaga[]> {
+  const queryParams = new URLSearchParams()
+  queryParams.set("latitude", String(params.latitude))
+  queryParams.set("longitude", String(params.longitude))
+  if (params.raioKm != null) {
+    queryParams.set("raioKm", String(params.raioKm))
+  }
+
+  const res = await fetch(`${API_BASE_URL}/vagas/proximas?${queryParams.toString()}`, {
+    method: "GET",
+    headers: getHeaders(),
+    credentials: "include",
+  })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await handleResponse<any>(res)
+  if (Array.isArray(data)) return data
+  if (data && Array.isArray(data.content)) return data.content
+  if (data && Array.isArray(data.vagas)) return data.vagas
+  return []
 }
 
 /**

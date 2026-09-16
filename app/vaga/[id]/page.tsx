@@ -2,9 +2,9 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { cookies } from "next/headers"
 import { notFound } from "next/navigation"
-import { ArrowRight, CalendarDays, Gift, Lock, Search } from "lucide-react"
+import { ArrowRight, CalendarDays, CheckCircle2, Gift, Lock, MapPin, Search } from "lucide-react"
+
 import { SelectaLogo } from "@/components/ui/selecta-logo"
-import { Badge } from "@/components/ui/badge"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { VagaBenefits, VagaHighlights, VagaTags } from "@/components/vaga/vaga-facts"
 import { VagaDescription } from "@/components/vaga/vaga-description"
@@ -15,7 +15,6 @@ import { CATEGORIA_LABELS, MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/v
 
 type PageProps = { params: Promise<{ id: string }> }
 
-/** Remove a marcação do markdown simplificado para usar em metadata. */
 function toPlainText(markdown: string, limit = 200) {
   const text = markdown
     .replace(/#{1,6}\s+/g, "")
@@ -39,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `${vaga.titulo} — ${company}`
   const description =
     toPlainText(vaga.descricao) ||
-    `Vaga de ${vaga.titulo} (${NIVEL_LABELS[vaga.nivelExperiencia]}) em ${vaga.cidade}, ${vaga.estado} — ${MODALIDADE_LABELS[vaga.modalidade]}.`
+    `Vaga de ${vaga.titulo} (${NIVEL_LABELS[vaga.nivelExperiencia]}) em ${vaga.cidade} - ${vaga.estado} — ${MODALIDADE_LABELS[vaga.modalidade]}.`
 
   return {
     title,
@@ -63,171 +62,213 @@ export default async function VagaPublicaPage({ params }: PageProps) {
 
   if (!vaga) notFound()
 
-  const company = vaga.companyName ?? "Empresa confidencial"
+  const company = vaga.nomeEmpresa ?? "Empresa confidencial"
   const isAuthenticated = Boolean((await cookies()).get("token")?.value)
   const applyHref = isAuthenticated ? `/dashboard?vaga=${vaga.id}` : `/auth?from=/vaga/${vaga.id}`
 
+  const formattedSalary = vaga.salario
+    ? vaga.salario.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      maximumFractionDigits: 0,
+    })
+    : null
+
   return (
     <div className="flex min-h-screen flex-col bg-surface">
-      <header className="border-b border-border bg-card">
+      {/* Header Fino e Transparente */}
+      <header className="sticky top-0 z-40 border-b border-border-subtle/50 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link href="/" aria-label="Selecta — página inicial">
             <SelectaLogo />
           </Link>
 
-          <Link
-            href={isAuthenticated ? "/dashboard" : "/auth"}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-strong-foreground transition-colors hover:text-primary"
-          >
-            {isAuthenticated ? "Ir para o app" : "Entrar"}
-            <ArrowRight className="size-4" aria-hidden />
-          </Link>
+          <div className="flex items-center gap-3">
+            <ShareVagaButton path={`/vaga/${vaga.id}`} title={`${vaga.titulo} — ${company}`} />
+            <Link
+              href={isAuthenticated ? "/dashboard" : "/auth"}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border-subtle/80 bg-card px-4 text-xs font-semibold text-foreground transition-all duration-200 hover:border-border hover:shadow-sm active:scale-95"
+            >
+              {isAuthenticated ? "Ir para o painel" : "Entrar"}
+              <ArrowRight className="size-3.5" aria-hidden />
+            </Link>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 lg:py-12">
         <article>
-          {/* ── Identificação da vaga ── */}
-          <header className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
-            <EntityAvatar name={company} size="lg" className="sm:size-16 sm:rounded-2xl sm:text-lg" />
+          {/* Título e Cabeçalho Estilo Anúncio Airbnb */}
+          <header className="border-b border-border-subtle/60 pb-8">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <span>{company}</span>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="size-3.5" />
+                {vaga.cidade} - {vaga.estado}
+              </span>
+            </div>
 
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-muted-foreground">{company}</p>
-              <h1 className="mt-1.5 text-3xl font-bold leading-tight tracking-tight text-foreground text-balance sm:text-4xl">
-                {vaga.titulo}
-              </h1>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[40px] lg:leading-tight">
+              {vaga.titulo}
+            </h1>
 
-              <div className="mt-4 flex flex-wrap items-center gap-1.5">
-                <VagaTags vaga={vaga} />
-                {!vaga.ativa && <Badge variant="danger">Encerrada</Badge>}
-              </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <VagaTags vaga={vaga} />
+              {!vaga.ativa && (
+                <span className="inline-flex items-center rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
+                  Inscrições finalizadas
+                </span>
+              )}
             </div>
           </header>
 
-          {/* ── Ações ── */}
-          <div className="mt-7 flex flex-wrap items-center gap-2.5">
-            {vaga.ativa ? (
-              <Link href={applyHref} className="btn-primary">
-                {isAuthenticated ? "Candidatar-se" : "Entrar para se candidatar"}
-                {!isAuthenticated && <Lock className="size-4" aria-hidden />}
-              </Link>
-            ) : (
-              <span className="btn-secondary pointer-events-none opacity-60" aria-disabled>
-                Candidaturas encerradas
-              </span>
-            )}
+          {/* Grid Principal: Conteúdo Aberto + Widget Lateral */}
+          <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-12">
+            {/* Coluna Esquerda: Narrativa Limpa */}
+            <div className="space-y-10">
+              {/* Card da Empresa */}
+              <div className="flex items-center gap-4 border-b border-border-subtle/60 pb-8">
+                <EntityAvatar name={company} size="lg" className="size-14 rounded-2xl sm:size-16" />
+                <div>
+                  <h3 className="text-base font-semibold text-foreground">
+                    Oportunidade oferecida por {company}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Publicada {formatRelativeDate(vaga.createdAt)} · {formatDate(vaga.createdAt)}
+                  </p>
+                </div>
+              </div>
 
-            <ShareVagaButton path={`/vaga/${vaga.id}`} title={`${vaga.titulo} — ${company}`} />
-          </div>
+              {/* Destaques Rápidos da Vaga */}
+              <div className="border-b border-border-subtle/60 pb-8">
+                <VagaHighlights vaga={vaga} />
+              </div>
 
-          {/* ── Conteúdo ── */}
-          <div className="mt-9 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
-            <div className="flex flex-col gap-6">
-              <section
-                aria-labelledby="descricao-vaga"
-                className="rounded-panel border border-border bg-card p-6 shadow-card sm:p-8"
-              >
-                <h2
-                  id="descricao-vaga"
-                  className="text-lg font-bold tracking-tight text-foreground"
-                >
-                  Sobre a vaga
+              {/* Descrição em Prosa Fluida */}
+              <section aria-labelledby="descricao-vaga" className="border-b border-border-subtle/60 pb-8">
+                <h2 id="descricao-vaga" className="text-xl font-semibold tracking-tight text-foreground">
+                  Sobre esta oportunidade
                 </h2>
-                <VagaDescription description={vaga.descricao} className="mt-5" />
+                <VagaDescription description={vaga.descricao} className="mt-5 leading-relaxed" />
               </section>
 
+              {/* Benefícios */}
               {vaga.beneficios && (
-                <section
-                  aria-labelledby="beneficios-vaga"
-                  className="rounded-panel border border-border bg-card p-6 shadow-card sm:p-8"
-                >
-                  <h2
-                    id="beneficios-vaga"
-                    className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground"
-                  >
-                    <Gift className="size-[18px] text-primary" aria-hidden />
-                    Benefícios
-                  </h2>
-                  <VagaBenefits beneficios={vaga.beneficios} className="mt-4" />
+                <section aria-labelledby="beneficios-vaga" className="border-b border-border-subtle/60 pb-8">
+                  <div className="flex items-center gap-2">
+                    <Gift className="size-5 text-primary" aria-hidden />
+                    <h2 id="beneficios-vaga" className="text-xl font-semibold tracking-tight text-foreground">
+                      O que a posição oferece
+                    </h2>
+                  </div>
+                  <VagaBenefits beneficios={vaga.beneficios} className="mt-5" />
                 </section>
               )}
             </div>
 
-            {/* ── Resumo lateral ── */}
-            <aside className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-              <section
-                aria-labelledby="resumo-vaga"
-                className="rounded-panel border border-border bg-card p-5 shadow-card"
-              >
-                <h2
-                  id="resumo-vaga"
-                  className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground"
-                >
-                  Resumo
-                </h2>
-
-                <VagaHighlights vaga={vaga} className="mt-4" />
-
-                <dl className="mt-5 flex flex-col gap-3 border-t border-border-subtle pt-4 text-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <dt className="text-muted-foreground">Modalidade</dt>
-                    <dd className="font-semibold text-foreground">
-                      {MODALIDADE_LABELS[vaga.modalidade]}
-                    </dd>
+            {/* Coluna Direita: Sticky Widget Estilo Reserva Airbnb */}
+            <aside className="lg:sticky lg:top-24 lg:self-start">
+              <div className="rounded-3xl border border-border-subtle/80 bg-card/70 p-6 shadow-xl shadow-black/5 backdrop-blur-sm">
+                <div className="flex items-baseline justify-between border-b border-border-subtle/60 pb-5">
+                  <div>
+                    {formattedSalary ? (
+                      <div>
+                        <span className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                          {formattedSalary}
+                        </span>
+                        <span className="text-xs text-muted-foreground"> / mês</span>
+                      </div>
+                    ) : (
+                      <span className="text-lg font-semibold text-foreground">Salário a combinar</span>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <dt className="text-muted-foreground">Experiência</dt>
-                    <dd className="font-semibold text-foreground">
-                      {NIVEL_LABELS[vaga.nivelExperiencia]}
-                    </dd>
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    <dt className="shrink-0 text-muted-foreground">Área</dt>
-                    <dd className="text-right font-semibold text-foreground">
-                      {CATEGORIA_LABELS[vaga.categoria]}
-                    </dd>
-                  </div>
-                </dl>
+                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    {vaga.ativa ? "Aberta" : "Encerrada"}
+                  </span>
+                </div>
 
-                {vaga.createdAt && (
-                  <p className="mt-4 flex items-center gap-2 border-t border-border-subtle pt-4 text-xs text-muted-foreground">
-                    <CalendarDays className="size-3.5" aria-hidden />
-                    <span>
-                      Publicada {formatRelativeDate(vaga.createdAt)}
-                      <span className="text-subtle-foreground"> · {formatDate(vaga.createdAt)}</span>
-                    </span>
-                  </p>
-                )}
-              </section>
-
-              <section className="rounded-panel border border-border bg-card p-5 shadow-card">
-                <div className="flex items-center gap-3">
-                  <EntityAvatar name={company} size="sm" />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-foreground">{company}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {vaga.cidade}, {vaga.estado}
-                    </p>
+                {/* Bloco de Atributos com Bordas Suaves */}
+                <div className="mt-5 divide-y divide-border-subtle/60 rounded-2xl border border-border-subtle/70 bg-background/50 text-xs">
+                  <div className="flex items-center justify-between p-3.5">
+                    <span className="text-muted-foreground">Modalidade</span>
+                    <span className="font-semibold text-foreground">{MODALIDADE_LABELS[vaga.modalidade]}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3.5">
+                    <span className="text-muted-foreground">Experiência</span>
+                    <span className="font-semibold text-foreground">{NIVEL_LABELS[vaga.nivelExperiencia]}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3.5">
+                    <span className="text-muted-foreground">Área</span>
+                    <span className="text-right font-semibold text-foreground">{CATEGORIA_LABELS[vaga.categoria]}</span>
                   </div>
                 </div>
-                <Link
-                  href={isAuthenticated ? "/dashboard" : "/auth"}
-                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary-hover"
-                >
-                  <Search className="size-4" aria-hidden />
-                  Ver outras vagas
-                </Link>
-              </section>
+
+                {/* Botão de Candidatura Principal */}
+                <div className="mt-6">
+                  {vaga.ativa ? (
+                    <Link
+                      href={applyHref}
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-md transition-all hover:opacity-95 active:scale-95"
+                    >
+                      {isAuthenticated ? "Enviar candidatura" : "Entrar para se candidatar"}
+                      {!isAuthenticated && <Lock className="size-4" aria-hidden />}
+                    </Link>
+                  ) : (
+                    <div
+                      aria-disabled
+                      className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground"
+                    >
+                      Inscrições encerradas
+                    </div>
+                  )}
+                  <p className="mt-3 text-center text-[11px] text-muted-foreground">
+                    Você não será cobrado por enviar seu perfil
+                  </p>
+                </div>
+
+                {/* Card de Segurança/Garantia */}
+                <div className="mt-6 flex items-start gap-2.5 border-t border-border-subtle/60 pt-5 text-xs text-muted-foreground">
+                  <CheckCircle2 className="size-4 shrink-0 text-primary" />
+                  <span>Processo verificado pela Selecta. Dados protegidos e sem intermediários.</span>
+                </div>
+              </div>
             </aside>
           </div>
         </article>
       </main>
 
-      <footer className="border-t border-border bg-card">
-        <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-1 px-4 py-8 text-center sm:px-6">
+      {/* Floating Bottom Bar no Mobile (Estilo Airbnb Mobile Booking) */}
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between border-t border-border-subtle/60 bg-card/95 px-5 py-3 shadow-lg backdrop-blur-md lg:hidden">
+        <div>
+          {formattedSalary ? (
+            <p className="text-base font-bold text-foreground">
+              {formattedSalary}
+              <span className="text-xs font-normal text-muted-foreground">/mês</span>
+            </p>
+          ) : (
+            <p className="text-xs font-semibold text-foreground">A combinar</p>
+          )}
+          <p className="text-[11px] text-muted-foreground">{company}</p>
+        </div>
+
+        {vaga.ativa ? (
+          <Link
+            href={applyHref}
+            className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-xs font-semibold text-primary-foreground active:scale-95"
+          >
+            Candidatar-se
+          </Link>
+        ) : (
+          <span className="text-xs font-medium text-muted-foreground">Encerrada</span>
+        )}
+      </div>
+
+      <footer className="mt-12 border-t border-border-subtle/50 bg-background/50">
+        <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-2 px-4 py-8 text-center sm:px-6">
           <SelectaLogo />
-          <p className="mt-2 text-sm text-muted-foreground text-pretty">
-            Processos seletivos mais transparentes e humanos.
+          <p className="text-xs text-muted-foreground">
+            Conectando profissionais talentosos a empresas inovadoras.
           </p>
         </div>
       </footer>

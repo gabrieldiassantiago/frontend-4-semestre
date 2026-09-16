@@ -55,7 +55,7 @@ const ABAS: { id: Aba; label: string }[] = [
  * feedback — cada uma como um passo curto e explícito, para que ninguém
  * movimente um processo sem entender o efeito.
  */
-export function CandidaturaDetailPanel({ candidaturaId }: { candidaturaId: string }) {
+export function CandidaturaDetailPanel({ candidaturaId, showDocuments = true }: { candidaturaId: string; showDocuments?: boolean }) {
   const { detalhe, loading, error, refetch } = useCandidaturaEmpresa(candidaturaId)
   const [aba, setAba] = useState<Aba>("processo")
 
@@ -147,7 +147,7 @@ export function CandidaturaDetailPanel({ candidaturaId }: { candidaturaId: strin
       <div className="flex flex-col gap-6 p-5">
         {aba === "processo" && (
           <>
-            {candidatura.cartaApresentacao && (
+            {showDocuments && candidatura.cartaApresentacao && (
               <section>
                 <h4 className="text-xs font-bold uppercase tracking-[0.12em] text-subtle-foreground">
                   Carta de apresentação
@@ -158,7 +158,7 @@ export function CandidaturaDetailPanel({ candidaturaId }: { candidaturaId: strin
               </section>
             )}
 
-            {candidatura.curriculoUrl && (
+            {showDocuments && candidatura.curriculoUrl && (
               <a
                 href={candidatura.curriculoUrl}
                 target="_blank"

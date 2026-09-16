@@ -201,7 +201,7 @@ export function ExperienceEditor({
                 className="field-input"
                 value={rascunho.role}
                 onChange={(event) => setRascunho({ ...rascunho, role: event.target.value })}
-                placeholder="Ex.: Estagiário de Front-end"
+                placeholder="Ex.: Assistente de vendas"
               />
             </Field>
 
@@ -250,7 +250,7 @@ export function ExperienceEditor({
                 onChange={(event) =>
                   setRascunho({ ...rascunho, description: event.target.value })
                 }
-                placeholder="Ex.: Desenvolvi telas em React e reduzi o tempo de carregamento em 30%."
+                placeholder="Ex.: Organizei o atendimento e ajudei a reduzir o tempo de espera dos clientes."
               />
             </Field>
           </div>

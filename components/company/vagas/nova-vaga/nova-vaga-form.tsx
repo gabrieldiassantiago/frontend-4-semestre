@@ -1,8 +1,10 @@
 "use client"
 
+import { RouteSkeleton } from "@/components/ui/route-skeleton"
+
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, X } from "lucide-react"
+import { AlertCircle, ArrowLeft, CheckCircle2, X } from "lucide-react"
 import { createVaga } from "@/lib/services/vagas.service"
 import { useCompanyProfile } from "@/lib/hooks/useCompanyProfile"
 import { ShareVagaButton } from "@/components/vaga/share-vaga-button"
@@ -74,6 +76,8 @@ export function NovaVagaForm() {
   const [salario, setSalario] = useState(8500)
   const [cidade, setCidade] = useState("São Paulo")
   const [estado, setEstado] = useState("SP")
+  const [latitude, setLatitude] = useState<number>(-23.5505)
+  const [longitude, setLongitude] = useState<number>(-46.6333)
   const [selectedBenefits, setSelectedBenefits] = useState<string[]>(DEFAULT_BENEFITS)
   const [descricao, setDescricao] = useState(() =>
     buildTemplate("", "DESENVOLVIMENTO_SOFTWARE", "PLENO", "HIBRIDO"),
@@ -156,6 +160,8 @@ export function NovaVagaForm() {
         descricao: descricao.trim(),
         beneficios: selectedBenefits.join(", "),
         companyProfileId,
+        latitude: Number(latitude),
+        longitude: Number(longitude),
         cidade: cidade.trim(),
         estado: estado.trim().toUpperCase(),
         categoria,
@@ -176,14 +182,7 @@ export function NovaVagaForm() {
     formError ??
     (profileError ? "Não foi possível identificar sua empresa. Faça login novamente." : null)
 
-  if (loadingCompany) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
-        <Loader2 className="size-6 animate-spin text-primary" aria-hidden />
-        <p className="text-sm font-semibold text-muted-foreground">Carregando dados da empresa...</p>
-      </div>
-    )
-  }
+  if (loadingCompany) return <RouteSkeleton variant="form" />
 
   // Confirmação: publicar termina em uma ação útil (divulgar a vaga), não num redirect seco.
   if (publishedId) {
@@ -287,6 +286,10 @@ export function NovaVagaForm() {
             setCidade={setCidade}
             estado={estado}
             setEstado={setEstado}
+            latitude={latitude}
+            setLatitude={setLatitude}
+            longitude={longitude}
+            setLongitude={setLongitude}
             modalidade={modalidade}
             salario={salario}
             setSalario={setSalario}

@@ -1,4 +1,3 @@
-import { getAuthToken } from "@/lib/api"
 import { ApiError } from "@/lib/errors"
 import type {
   AvancarEtapaDto,
@@ -11,8 +10,9 @@ import type {
   DecidirCandidaturaDto,
   EtapaProcesso,
 } from "@/lib/types/candidatura.types"
+import { getAuthToken } from "./auth.service"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://projeto-para-processos-seletivos-mais.onrender.com"
+const API_BASE_URL = 'http://localhost:8080'
 
 function getHeaders(): HeadersInit {
   const headers: Record<string, string> = {
@@ -22,6 +22,7 @@ function getHeaders(): HeadersInit {
   if (token) {
     headers["Authorization"] = `Bearer ${token}`
   }
+
   return headers
 }
 

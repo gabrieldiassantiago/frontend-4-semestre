@@ -12,7 +12,6 @@ interface UseVagasState {
 }
 
 interface UseVagasOptions {
-  /** Delay do debounce em ms (padrão: 400ms). Use 0 para desativar. */
   debounceMs?: number
 }
 

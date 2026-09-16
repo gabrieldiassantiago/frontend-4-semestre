@@ -1,132 +1,126 @@
 "use client"
 
-import { useRef, useState } from "react"
-import { FileText, LoaderCircle, Upload, X } from "lucide-react"
-import { Field } from "@/components/ui/form-field"
+import { useEffect, useRef, useState } from "react"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { CheckCircle2, ExternalLink, FileText, LoaderCircle, Upload } from "lucide-react"
 import { Alert } from "@/components/ui/states"
-import { uploadCandidateResume, uploadCandidateAvatar } from "@/lib/services/candidate.service"
+import { uploadCandidateResume } from "@/lib/services/candidate.service"
+import { API_BASE_URL } from "@/lib/http/config"
+import { getErrorMessage } from "@/lib/errors"
+import { validateResume } from "@/lib/utils/resume"
+import { cn } from "@/lib/utils"
 import type { CandidateProfile } from "@/lib/types/candidate.types"
 
 interface ResumeUploadProps {
   profile: CandidateProfile
   onProfileChange: (profile: CandidateProfile) => void
+  onUploadingChange?: (uploading: boolean) => void
 }
 
-export function ResumeUpload({ profile, onProfileChange }: ResumeUploadProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
+function resumeLink(value?: string) {
+  if (!value) return null
+  try {
+    const url = new URL(value, `${API_BASE_URL}/`)
+    return ["https:", "http:"].includes(url.protocol) ? url.href : null
+  } catch {
+    return null
+  }
+}
+
+export function ResumeUpload({ profile, onProfileChange, onUploadingChange }: ResumeUploadProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const uploadLock = useRef(false)
+  const reduceMotion = useReducedMotion()
+  const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [dragging, setDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [saved, setSaved] = useState(false)
 
-  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0]
+  useEffect(() => {
     if (!file) return
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [file])
 
-    // Validar se é PDF
-    if (file.type !== "application/pdf") {
-      setError("Apenas arquivos PDF são permitidos.")
-      return
-    }
-
-    // Validar tamanho (máximo 10MB)
-    const maxSize = 10 * 1024 * 1024
-    if (file.size > maxSize) {
-      setError("O arquivo deve ter no máximo 10 MB.")
-      return
-    }
-
-    setError(null)
-    setSuccess(false)
+  async function upload(selected: File) {
+    if (uploadLock.current) return
+    uploadLock.current = true
     setUploading(true)
-
-    console.log("estou fazendo upload do arquivo", file)
-
+    onUploadingChange?.(true)
+    setError(null)
     try {
-      const updatedProfile = await uploadCandidateResume(file)
-      onProfileChange(updatedProfile)
-      setSuccess(true)
-      // Limpar o input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
+      const validationError = await validateResume(selected)
+      if (validationError) {
+        setError(validationError)
+        return
       }
-      // Remover mensagem de sucesso após 3 segundos
-      setTimeout(() => setSuccess(false), 3000)
-    } catch (err) {
-
-    
-      
-      const errorMessage = err instanceof Error ? err.message : "Falha ao fazer upload do currículo."
-      setError(errorMessage)
+      setFile(selected)
+      setSaved(false)
+      const updated = await uploadCandidateResume(selected)
+      onProfileChange(updated)
+      setSaved(true)
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Não foi possível enviar o PDF. Tente novamente."))
     } finally {
+      uploadLock.current = false
       setUploading(false)
+      onUploadingChange?.(false)
+      if (inputRef.current) inputRef.current.value = ""
     }
   }
 
-  const hasResume = !!(profile as any).resumeUrl
+  const source = previewUrl || resumeLink(profile.resumeUrl)
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <Field
-        label="Seu currículo"
-        hint="Carregue um arquivo PDF com seu currículo. Máximo 10 MB."
-      >
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted p-4">
-            <FileText className="size-5 text-muted-foreground" aria-hidden />
-            <div className="flex-1 min-w-0">
-              {hasResume ? (
-                <>
-                  <p className="text-sm font-semibold text-foreground">Currículo enviado ✓</p>
-                  <p className="text-xs text-muted-foreground">Clique para substituir</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm font-semibold text-foreground">Nenhum currículo enviado</p>
-                  <p className="text-xs text-muted-foreground">Clique para enviar um arquivo PDF</p>
-                </>
-              )}
+    <div className="min-w-0 space-y-5">
+      <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="sr-only" tabIndex={-1}
+        aria-label="Selecionar currículo em PDF" disabled={uploading}
+        onChange={(event) => { const selected = event.target.files?.[0]; if (selected) void upload(selected) }} />
+      <motion.button type="button" disabled={uploading}
+        whileHover={reduceMotion || uploading ? undefined : { y: -2 }}
+        whileTap={reduceMotion || uploading ? undefined : { scale: 0.99 }}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(event) => { event.preventDefault(); if (!uploading) setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(event) => {
+          event.preventDefault()
+          setDragging(false)
+          const selected = event.dataTransfer.files[0]
+          if (selected) void upload(selected)
+        }}
+        className={cn("flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-5 py-8 text-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary disabled:opacity-60", dragging ? "border-primary bg-primary-subtle" : "border-border-strong bg-muted/50 hover:border-primary hover:bg-primary-subtle/50")}>
+        <span className="grid size-12 place-items-center rounded-2xl bg-primary-subtle text-primary">
+          {uploading ? <LoaderCircle className="size-6 animate-spin" aria-hidden /> : <Upload className="size-6" aria-hidden />}
+        </span>
+        <span className="text-base font-semibold">{uploading ? "Enviando seu currículo…" : source ? "Quer atualizar seu currículo?" : "Seu próximo passo pode estar neste PDF"}</span>
+        <span className="text-sm text-muted-foreground">{uploading ? "Aguarde a confirmação antes de continuar." : "Escolha um arquivo ou arraste ele para cá."}</span>
+        <span className="text-xs text-muted-foreground">Somente PDF · até 10 MB</span>
+      </motion.button>
+
+      <div aria-live="polite" className="space-y-3">
+        {error && <Alert tone="danger">{error}</Alert>}
+        {error && file && !saved && <button type="button" disabled={uploading} onClick={() => void upload(file)} className="btn-secondary">Tentar enviar novamente</button>}
+        {saved && <p className="flex items-center gap-2 text-sm text-success-foreground"><CheckCircle2 className="size-4" aria-hidden />Currículo salvo no seu perfil.</p>}
+      </div>
+
+      <AnimatePresence initial={false}>
+        {source && <motion.section key="pdf-preview" initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : 0.25 }} className="overflow-hidden rounded-2xl border border-border bg-card" aria-label="Pré-visualização do currículo">
+          <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
+            <FileText className="size-5 shrink-0 text-primary" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{file?.name || "Seu currículo.pdf"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{file ? `${(file.size / 1024 / 1024).toFixed(2)} MB · ` : ""}{uploading ? "Enviando" : file && !saved ? "Prévia local · ainda não enviado" : "PDF anexado"}</p>
             </div>
+            <a href={source} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-primary">Abrir PDF<ExternalLink className="size-3.5" aria-hidden /></a>
           </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,application/pdf"
-            onChange={handleFileChange}
-            disabled={uploading}
-            className="hidden"
-            aria-label="Selecionar arquivo de currículo"
-          />
-
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="btn-secondary w-full"
-          >
-            {uploading && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
-            {uploading ? "Enviando..." : "Selecionar arquivo PDF"}
-          </button>
-
-          {error && (
-            <div className="mt-4">
-              <Alert tone="danger">{error}</Alert>
-            </div>
-          )}
-
-          {success && (
-            <div className="mt-4">
-              <Alert tone="success">Currículo enviado com sucesso!</Alert>
-            </div>
-          )}
-
-          {hasResume && (
-            <div className="text-xs text-muted-foreground">
-              💡 Dica: Manter seu currículo atualizado aumenta suas chances de ser encontrado pelas empresas.
-            </div>
-          )}
-        </div>
-      </Field>
+          <object data={source} type="application/pdf" aria-label="Conteúdo do currículo em PDF" className="h-[420px] w-full bg-muted sm:h-[540px]">
+            <div className="p-8 text-center text-sm text-muted-foreground">Seu navegador não oferece prévia de PDF aqui. Use “Abrir PDF” para visualizar o arquivo.</div>
+          </object>
+        </motion.section>}
+      </AnimatePresence>
     </div>
   )
 }

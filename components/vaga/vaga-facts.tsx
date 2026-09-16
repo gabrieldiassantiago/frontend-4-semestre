@@ -1,6 +1,7 @@
 import { Layers, MapPin, Users, Wallet } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/format"
+import { formatDistance } from "@/lib/utils/distance"
 import { cn } from "@/lib/utils"
 import {
   CATEGORIA_LABELS,
@@ -85,7 +86,7 @@ export function VagaHighlights({
   applicants,
   className,
 }: {
-  vaga: Pick<Vaga, "salario" | "cidade" | "estado" | "categoria">
+  vaga: Pick<Vaga, "salario" | "cidade" | "estado" | "categoria" | "distanciaKm">
   applicants?: number
   className?: string
 }) {
@@ -97,7 +98,14 @@ export function VagaHighlights({
       </Highlight>
 
       <Highlight icon={MapPin} tone="location">
-        {vaga.cidade}, {vaga.estado}
+        <span>
+          {vaga.cidade} - {vaga.estado}
+        </span>
+        {vaga.distanciaKm != null && (
+          <span className="ml-1.5 inline-flex items-center rounded-md bg-primary-subtle px-1.5 py-0.5 text-[11px] font-bold text-primary">
+            a {formatDistance(vaga.distanciaKm)}
+          </span>
+        )}
       </Highlight>
 
       <Highlight icon={Layers} tone="area">

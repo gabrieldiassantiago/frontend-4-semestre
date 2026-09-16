@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Briefcase, DollarSign, Loader2, MapPin, X } from "lucide-react"
+import { Briefcase, DollarSign, Loader2, MapPin, X, Crosshair } from "lucide-react"
 import { createVaga, updateVaga } from "@/lib/services/vagas.service"
+import { AddressAutocomplete } from "@/components/company/vagas/address-autocomplete"
 import {
   CATEGORIA_LABELS,
   MODALIDADE_LABELS,
@@ -25,6 +26,8 @@ const EMPTY_FORM: FormState = {
   beneficios: "",
   cidade: "",
   estado: "",
+  latitude: -23.5505,
+  longitude: -46.6333,
   categoria: "DESENVOLVIMENTO_SOFTWARE",
   modalidade: "HIBRIDO",
   nivelExperiencia: "PLENO",
@@ -37,6 +40,8 @@ interface FormState {
   beneficios: string
   cidade: string
   estado: string
+  latitude?: number
+  longitude?: number
   categoria: VagaCategoria
   modalidade: VagaModalidade
   nivelExperiencia: NivelExperiencia
@@ -65,6 +70,8 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
         beneficios: vagaToEdit.beneficios ?? "",
         cidade: vagaToEdit.cidade,
         estado: vagaToEdit.estado,
+        latitude: vagaToEdit.latitude ?? -23.5505,
+        longitude: vagaToEdit.longitude ?? -46.6333,
         categoria: vagaToEdit.categoria,
         modalidade: vagaToEdit.modalidade,
         nivelExperiencia: vagaToEdit.nivelExperiencia,
@@ -105,6 +112,8 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
           beneficios: form.beneficios || undefined,
           cidade: form.cidade,
           estado: form.estado,
+          latitude: form.latitude,
+          longitude: form.longitude,
           categoria: form.categoria,
           modalidade: form.modalidade,
           nivelExperiencia: form.nivelExperiencia,
@@ -116,6 +125,8 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
           descricao: form.descricao,
           beneficios: form.beneficios || undefined,
           companyProfileId,
+          latitude: form.latitude ?? -23.5505,
+          longitude: form.longitude ?? -46.6333,
           cidade: form.cidade,
           estado: form.estado,
           categoria: form.categoria,
@@ -224,6 +235,27 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
             />
           </div>
 
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-strong-foreground">
+              Buscar localização no mapa
+            </label>
+            <AddressAutocomplete
+              initialCity={form.cidade}
+              initialState={form.estado}
+              initialCoords={
+                form.latitude != null && form.longitude != null
+                  ? { latitude: form.latitude, longitude: form.longitude }
+                  : null
+              }
+              onSelectLocation={(loc) => {
+                set("cidade", loc.cidade)
+                set("estado", loc.estado)
+                set("latitude", loc.latitude)
+                set("longitude", loc.longitude)
+              }}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label htmlFor="vf-cidade" className="block text-sm font-semibold text-strong-foreground">
@@ -256,6 +288,18 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
               />
             </div>
           </div>
+
+          {form.latitude != null && form.longitude != null && (
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
+              <Crosshair className="size-3.5 text-primary shrink-0" />
+              <span>
+                Coordenadas registradas:{" "}
+                <strong className="text-strong-foreground">
+                  {form.latitude.toFixed(4)}, {form.longitude.toFixed(4)}
+                </strong>
+              </span>
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-1.5">

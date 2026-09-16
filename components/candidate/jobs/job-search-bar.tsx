@@ -8,7 +8,9 @@ import {
   ChevronDown,
   Globe,
   Layers,
+  Loader2,
   MapPin,
+  Navigation,
   Search,
   SlidersHorizontal,
   Sparkles,
@@ -505,11 +507,17 @@ export function JobSearchBar({
   onSubmit,
   onOpenFilters,
   activeFilterCount,
+  onProximitySearch,
+  isProximityActive = false,
+  isLocating = false,
 }: {
   value: JobSearchState
   onSubmit: (next: JobSearchState) => void
   onOpenFilters: () => void
   activeFilterCount: number
+  onProximitySearch?: () => void
+  isProximityActive?: boolean
+  isLocating?: boolean
 }) {
   const [draft, setDraft] = useState(value)
   const queryId = useId()
@@ -559,25 +567,12 @@ export function JobSearchBar({
             type="search"
             value={draft.query}
             onChange={(event) => update("query", event.target.value)}
-            placeholder="Cargo, especialidade, empresa ou termo..."
-            className="h-12 w-full rounded-2xl bg-surface pl-11 pr-4 text-sm text-foreground outline-none transition-none placeholder:text-muted-foreground focus:bg-surface focus:ring-0 focus:outline-none lg:bg-transparent lg:focus:bg-transparent"
+            placeholder="Cargo, empresa ou palavra-chave..."
+            className="h-12 w-full rounded-2xl bg-surface pl-11 pr-4 text-sm text-foreground outline-none transition-none placeholder:text-slate-400 focus:bg-surface focus:ring-0 focus:outline-none lg:bg-transparent lg:focus:bg-transparent"
           />
         </div>
 
-        <span className="hidden h-8 w-px bg-border-subtle lg:block" aria-hidden />
-
-        {/* Seletor de Categoria/Área com animação refinada e suporte geral */}
-        <CategorySelect
-          categoria={draft.categoria}
-          outro={draft.outro}
-          onChange={(cat, outroVal) => {
-            setDraft((curr) => ({
-              ...curr,
-              categoria: cat,
-              outro: outroVal ?? "",
-            }))
-          }}
-        />
+        <span className="hidden h-8 w-px bg-slate-200 lg:block" aria-hidden />
 
         {/* Seletor de Localização unificado Cidade + Estado */}
         <UnifiedLocationSelect
@@ -592,16 +587,56 @@ export function JobSearchBar({
           }}
         />
 
+        <span className="hidden h-8 w-px bg-slate-200 lg:block" aria-hidden />
+
+        {/* Seletor de Categoria/Área de atuação */}
+        <CategorySelect
+          categoria={draft.categoria}
+          outro={draft.outro}
+          onChange={(cat, outroVal) => {
+            setDraft((curr) => ({
+              ...curr,
+              categoria: cat,
+              outro: outroVal ?? "",
+            }))
+          }}
+        />
+
         {/* Botão Principal de Busca */}
         <motion.button
           type="submit"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.96 }}
-          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-[0_5px_14px_rgba(124,58,237,0.25)] transition-colors hover:bg-primary-hover lg:ml-1 lg:rounded-full"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#7c3aed] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(124,58,237,0.3)] transition-all hover:bg-[#6d28d9] lg:ml-1"
         >
           <Search className="size-4" aria-hidden />
           <span>Buscar</span>
+
         </motion.button>
+
+        {/* Botão de Busca por Proximidade */}
+        {onProximitySearch && (
+          <motion.button
+            type="button"
+            onClick={onProximitySearch}
+            disabled={isLocating}
+            whileTap={{ scale: 0.96 }}
+            title="Buscar vagas mais próximas de você usando sua localização"
+            className={cn(
+              "inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-2xl px-3.5 text-xs font-bold transition-all lg:ml-1 lg:h-10 lg:rounded-full",
+              isProximityActive
+                ? "border border-primary/30 bg-primary-subtle text-primary shadow-xs"
+                : "border border-border bg-surface text-foreground hover:bg-muted"
+            )}
+          >
+            {isLocating ? (
+              <Loader2 className="size-3.5 animate-spin text-primary" />
+            ) : (
+              <Navigation className={cn("size-3.5", isProximityActive ? "text-primary" : "text-subtle-foreground")} />
+            )}
+            <span>{isLocating ? "Localizando..." : "Perto de mim"}</span>
+          </motion.button>
+        )}
 
         <motion.button
           type="button"

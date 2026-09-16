@@ -1,16 +1,17 @@
 import type { CandidateProfile, UpdateCandidateProfileDto } from "@/lib/types/candidate.types"
 
-/**
- * Passos do fluxo "Completar perfil". A mesma lista alimenta o wizard, a
- * navegação da tela de perfil e o checklist de pendências, para que os três
- * nunca discordem sobre onde uma informação é preenchida.
- */
 export const PROFILE_STEPS = [
   {
     id: "basico",
     label: "Sobre você",
     title: "Vamos começar pelo básico",
     description: "É assim que as empresas vão te identificar nos processos seletivos.",
+  },
+  {
+    id: "localizacao",
+    label: "Localização",
+    title: "Onde você quer encontrar oportunidades",
+    description: "Use sua cidade para receber vagas mais próximas e relevantes.",
   },
   {
     id: "formacao",
@@ -27,8 +28,14 @@ export const PROFILE_STEPS = [
   {
     id: "links",
     label: "Links",
-    title: "Sua presença profissional",
-    description: "Adicione apenas links públicos que representem o seu trabalho.",
+    title: "Onde conhecer melhor seu trabalho",
+    description: "Compartilhe um perfil profissional, portfólio ou página com exemplos do seu trabalho. É opcional.",
+  },
+  {
+    id: "curriculo",
+    label: "Currículo",
+    title: "Seu currículo, do seu jeito",
+    description: "Anexe um PDF e confira como ele será apresentado. Esta etapa é opcional.",
   },
   {
     id: "experiencias",
@@ -39,8 +46,8 @@ export const PROFILE_STEPS = [
   {
     id: "projetos",
     label: "Projetos",
-    title: "O que você já construiu",
-    description: "Projetos são a forma mais rápida de provar o que você sabe fazer.",
+    title: "Projetos que contam sua história",
+    description: "Inclua iniciativas do trabalho, dos estudos ou da comunidade. O que você fez e qual foi sua contribuição?",
   },
   {
     id: "revisao",
@@ -59,7 +66,6 @@ export interface ChecklistItem {
   label: string
   step: ProfileStepId
   done: boolean
-  /** Itens obrigatórios liberam a candidatura; os demais só somam pontos. */
   required: boolean
 }
 
@@ -67,11 +73,6 @@ function filled(value?: string | null) {
   return Boolean(value && value.trim())
 }
 
-/**
- * Checklist do perfil. Aceita tanto o perfil da API quanto o rascunho do
- * formulário, então o wizard consegue mostrar o progresso enquanto a pessoa
- * digita, sem esperar o salvamento.
- */
 export function getProfileChecklist(
   profile: (UpdateCandidateProfileDto & Partial<CandidateProfile>) | null | undefined,
 ): ChecklistItem[] {
@@ -81,6 +82,7 @@ export function getProfileChecklist(
   const projects = data.projects ?? []
 
   return [
+    { id: "resume", label: "Currículo em PDF", step: "curriculo", required: false, done: filled(data.resumeUrl) },
     {
       id: "headline",
       label: "Título profissional",
@@ -105,7 +107,7 @@ export function getProfileChecklist(
     {
       id: "location",
       label: "Cidade e estado",
-      step: "basico",
+      step: "localizacao",
       required: true,
       done: filled(data.city) && filled(data.state),
     },
@@ -174,7 +176,6 @@ export interface ProfileCompletion {
   items: ChecklistItem[]
   missing: ChecklistItem[]
   missingRequired: ChecklistItem[]
-  /** Sem pendências obrigatórias: pode se candidatar com tranquilidade. */
   ready: boolean
   complete: boolean
 }
@@ -197,7 +198,6 @@ export function getProfileCompletion(
   }
 }
 
-/** Quais passos ainda têm pendências — usado para destacar a trilha. */
 export function stepsComPendencia(completion: ProfileCompletion): ProfileStepId[] {
   return Array.from(new Set(completion.missing.map((item) => item.step)))
 }

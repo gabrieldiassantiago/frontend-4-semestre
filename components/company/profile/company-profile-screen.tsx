@@ -1,5 +1,7 @@
 "use client"
 
+import { RouteSkeleton } from "@/components/ui/route-skeleton"
+
 import { useEffect, useState } from "react"
 import { Building2, Check, Globe2, LoaderCircle, MapPin, ShieldCheck } from "lucide-react"
 import { getCompanyProfileMe, updateCompanyProfileMe } from "@/lib/services/company.service"
@@ -51,14 +53,7 @@ export function CompanyProfileScreen() {
     }
   }
 
-  if (loading) {
-    return (
-      <main className="mx-auto max-w-[1100px] animate-pulse px-4 py-12 sm:px-8">
-        <div className="h-9 w-52 rounded bg-border" />
-        <div className="mt-8 h-[650px] rounded-[24px] bg-background" />
-      </main>
-    )
-  }
+  if (loading) return <RouteSkeleton variant="profile" />
 
   if (!profile) {
     return (

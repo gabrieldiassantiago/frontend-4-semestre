@@ -251,7 +251,7 @@ export function CheckCard({
           : "border-border bg-surface text-strong-foreground hover:border-border-strong hover:bg-muted",
       )}
     >
-        <span className="min-w-0 text-xs font-semibold">{label}</span>
+      <span className="min-w-0 text-xs font-semibold">{label}</span>
 
       <input type="checkbox" checked={checked} onChange={onChange} className="sr-only" />
 

@@ -133,7 +133,7 @@ export function CandidateProfileScreen() {
         eyebrow="Sua conta"
         title="Meu perfil"
         description="É este perfil que a empresa vê quando você se candidata a uma vaga."
-        
+
       />
 
       <div className="mt-8 grid items-start gap-6 lg:grid-cols-[300px_1fr]">
@@ -223,7 +223,7 @@ export function CandidateProfileScreen() {
           >
             {SECTIONS.map((item) => {
               const active = section === item.id
-              const pendente = pendentesPorSecao.has(item.id)
+              const pendente = item.id !== "curriculo" && pendentesPorSecao.has(item.id)
 
               return (
                 <button
@@ -276,7 +276,7 @@ export function CandidateProfileScreen() {
           <form onSubmit={salvar}>
             <div className="px-5 py-7 sm:px-7">
               {section === "basico" && (
-                <ProfileFields form={form} setForm={setForm} profile={profile} />
+                <ProfileFields onProfileUpdated={aplicarPerfil} form={form} setForm={setForm} profile={profile} />
               )}
 
               {section === "formacao" && <EducationFields form={form} setForm={setForm} />}

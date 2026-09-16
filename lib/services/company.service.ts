@@ -1,9 +1,15 @@
-/**
- * Re-exports das funções de perfil de empresa do api.ts central.
- */
-export { getCompanyProfileMe, updateCompanyProfileMe } from "@/lib/api"
+import { apiRequest } from "@/lib/http/client"
+import type { CompanyProfile, UpdateCompanyProfileDto } from "@/lib/types/company.types"
 
-export type {
-  CompanyProfile,
-  UpdateCompanyProfileDto,
-} from "@/lib/api"
+export async function getCompanyProfileMe(): Promise<CompanyProfile> {
+  return apiRequest<CompanyProfile>(`/company-profile/me`, {
+    method: "GET",
+  })
+}
+
+export async function updateCompanyProfileMe(dto: UpdateCompanyProfileDto): Promise<CompanyProfile> {
+  return apiRequest<CompanyProfile>(`/company-profile/me`, {
+    method: "PUT",
+    body: JSON.stringify(dto),
+  })
+}

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, CheckCircle2, Mail, RefreshCw } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { verifyEmail, resendCode } from "@/lib/services/auth.service"
+import { finishRegistration, profileDestination } from "@/lib/auth-flow"
 import { getErrorMessage } from "@/lib/errors"
 
 export function VerifyEmailScreen() {
@@ -25,7 +26,6 @@ export function VerifyEmailScreen() {
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  // Countdown timer for resending code
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
@@ -33,10 +33,9 @@ export function VerifyEmailScreen() {
     }
   }, [countdown])
 
-  // Handle single digit input change
   const handleDigitChange = (index: number, value: string) => {
     if (value.length > 1) {
-      // Paste full code handler
+
       const pastedCode = value.slice(0, 5).split("")
       const newCode = [...code]
       pastedCode.forEach((char, i) => {
@@ -52,13 +51,11 @@ export function VerifyEmailScreen() {
     newCode[index] = value
     setCode(newCode)
 
-    // Focus next input if digit entered
     if (value && index < 4) {
       inputRefs.current[index + 1]?.focus()
     }
   }
 
-  // Handle backspace navigation
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !code[index] && index > 0) {
       inputRefs.current[index - 1]?.focus()
@@ -84,10 +81,8 @@ export function VerifyEmailScreen() {
     setLoading(true)
     try {
       await verifyEmail({ email, code: fullCode })
-      setSuccessMessage("E-mail verificado com sucesso! Redirecionando...")
-      setTimeout(() => {
-        router.push(roleParam === "COMPANY" ? "/auth/empresa" : "/auth/candidato")
-      }, 1500)
+      const authenticated = await finishRegistration(email, roleParam)
+      router.replace(authenticated ? profileDestination(roleParam) : `${roleParam === "COMPANY" ? "/auth/empresa" : "/auth/candidato"}?setup=1`)
     } catch (err: unknown) {
       setErrorMessage(getErrorMessage(err, "Código inválido ou expirado."))
     } finally {
@@ -114,7 +109,6 @@ export function VerifyEmailScreen() {
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background px-6 py-12">
-      {/* Botão de Voltar */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -134,9 +128,8 @@ export function VerifyEmailScreen() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md text-center"
+        className="w-full max-w-md rounded-3xl border border-border bg-card p-6 text-center shadow-raised sm:p-10"
       >
-        {/* Logo */}
         <Image
           src="/images/logo_selecta.svg"
           alt="Logo Selecta"
@@ -145,12 +138,11 @@ export function VerifyEmailScreen() {
           priority
           className="mx-auto mb-8"
         />
-
-        {/* Ícone de Email */}
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-subtle text-primary shadow-sm border border-primary/20">
           <Mail className="h-8 w-8" />
         </div>
 
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-primary">Conta criada · próximo passo</p>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
           Verifique seu e-mail
         </h1>
@@ -158,8 +150,6 @@ export function VerifyEmailScreen() {
           Enviamos um código de verificação de 5 dígitos para o e-mail:
         </p>
         <p className="mt-1 font-semibold text-foreground">{email || "seu@email.com"}</p>
-
-        {/* Feedback Messages */}
         <AnimatePresence>
           {errorMessage && (
             <motion.div
@@ -184,8 +174,7 @@ export function VerifyEmailScreen() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Form de código de 5 dígitos */}
+        <p className="mt-4 text-sm text-muted-foreground">Confirme seu e-mail para continuar com o preenchimento do perfil.</p>
         <form onSubmit={handleVerify} className="mt-8 space-y-6">
           <div className="flex justify-center gap-2.5 sm:gap-3.5">
             {code.map((digit, index) => (
@@ -194,10 +183,12 @@ export function VerifyEmailScreen() {
                 ref={(el) => { inputRefs.current[index] = el }}
                 type="text"
                 maxLength={5}
+                aria-label={`Dígito ${index + 1} do código`}
+                autoComplete={index === 0 ? "one-time-code" : "off"}
                 value={digit}
                 onChange={(e) => handleDigitChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl border border-border-strong bg-background text-center text-2xl font-bold text-foreground shadow-sm transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="h-12 min-w-0 w-full sm:h-14 sm:w-14 rounded-xl border border-border-strong bg-background text-center text-2xl font-bold text-foreground shadow-sm transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             ))}
           </div>
@@ -212,8 +203,6 @@ export function VerifyEmailScreen() {
             {loading ? "Verificando..." : "Verificar código"}
           </motion.button>
         </form>
-
-        {/* Reenviar código */}
         <div className="mt-6 flex flex-col items-center gap-2 text-sm text-muted-foreground">
           <p>Não recebeu o código?</p>
           <button

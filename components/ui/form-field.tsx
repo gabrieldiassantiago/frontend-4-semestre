@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils"
 
-/** Label + controle + dica/erro. Usado por todos os formulários. */
 export function Field({
   label,
   hint,

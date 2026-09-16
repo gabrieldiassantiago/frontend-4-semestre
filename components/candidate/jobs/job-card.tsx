@@ -1,13 +1,23 @@
 "use client"
 
-import { Bookmark, Check } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { EntityAvatar } from "@/components/ui/entity-avatar"
-import { VagaHighlights, VagaTags } from "@/components/vaga/vaga-facts"
-import { formatRelativeDate } from "@/lib/format"
+import React from "react"
+import {
+  Bookmark,
+  Briefcase,
+  Check,
+  ChevronRight,
+  Clock,
+  Hourglass,
+  MapPin,
+  Sparkles,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { Vaga } from "@/lib/types/vaga.types"
-import { STATUS_LABELS, type StatusCandidatura } from "@/lib/types/candidatura.types"
+import { formatRelativeDate } from "@/lib/format"
+import { MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
+import type { StatusCandidatura } from "@/lib/types/candidatura.types"
+import { CompanyBrandLogo } from "./company-brand-logo"
+import { ApplicantFacepile } from "./applicant-facepile"
+import type { ExtendedVaga } from "@/lib/data/mock-jobs"
 
 export function JobCard({
   vaga,
@@ -17,97 +27,163 @@ export function JobCard({
   onSelect,
   onToggleSave,
 }: {
-  vaga: Vaga
+  vaga: ExtendedVaga
   saved: boolean
   selected: boolean
-  /** Situação da candidatura já enviada, quando existir. */
   applied?: StatusCandidatura
   onSelect: () => void
   onToggleSave: () => void
 }) {
-  const company = vaga.nomeEmpresa ?? "Empresa confidencial"
-  const isNew = vaga.createdAt
-    ? Date.now() - new Date(vaga.createdAt).getTime() < 1000 * 60 * 60 * 24 * 3
-    : false
+  const company = vaga.nomeEmpresa || "Empresa"
+  const locationText =
+    vaga.cidade && vaga.estado ? `${vaga.cidade} - ${vaga.estado}` : vaga.cidade || "Brasil"
+
+  const salaryText =
+    vaga.salario && vaga.salario > 0 ? `${(vaga.salario)} / mês` : "A combinar"
+
+  const relativeDateText =
+    vaga.relativeTimeText || (vaga.createdAt ? `Publicado ${formatRelativeDate(vaga.createdAt)}` : "Recente")
+
+  // Determina o status badge (Prioridade: aplicado real -> badge mock/definido -> novo)
+  const renderStatusBadge = () => {
+    if (applied === "EM_ANDAMENTO" || vaga.initialBadge === "CANDIDATURA_ENVIADA") {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          <Check className="size-3.5" />
+          Candidatura enviada
+        </span>
+      )
+    }
+
+    if (vaga.initialBadge === "EM_ANALISE") {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+          <Hourglass className="size-3.5" />
+          Em análise
+        </span>
+      )
+    }
+
+    if (vaga.initialBadge === "NOVA") {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-[#7c3aed]">
+          <Sparkles className="size-3.5" />
+          Nova
+        </span>
+      )
+    }
+
+    if (vaga.initialBadge === "SALVA" || saved) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+          <Bookmark className="size-3.5 fill-current" />
+          Salva
+        </span>
+      )
+    }
+
+    return null
+  }
+
+  // Tags do card (Nível, Modalidade, Categoria)
+  const nivelLabel = NIVEL_LABELS[vaga.nivelExperiencia] || "Pleno"
+  const modalidadeLabel = MODALIDADE_LABELS[vaga.modalidade] || "Híbrido"
+  const categoriaLabel = vaga.displayCategory || "Tecnologia"
 
   return (
     <article
+      onClick={onSelect}
       className={cn(
-        "group relative flex flex-col rounded-card border bg-card p-5 transition-all duration-200 ease-out sm:p-6",
-        selected
-          ? "border-primary shadow-raised"
-          : "border-border hover:-translate-y-1 hover:border-border-strong hover:shadow-raised",
+        "group relative flex flex-col justify-between rounded-3xl border bg-white p-5 sm:p-6 shadow-xs transition-all duration-200 hover:shadow-md hover:border-slate-300/80 cursor-pointer",
+        selected ? "border-[#7c3aed] ring-2 ring-[#7c3aed]/15" : "border-slate-200/80"
       )}
     >
-      <header className="flex items-start gap-3.5">
-        <EntityAvatar name={company} size="lg" className="shrink-0" />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        {/* Lado Esquerdo: Logo + Título + Badges + Metadados + Descrição */}
+        <div className="flex items-start gap-4 min-w-0 flex-1">
+          <CompanyBrandLogo
+            company={company}
+            variant={vaga.logoVariant}
+            className="size-14 rounded-2xl shrink-0"
+          />
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-xs font-semibold text-muted-foreground">{company}</p>
-            {isNew && (
-              <span className="shrink-0 rounded-full bg-primary-subtle px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-                Novo
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              {company}
+            </p>
+            <h3 className="mt-0.5 text-base font-bold text-slate-900 transition-colors group-hover:text-[#7c3aed] sm:text-lg">
+              {vaga.titulo}
+            </h3>
+
+            {/* Tags Pills */}
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">
+                {nivelLabel}
               </span>
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">
+                {modalidadeLabel}
+              </span>
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">
+                {categoriaLabel}
+              </span>
+            </div>
+
+            {/* Metadados: Localização, Salário, Data */}
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500">
+              <div className="flex items-center gap-1">
+                <MapPin className="size-3.5 text-slate-400" />
+                <span>{locationText}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Briefcase className="size-3.5 text-slate-400" />
+                <span>{salaryText}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="size-3.5 text-slate-400" />
+                <span>{relativeDateText}</span>
+              </div>
+            </div>
+
+            {/* Descrição Preview limpa de tags HTML/Markdown */}
+            {vaga.descricao && (
+              <p className="mt-3 line-clamp-2 text-xs text-slate-500 leading-relaxed">
+                {vaga.descricao
+                  .replace(/<[^>]*>/g, " ")
+                  .replace(/[#*_`~]/g, "")
+                  .replace(/\s+/g, " ")
+                  .trim()}
+              </p>
             )}
           </div>
-          <h3 className="mt-1 line-clamp-2 text-base font-bold leading-snug tracking-tight text-foreground">
-            <button
-              type="button"
-              onClick={onSelect}
-              aria-pressed={selected}
-              className="text-left text-pretty after:absolute after:inset-0 after:rounded-card after:content-['']"
-            >
-              {vaga.titulo}
-            </button>
-          </h3>
         </div>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggleSave()
-          }}
-          aria-pressed={saved}
-          aria-label={saved ? `Remover ${vaga.titulo} dos salvos` : `Salvar ${vaga.titulo}`}
-          className={cn(
-            "relative z-10 -mr-1 -mt-1 grid size-9 shrink-0 place-items-center rounded-full transition-all duration-150 hover:scale-110",
-            saved
-              ? "text-primary"
-              : "text-subtle-foreground hover:bg-muted hover:text-strong-foreground",
-          )}
-        >
-          <Bookmark className={cn("size-[18px]", saved && "fill-current")} />
-        </button>
-      </header>
+        {/* Lado Direito: Bookmark, Status Badge, Facepile e Chevron */}
+        <div className="flex flex-row items-center justify-between sm:flex-col sm:items-end sm:justify-between sm:self-stretch sm:pl-4">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleSave()
+              }}
+              aria-label={saved ? "Remover dos salvos" : "Salvar vaga"}
+              className="grid size-9 place-items-center rounded-full text-slate-400 transition-all hover:bg-slate-100 hover:text-[#7c3aed]"
+            >
+              <Bookmark className={cn("size-4", saved && "fill-current text-[#7c3aed]")} />
+            </button>
 
-      <VagaTags vaga={vaga} size="sm" className="mt-4" />
+            {renderStatusBadge()}
+          </div>
 
-      <VagaHighlights vaga={vaga} className="mt-4" />
-
-      <footer className="mt-5 flex items-center justify-between gap-3 border-t border-border-subtle pt-4">
-        {applied ? (
-          <Badge variant={applied === "EM_ANDAMENTO" ? "success" : "neutral"} size="sm">
-            <Check aria-hidden />
-            {applied === "EM_ANDAMENTO" ? "Candidatura enviada" : STATUS_LABELS[applied]}
-          </Badge>
-        ) : selected ? (
-          <Badge variant="primary" size="sm">
-            Selecionada
-          </Badge>
-        ) : (
-          <span className="text-sm font-semibold text-primary transition-colors group-hover:underline">
-            Ver detalhes →
-          </span>
-        )}
-
-        {vaga.createdAt && (
-          <time dateTime={vaga.createdAt} className="text-xs text-subtle-foreground">
-            {formatRelativeDate(vaga.createdAt)}
-          </time>
-        )}
-      </footer>
+          <div className="mt-auto flex items-center gap-3 pt-3">
+            <ApplicantFacepile
+              count={vaga.applicantsCount}
+              timeText={vaga.relativeTimeText ? "há 6 dias" : undefined}
+            />
+            <ChevronRight className="size-4 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-slate-700" />
+          </div>
+        </div>
+      </div>
     </article>
   )
 }

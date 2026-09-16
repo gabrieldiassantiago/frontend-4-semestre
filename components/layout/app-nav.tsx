@@ -9,11 +9,17 @@ export type NavItem = {
   label: string
   icon: React.ComponentType<{ className?: string }>
   badge?: string | number
+  dotBadge?: boolean
 }
 
 function useIsActive() {
   const pathname = usePathname()
-  return (href: string) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`))
+  return (href: string) => {
+    if (pathname === href) return true
+    if (href === "/vagas" && (pathname === "/dashboard" || pathname === "/vagas")) return true
+    if (href !== "/dashboard" && href !== "/vagas" && pathname.startsWith(`${href}/`)) return true
+    return false
+  }
 }
 
 export function SidebarNav({
@@ -28,7 +34,7 @@ export function SidebarNav({
   const isActive = useIsActive()
 
   return (
-    <nav className={cn("flex flex-col gap-1", className)} aria-label="Navegação lateral">
+    <nav className={cn("flex flex-col gap-1.5", className)} aria-label="Navegação lateral">
       {items.map((item) => {
         const active = isActive(item.href)
         const Icon = item.icon
@@ -40,13 +46,13 @@ export function SidebarNav({
             title={collapsed ? item.label : undefined}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "group relative flex items-center rounded-2xl text-sm font-semibold transition-all duration-200 ease-out",
+              "group relative flex items-center rounded-2xl text-sm font-medium transition-all duration-200 ease-out",
               collapsed
                 ? "size-11 justify-center mx-auto"
                 : "justify-between gap-3 px-3.5 py-2.5",
               active
-                ? "bg-primary text-primary-foreground shadow-[0_6px_16px_-4px_rgb(124_58_237/0.45)]"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground hover:translate-x-0.5",
+                ? "bg-[#f3f0ff] font-semibold text-[#7c3aed]"
+                : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900",
             )}
           >
             <div className={cn("flex items-center", !collapsed && "gap-3")}>
@@ -54,26 +60,32 @@ export function SidebarNav({
                 className={cn(
                   "grid shrink-0 place-items-center rounded-lg transition-all duration-200",
                   collapsed ? "size-6" : "size-7",
-                  active ? "" : "bg-transparent group-hover:bg-background/60",
                 )}
               >
                 <Icon
                   className={cn(
-                    "size-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
-                    active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                    "size-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105",
+                    active ? "text-[#7c3aed]" : "text-slate-500 group-hover:text-slate-800"
                   )}
                 />
               </span>
               {!collapsed && <span className="tracking-[-0.01em]">{item.label}</span>}
             </div>
 
+            {!collapsed && item.dotBadge && (
+              <span
+                className="size-2 rounded-full bg-[#7c3aed]"
+                aria-label="Nova mensagem"
+              />
+            )}
+
             {!collapsed && item.badge !== undefined && (
               <span
                 className={cn(
                   "grid size-5 place-items-center rounded-full text-[10px] font-bold",
                   active
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-primary-subtle text-primary"
+                    ? "bg-[#7c3aed] text-white"
+                    : "bg-[#f3f0ff] text-[#7c3aed]"
                 )}
               >
                 {item.badge}
@@ -129,9 +141,9 @@ export function AppTabBar({ items }: { items: NavItem[] }) {
   return (
     <nav
       aria-label="Navegação principal"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.15)] backdrop-blur lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-md lg:hidden"
     >
-      <ul className="flex items-stretch">
+      <ul className="flex items-stretch justify-around">
         {items.map((item) => {
           const active = isActive(item.href)
           return (
@@ -140,17 +152,20 @@ export function AppTabBar({ items }: { items: NavItem[] }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1 whitespace-nowrap py-2.5 text-[11px] font-semibold transition-colors",
-                  active ? "text-primary font-bold" : "text-muted-foreground",
+                  "flex flex-col items-center gap-1 whitespace-nowrap py-2 text-[11px] font-semibold transition-colors",
+                  active ? "text-[#7c3aed] font-bold" : "text-slate-500 hover:text-slate-800",
                 )}
               >
                 <span
                   className={cn(
-                    "grid place-items-center rounded-full transition-all duration-200",
-                    active ? "size-9 bg-primary-subtle text-primary scale-105" : "size-9 text-muted-foreground",
+                    "relative grid place-items-center rounded-full transition-all duration-200",
+                    active ? "size-9 bg-[#f3f0ff] text-[#7c3aed] scale-105 shadow-xs" : "size-9 text-slate-500",
                   )}
                 >
-                  <item.icon className={cn("transition-all duration-200", active ? "size-5" : "size-[18px]")} />
+                  <item.icon className={cn("transition-all duration-200", active ? "size-5 text-[#7c3aed]" : "size-[18px]")} />
+                  {item.dotBadge && (
+                    <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-[#7c3aed] ring-1 ring-white" />
+                  )}
                 </span>
                 {item.label}
               </Link>

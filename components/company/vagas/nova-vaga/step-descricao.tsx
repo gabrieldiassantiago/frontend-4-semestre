@@ -12,6 +12,7 @@ import {
   type NivelExperiencia,
 } from "@/lib/types/vaga.types"
 import { StepCard, StepHeader } from "./wizard"
+import { RichTextEditor } from "./rich-text-editor"
 
 export function StepDescricao({
   titulo,
@@ -50,6 +51,9 @@ export function StepDescricao({
     { label: "Benefícios", value: `${selectedBenefits.length} selecionados` },
   ]
 
+  // Contagem aproximada de caracteres (ignora tags HTML)
+  const charCount = descricao.replace(/<[^>]*>/g, "").length
+
   return (
     <div className="space-y-6">
       <StepHeader
@@ -72,15 +76,13 @@ export function StepDescricao({
         <Field
           label="Descrição da vaga"
           error={error}
-          hint={`${descricao.trim().length} caracteres • use títulos curtos e listas para facilitar a leitura`}
+          hint={`${charCount} caracteres • use os botões acima para formatar o texto`}
         >
-          <textarea
-            rows={16}
+          <RichTextEditor
             value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
+            onChange={setDescricao}
+            error={error}
             placeholder="Fale sobre a missão da vaga, responsabilidades, requisitos e diferenciais..."
-            aria-invalid={Boolean(error)}
-            className="field-input min-h-64 resize-y leading-relaxed"
           />
         </Field>
       </StepCard>

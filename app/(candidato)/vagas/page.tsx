@@ -1,6 +1,16 @@
-import { redirect } from "next/navigation"
+import { RouteSkeleton } from "@/components/ui/route-skeleton"
+import { Suspense } from "react"
+import { JobsDashboardScreen } from "@/components/candidate/jobs/jobs-dashboard-screen"
 
-/** /vagas era um duplicado de /dashboard — agora aponta para a rota canônica. */
+export const metadata = {
+  title: "Vagas | Selecta",
+  description: "Encontre oportunidades que combinam com o seu perfil.",
+}
+
 export default function VagasPage() {
-  redirect("/dashboard")
+  return (
+    <Suspense fallback={<RouteSkeleton variant="opportunities" />}>
+      <JobsDashboardScreen />
+    </Suspense>
+  )
 }

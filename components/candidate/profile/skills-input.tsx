@@ -4,16 +4,8 @@ import { useState } from "react"
 import { Plus, X } from "lucide-react"
 
 const SUGESTOES = [
-  "React",
-  "TypeScript",
-  "Java",
-  "Python",
-  "SQL",
-  "Node.js",
-  "Git",
-  "Figma",
-  "Comunicação",
-  "Trabalho em equipe",
+  "Atendimento ao público", "Organização", "Comunicação", "Trabalho em equipe",
+  "Vendas", "Resolução de problemas", "Planejamento", "Liderança", "Excel", "Inglês",
 ]
 
 /**
@@ -51,9 +43,9 @@ export function SkillsInput({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
-          className="field-input flex-1"
+          className="field-input min-w-0 flex-1"
           value={valor}
           onChange={(event) => {
             const texto = event.target.value

@@ -25,6 +25,7 @@ import {
 import { VagaDescription } from "@/components/vaga/vaga-description"
 import { ShareVagaButton } from "@/components/vaga/share-vaga-button"
 import { formatCurrency, formatRelativeDate } from "@/lib/format"
+import { formatDistance } from "@/lib/utils/distance"
 import { cn } from "@/lib/utils"
 import type { Vaga } from "@/lib/types/vaga.types"
 import { StatusBadge } from "@/components/candidatura/candidatura-ui"
@@ -76,8 +77,13 @@ export function JobDetailPanel({
           <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <MapPin className="size-3 text-muted-foreground/70" />
-              {vaga.cidade ? `${vaga.cidade}, ${vaga.estado}` : vaga.estado || "Brasil"}
+              {vaga.cidade ? `${vaga.cidade} - ${vaga.estado}` : vaga.estado || "Brasil"}
             </span>
+            {vaga.distanciaKm != null && (
+              <span className="rounded-md bg-primary-subtle px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                a {formatDistance(vaga.distanciaKm)}
+              </span>
+            )}
             {vaga.createdAt && (
               <>
                 <span>•</span>

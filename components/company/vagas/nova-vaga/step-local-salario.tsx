@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { MapPin, TrendingUp, Info } from "lucide-react"
+import { MapPin, TrendingUp, Info, Crosshair } from "lucide-react"
 import {
   getEstadosIBGE,
   getMunicipiosPorEstadoIBGE,
@@ -18,6 +18,7 @@ import {
   type NivelExperiencia,
 } from "@/lib/types/vaga.types"
 import { StepCard, StepHeader } from "./wizard"
+import { AddressAutocomplete } from "../address-autocomplete"
 
 const FALLBACK_BENCHMARK = { min: 4000, avg: 6500, max: 9500 }
 
@@ -26,6 +27,10 @@ export function StepLocalSalario({
   setCidade,
   estado,
   setEstado,
+  latitude,
+  setLatitude,
+  longitude,
+  setLongitude,
   modalidade,
   salario,
   setSalario,
@@ -37,6 +42,10 @@ export function StepLocalSalario({
   setCidade: (v: string) => void
   estado: string
   setEstado: (v: string) => void
+  latitude?: number
+  setLatitude: (v: number) => void
+  longitude?: number
+  setLongitude: (v: number) => void
   modalidade: VagaModalidade
   salario: number
   setSalario: (v: number) => void
@@ -93,81 +102,128 @@ export function StepLocalSalario({
       />
 
       <StepCard>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Estado">
-            <select
-              value={estado}
-              onChange={(e) => {
-                setEstado(e.target.value)
-                setCidade("")
+        <div className="space-y-5">
+          <div>
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-subtle-foreground">
+              Buscar endereço / local no mapa
+            </label>
+            <AddressAutocomplete
+              initialCity={cidade}
+              initialState={estado}
+              initialCoords={
+                latitude != null && longitude != null
+                  ? { latitude, longitude }
+                  : null
+              }
+              onSelectLocation={(loc) => {
+                setCidade(loc.cidade)
+                setEstado(loc.estado)
+                setLatitude(loc.latitude)
+                setLongitude(loc.longitude)
               }}
-              className="field-input"
-            >
-              {estados.length === 0 && <option value={estado}>{estado || "Carregando..."}</option>}
-              {estados.map((uf) => (
-                <option key={uf.sigla} value={uf.sigla}>
-                  {uf.nome} ({uf.sigla})
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <div ref={comboRef} className="relative">
-            <Field
-              label="Cidade"
               error={errors.cidade}
-              hint={municipios.length === 0 ? "Carregando municípios..." : undefined}
-            >
-              <div className="relative">
-                <MapPin
-                  className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-subtle-foreground"
-                  aria-hidden
-                />
-                <input
-                  type="text"
-                  value={cidade}
-                  onChange={(e) => {
-                    setCidade(e.target.value)
-                    setOpen(true)
-                  }}
-                  onFocus={() => setOpen(true)}
-                  onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-                  placeholder="Busque o município"
-                  role="combobox"
-                  aria-expanded={open}
-                  aria-autocomplete="list"
-                  aria-invalid={Boolean(errors.cidade)}
-                  className="field-input pl-11"
-                />
-              </div>
+            />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              As coordenadas geográficas serão salvas na vaga para candidatos poderem encontrá-la por proximidade.
+            </p>
+          </div>
+
+          <div className="relative flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              ou confirme Cidade e Estado
+            </span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Estado">
+              <select
+                value={estado}
+                onChange={(e) => {
+                  setEstado(e.target.value)
+                  setCidade("")
+                }}
+                className="field-input"
+              >
+                {estados.length === 0 && <option value={estado}>{estado || "Carregando..."}</option>}
+                {estados.map((uf) => (
+                  <option key={uf.sigla} value={uf.sigla}>
+                    {uf.nome} ({uf.sigla})
+                  </option>
+                ))}
+              </select>
             </Field>
 
-            {open && sugestoes.length > 0 && (
-              <ul
-                role="listbox"
-                aria-label="Municípios"
-                className="absolute z-20 mt-2 max-h-60 w-full list-none overflow-y-auto rounded-xl border border-border bg-card p-1.5 shadow-overlay"
+            <div ref={comboRef} className="relative">
+              <Field
+                label="Cidade"
+                error={errors.cidade}
+                hint={municipios.length === 0 ? "Carregando municípios..." : undefined}
               >
-                {sugestoes.map((nome) => (
-                  <li key={nome}>
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={nome === cidade}
-                      onClick={() => {
-                        setCidade(nome)
-                        setOpen(false)
-                      }}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-strong-foreground transition-colors hover:bg-primary-subtle hover:text-primary-subtle-foreground"
-                    >
-                      <span className="truncate">{nome}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">{estado}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+                <div className="relative">
+                  <MapPin
+                    className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-subtle-foreground"
+                    aria-hidden
+                  />
+                  <input
+                    type="text"
+                    value={cidade}
+                    onChange={(e) => {
+                      setCidade(e.target.value)
+                      setOpen(true)
+                    }}
+                    onFocus={() => setOpen(true)}
+                    onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+                    placeholder="Busque o município"
+                    role="combobox"
+                    aria-expanded={open}
+                    aria-autocomplete="list"
+                    aria-invalid={Boolean(errors.cidade)}
+                    className="field-input pl-11"
+                  />
+                </div>
+              </Field>
+
+              {open && sugestoes.length > 0 && (
+                <ul
+                  role="listbox"
+                  aria-label="Municípios"
+                  className="absolute z-20 mt-2 max-h-60 w-full list-none overflow-y-auto rounded-xl border border-border bg-card p-1.5 shadow-overlay"
+                >
+                  {sugestoes.map((nome) => (
+                    <li key={nome}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={nome === cidade}
+                        onClick={() => {
+                          setCidade(nome)
+                          setOpen(false)
+                        }}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-strong-foreground transition-colors hover:bg-primary-subtle hover:text-primary-subtle-foreground"
+                      >
+                        <span className="truncate">{nome}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground">{estado}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
+
+          {latitude != null && longitude != null && (
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
+              <Crosshair className="size-3.5 text-primary shrink-0" />
+              <span>
+                Coordenadas registradas:{" "}
+                <strong className="text-strong-foreground">
+                  {latitude.toFixed(4)}, {longitude.toFixed(4)}
+                </strong>
+              </span>
+            </div>
+          )}
         </div>
 
         {modalidade === "REMOTO" && (
