@@ -13,10 +13,10 @@ export function ApplicantFacepile({
   className,
 }: ApplicantFacepileProps) {
   return (
-    <div className={cn("flex items-center gap-2 text-xs text-slate-400", className)}>
+    <div className={cn("flex items-center gap-2 text-xs text-subtle-foreground", className)}>
       <div className="flex items-center -space-x-1.5">
         {/* Avatar 1 */}
-        <div className="relative size-6 overflow-hidden rounded-full border-2 border-white bg-slate-200 ring-1 ring-slate-100">
+        <div className="relative size-6 overflow-hidden rounded-full border-2 border-white bg-border ring-1 ring-border">
           <img
             src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces"
             alt="Candidato"
@@ -24,7 +24,7 @@ export function ApplicantFacepile({
           />
         </div>
         {/* Avatar 2 */}
-        <div className="relative size-6 overflow-hidden rounded-full border-2 border-white bg-slate-300 ring-1 ring-slate-100">
+        <div className="relative size-6 overflow-hidden rounded-full border-2 border-white bg-slate-300 ring-1 ring-border">
           <img
             src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=faces"
             alt="Candidato"
@@ -34,13 +34,13 @@ export function ApplicantFacepile({
       </div>
 
       {count > 0 && (
-        <span className="text-[11px] font-semibold text-slate-500">
+        <span className="text-[11px] font-semibold text-muted-foreground">
           +{count}
         </span>
       )}
 
       {timeText && (
-        <span className="text-[11px] text-slate-400 font-medium">
+        <span className="text-[11px] text-subtle-foreground font-medium">
           {timeText}
         </span>
       )}

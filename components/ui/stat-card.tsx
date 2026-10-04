@@ -19,23 +19,23 @@ export function StatCard({
 }: {
   label: string
   value: string | number
-  note?: string
+  note?: React.ReactNode
   icon?: React.ComponentType<{ className?: string }>
   tone?: keyof typeof TONES
   className?: string
 }) {
   return (
-    <div className={cn("rounded-card border border-border bg-card p-5 shadow-card", className)}>
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+    <div className={cn("flex min-w-0 flex-col rounded-card border border-border bg-card p-4 sm:p-5", className)}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground sm:text-sm">{label}</p>
         {Icon && (
-          <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl", TONES[tone])}>
-            <Icon className="size-4.5" aria-hidden />
+          <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg sm:size-9", TONES[tone])}>
+            <Icon className="size-4" aria-hidden />
           </span>
         )}
       </div>
-      <p className="mt-4 text-3xl font-bold tracking-tight tabular-nums text-foreground">{value}</p>
-      {note && <p className="mt-1.5 text-xs text-subtle-foreground">{note}</p>}
+      <p className="mt-3 text-2xl font-semibold tracking-tight tabular-nums text-foreground sm:mt-4 sm:text-3xl">{value}</p>
+      {note && <p className="mt-1 text-xs leading-snug text-muted-foreground">{note}</p>}
     </div>
   )
 }

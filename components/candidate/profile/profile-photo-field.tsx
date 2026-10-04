@@ -106,7 +106,7 @@ export function ProfilePhotoField({
 
     return (
         <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 sm:flex-row sm:items-center">
-            <div className="relative shrink-0">
+            <div className="relative shrink-0 self-start sm:self-center">
                 <button
                     type="button"
                     aria-label="Alterar foto de perfil"

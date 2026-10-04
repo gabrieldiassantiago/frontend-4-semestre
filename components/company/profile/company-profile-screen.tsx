@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import { Globe2, LoaderCircle, MapPin, Upload } from "lucide-react"
 import { useCompanyProfile, useUpdateCompanyProfile, useUploadCompanyLogo, useDeleteCompanyLogo } from "@/lib/queries/use-company-profile"
 import type { CompanyProfile, UpdateCompanyProfileDto } from "@/lib/types/company.types"
-import { CompanyLogo } from "@/components/company/company-logo"
+import { CompanyLogo } from "@/components/shared/company-logo"
 import { Field, InputWithIcon } from "@/components/ui/form-field"
 import { getErrorMessage } from "@/lib/errors"
 import { AddressAutocomplete } from "@/components/company/vagas/address-autocomplete"
@@ -106,7 +106,7 @@ export function CompanyProfileScreen() {
           <section className="company-panel" aria-labelledby="company-brand-title">
             <div className="company-panel-heading"><h2 id="company-brand-title">Identidade da empresa</h2><p>Seu nome e logotipo identificam a empresa na plataforma.</p></div>
             <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center" aria-busy={logoBusy}>
-              <CompanyLogo url={profile.logoUrl} name={profile.companyName} className="size-20 rounded-xl" />
+              <CompanyLogo url={profile.logoUrl} name={profile.companyName} size="xl" />
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-semibold">Logotipo</h3>
                 <p className="mt-1 text-xs leading-6 text-muted-foreground">JPEG, PNG ou WebP, até 2 MB. A imagem é salva ao enviar.</p>
@@ -157,7 +157,7 @@ export function CompanyProfileScreen() {
         <aside className="space-y-5 xl:sticky xl:top-6" aria-label="Prévia do perfil público">
           <div className="company-panel">
             <div className="company-panel-heading"><h2>Como os candidatos veem</h2><p>Prévia das informações públicas.</p></div>
-            <div className="p-6"><CompanyLogo url={profile.logoUrl} name={form.companyName} className="size-16 rounded-xl" />
+            <div className="p-6"><CompanyLogo url={profile.logoUrl} name={form.companyName} size="xl" />
               <h3 className="mt-5 break-words text-lg font-semibold tracking-tight">{form.companyName || "Nome da empresa"}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{form.industry || "Setor de atuação"}</p>
               {form.city && <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground"><MapPin className="size-3.5 shrink-0" />{form.city}{form.state ? ", " + form.state : ""}</p>}

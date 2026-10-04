@@ -1,5 +1,6 @@
+import { ROUTES } from "@/lib/config/routes"
 import { redirect } from "next/navigation"
 
 export default function Page() {
-  redirect("/empresa/dashboard")
+  redirect(ROUTES.company.dashboard)
 }

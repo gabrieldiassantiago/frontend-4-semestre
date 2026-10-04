@@ -568,11 +568,11 @@ export function JobSearchBar({
             value={draft.query}
             onChange={(event) => update("query", event.target.value)}
             placeholder="Cargo, empresa ou palavra-chave..."
-            className="h-12 w-full rounded-2xl bg-surface pl-11 pr-4 text-sm text-foreground outline-none transition-none placeholder:text-slate-400 focus:bg-surface focus:ring-0 focus:outline-none lg:bg-transparent lg:focus:bg-transparent"
+            className="h-12 w-full rounded-2xl bg-surface pl-11 pr-4 text-sm text-foreground outline-none transition-none placeholder:text-subtle-foreground focus:bg-surface focus:ring-0 focus:outline-none lg:bg-transparent lg:focus:bg-transparent"
           />
         </div>
 
-        <span className="hidden h-8 w-px bg-slate-200 lg:block" aria-hidden />
+        <span className="hidden h-8 w-px bg-border lg:block" aria-hidden />
 
         {/* Seletor de Localização unificado Cidade + Estado */}
         <UnifiedLocationSelect
@@ -587,7 +587,7 @@ export function JobSearchBar({
           }}
         />
 
-        <span className="hidden h-8 w-px bg-slate-200 lg:block" aria-hidden />
+        <span className="hidden h-8 w-px bg-border lg:block" aria-hidden />
 
         {/* Seletor de Categoria/Área de atuação */}
         <CategorySelect
@@ -607,7 +607,7 @@ export function JobSearchBar({
           type="submit"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#7c3aed] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(124,58,237,0.3)] transition-all hover:bg-[#6d28d9] lg:ml-1"
+          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(124,58,237,0.3)] transition-all hover:bg-primary-hover lg:ml-1"
         >
           <Search className="size-4" aria-hidden />
           <span>Buscar</span>

@@ -1,4 +1,5 @@
 "use client"
+import { ROUTES } from "@/lib/config/routes"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -40,7 +41,7 @@ export function EditVagaForm({ vaga }: EditVagaFormProps) {
   // Campos do formulário pré-preenchidos com a vaga existente
   const [titulo, setTitulo] = useState(vaga.titulo)
   const [categoria, setCategoria] = useState<VagaCategoria>(vaga.categoria)
-  const [nivelExperiencia, setNivelExperiencia] = useState<NivelExperiencia>(vaga.nivelExperiencia)
+  const [nivelExperiencia, setNivelExperiencia] = useState<NivelExperiencia>(vaga.nivelExperiencia ?? "JUNIOR")
   const [modalidade, setModalidade] = useState<VagaModalidade>(vaga.modalidade)
   const [salario, setSalario] = useState(vaga.salario)
   const [cidade, setCidade] = useState(vaga.cidade)
@@ -150,7 +151,7 @@ export function EditVagaForm({ vaga }: EditVagaFormProps) {
             Ver página pública
           </Link>
           <Link
-            href="/empresa/vagas"
+            href={ROUTES.company.jobs}
             className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             Minhas vagas
@@ -167,7 +168,7 @@ export function EditVagaForm({ vaga }: EditVagaFormProps) {
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link
-              href="/empresa/vagas"
+              href={ROUTES.company.jobs}
               aria-label="Voltar para minhas vagas"
               className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-strong-foreground transition-colors hover:bg-muted"
             >

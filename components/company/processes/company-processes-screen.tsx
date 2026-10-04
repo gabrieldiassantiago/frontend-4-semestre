@@ -1,4 +1,5 @@
 "use client"
+import { ROUTES } from "@/lib/config/routes"
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
@@ -18,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { InputWithIcon } from "@/components/ui/form-field"
 import { VagaSelectionSkeleton, KanbanSkeleton, EmptyState, ErrorState } from "@/components/ui/states"
-import { StatusBadge } from "@/components/candidatura/candidatura-ui"
+import { StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
 import { useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
 import { useCompanyVagas } from "@/lib/queries/use-vagas"
 import {
@@ -118,7 +119,7 @@ function VagaSelectionScreen({
                           <span>•</span>
                           <span>{MODALIDADE_LABELS[vaga.modalidade]}</span>
                           <span>•</span>
-                          <span>{NIVEL_LABELS[vaga.nivelExperiencia]}</span>
+                          <span>{(vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "")}</span>
                         </div>
                       </div>
                     </div>
@@ -351,7 +352,7 @@ function VagaKanbanScreen({
                       {items.map((item) => (
                         <li key={item.id}>
                           <Link
-                            href={`/empresa/candidatos/${encodeURIComponent(item.id)}`}
+                            href={ROUTES.company.candidate(item.id)}
                             className={cn(
                               "flex w-full items-center gap-2.5 rounded-xl border p-2.5 text-left transition-all hover:shadow-sm active:scale-[0.98]",
                               "border-border bg-muted/40 hover:border-border hover:bg-muted/60",
@@ -394,7 +395,7 @@ export function CompanyProcessesScreen({ vagaId }: { vagaId?: string }) {
     return (
       <VagaKanbanScreen
         vaga={vagaSelecionada}
-        onBack={() => router.push("/empresa/processos")}
+        onBack={() => router.push(ROUTES.company.processes)}
       />
     )
   }
@@ -403,7 +404,7 @@ export function CompanyProcessesScreen({ vagaId }: { vagaId?: string }) {
     <VagaSelectionScreen
       vagas={vagas}
       loading={loading}
-      onSelect={(vaga: Vaga) => router.push(`/empresa/processos?vaga=${encodeURIComponent(vaga.id)}`)}
+      onSelect={(vaga: Vaga) => router.push(`${ROUTES.company.processes}?vaga=${encodeURIComponent(vaga.id)}`)}
     />
   )
 }

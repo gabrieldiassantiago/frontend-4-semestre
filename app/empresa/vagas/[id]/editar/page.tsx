@@ -1,4 +1,5 @@
 "use client"
+import { ROUTES } from "@/lib/config/routes"
 
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
 
@@ -29,7 +30,7 @@ export default function EditarVagaPage() {
           </p>
         </div>
         <Link
-          href="/empresa/vagas"
+          href={ROUTES.company.jobs}
           className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
         >
           <ArrowLeft className="size-4" />

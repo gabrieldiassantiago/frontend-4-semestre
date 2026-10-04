@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ROUTES } from "@/lib/config/routes"
 import { SearchX } from "lucide-react"
 import { SelectaLogo } from "@/components/ui/selecta-logo"
 
@@ -26,7 +27,7 @@ export default function VagaNaoEncontrada() {
           abertas agora.
         </p>
 
-        <Link href="/dashboard" className="btn-primary mt-7">
+        <Link href={ROUTES.candidate.overview} className="btn-primary mt-7">
           Explorar vagas
         </Link>
       </main>

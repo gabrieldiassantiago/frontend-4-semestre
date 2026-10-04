@@ -133,6 +133,8 @@ export interface UpdateVagaDto {
   estado?: string
   categoria?: VagaCategoria
   modalidade?: VagaModalidade
+  nivelExperiencia?: NivelExperiencia
+  metaTags?: string[]
   ativa?: boolean
 }
 

@@ -1,3 +1,4 @@
+import { ROUTES } from "@/lib/config/routes"
 import { redirect } from "next/navigation"
 
 export default async function OnboardingPage({ searchParams }: {
@@ -5,6 +6,6 @@ export default async function OnboardingPage({ searchParams }: {
 }) {
   const { role } = await searchParams
   redirect(role === "empresa" || role === "recrutador" || role === "COMPANY"
-    ? "/empresa/perfil"
-    : "/profile/candidato/completar")
+    ? ROUTES.company.profile
+    : ROUTES.candidate.completeProfile)
 }

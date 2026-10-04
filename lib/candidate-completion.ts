@@ -198,6 +198,25 @@ export function getProfileCompletion(
   }
 }
 
+export interface StepStatus {
+  done: boolean
+  required: boolean
+  optional: boolean
+  pending: number
+}
+
+/** Situação de uma etapa: concluída, obrigatória ou opcional, e quantos itens faltam. */
+export function getStepStatus(completion: ProfileCompletion, stepId: ProfileStepId): StepStatus {
+  const items = completion.items.filter((item) => item.step === stepId)
+  const required = items.some((item) => item.required)
+  return {
+    done: items.length > 0 && items.every((item) => item.done),
+    required,
+    optional: items.length > 0 && !required,
+    pending: items.filter((item) => !item.done).length,
+  }
+}
+
 export function stepsComPendencia(completion: ProfileCompletion): ProfileStepId[] {
   return Array.from(new Set(completion.missing.map((item) => item.step)))
 }

@@ -23,7 +23,7 @@ import {
   FeedbackCard,
   HistoricoTimeline,
   StatusBadge,
-} from "@/components/candidatura/candidatura-ui"
+} from "@/components/shared/candidatura/candidatura-ui"
 import {
   useAtualizarFeedback,
   useAtualizarAgendamento,

@@ -1,14 +1,15 @@
 import type { Metadata } from "next"
+import { ROUTES } from "@/lib/config/routes"
 import Link from "next/link"
 import { cookies } from "next/headers"
 import { notFound } from "next/navigation"
 import { ArrowLeft, ArrowRight, CalendarDays, Check, MapPin } from "lucide-react"
 
 import { SelectaLogo } from "@/components/ui/selecta-logo"
-import { CompanyLogo } from "@/components/company/company-logo"
-import { parseBeneficios } from "@/components/vaga/vaga-facts"
-import { VagaDescription } from "@/components/vaga/vaga-description"
-import { ShareVagaButton } from "@/components/vaga/share-vaga-button"
+import { CompanyLogo } from "@/components/shared/company-logo"
+import { parseBeneficios } from "@/components/shared/vaga/vaga-facts"
+import { VagaDescription } from "@/components/shared/vaga/vaga-description"
+import { ShareVagaButton } from "@/components/shared/vaga/share-vaga-button"
 import { normalizeVagaDescription } from "@/lib/utils/vaga-description"
 import { getVagaPublic } from "@/lib/services/vagas.public"
 import { formatDate, formatCurrency } from "@/lib/format"
@@ -66,7 +67,7 @@ export default async function VagaPublicaPage({ params }: PageProps) {
 
   const company = vaga.nomeEmpresa ?? "Empresa confidencial"
   const isAuthenticated = Boolean((await cookies()).get("token")?.value)
-  const applyHref = isAuthenticated ? `/dashboard?vaga=${vaga.id}` : `/auth?from=/vaga/${vaga.id}`
+  const applyHref = isAuthenticated ? ROUTES.candidate.job(vaga.id) : `/auth?from=/vaga/${vaga.id}`
 
   const formattedSalary = vaga.salario > 0 ? formatCurrency(vaga.salario) : "A combinar"
   const location = [vaga.cidade, vaga.estado].filter(Boolean).join(", ") || "Localização não informada"
@@ -84,17 +85,17 @@ export default async function VagaPublicaPage({ params }: PageProps) {
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-20 w-full max-w-[1240px] items-center justify-between gap-4 px-5 sm:px-8">
           <Link href="/" aria-label="Selecta, página inicial"><SelectaLogo className="h-8" /></Link>
-          <div className="flex items-center gap-4"><Link href="/vagas" className="hidden text-sm font-medium text-muted-foreground hover:text-foreground sm:block">Explorar vagas</Link>
-            <Link href={isAuthenticated ? "/dashboard" : "/auth"} className="btn-secondary">{isAuthenticated ? "Meu painel" : "Entrar"}<ArrowRight className="size-4" aria-hidden /></Link>
+          <div className="flex items-center gap-4"><Link href={ROUTES.candidate.jobs} className="hidden text-sm font-medium text-muted-foreground hover:text-foreground sm:block">Explorar vagas</Link>
+            <Link href={isAuthenticated ? ROUTES.candidate.overview : ROUTES.auth.root} className="btn-secondary">{isAuthenticated ? "Meu painel" : "Entrar"}<ArrowRight className="size-4" aria-hidden /></Link>
           </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-[1240px] flex-1 px-5 py-7 sm:px-8 lg:py-10">
-        <Link href="/vagas" className="inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" aria-hidden />Todas as vagas</Link>
+        <Link href={ROUTES.candidate.jobs} className="inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" aria-hidden />Todas as vagas</Link>
         <article className="mt-5">
           <header className="rounded-xl border border-border bg-card p-6 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex min-w-0 items-center gap-3"><CompanyLogo url={vaga.logoUrlEmpresa} name={company} className="size-14 rounded-lg" /><div className="min-w-0"><p className="break-words text-sm font-semibold">{company}</p><p className="mt-1 text-xs text-muted-foreground">Oportunidade de trabalho</p></div></div>
+              <div className="flex min-w-0 items-center gap-3"><CompanyLogo url={vaga.logoUrlEmpresa} name={company} size="lg" /><div className="min-w-0"><p className="break-words text-sm font-semibold">{company}</p><p className="mt-1 text-xs text-muted-foreground">Oportunidade de trabalho</p></div></div>
               <span className={"rounded-md px-3 py-1.5 text-xs font-medium " + (vaga.ativa ? "bg-success-subtle text-success-foreground" : "bg-muted text-muted-foreground")}>{vaga.ativa ? "Inscrições abertas" : "Inscrições encerradas"}</span>
             </div>
             <h1 className="mt-6 max-w-4xl break-words text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{vaga.titulo}</h1>
@@ -133,7 +134,7 @@ export default async function VagaPublicaPage({ params }: PageProps) {
           </div>
         </article>
       </main>
-      <footer className="mt-8 border-t border-border bg-card"><div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-3 px-5 py-7 text-xs text-muted-foreground sm:px-8"><p>Selecta · Recrutamento e seleção</p><Link href="/vagas" className="hover:text-foreground">Ver outras oportunidades</Link></div></footer>
+      <footer className="mt-8 border-t border-border bg-card"><div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-3 px-5 py-7 text-xs text-muted-foreground sm:px-8"><p>Selecta · Recrutamento e seleção</p><Link href={ROUTES.candidate.jobs} className="hover:text-foreground">Ver outras oportunidades</Link></div></footer>
       {vaga.ativa && <div className="public-job-mobile-action fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card px-5 py-3 lg:hidden"><div className="mx-auto flex max-w-lg items-center justify-between gap-4"><div className="min-w-0"><p className="text-[11px] text-muted-foreground">Remuneração mensal</p><p className="truncate text-sm font-semibold">{formattedSalary}</p></div><Link href={applyHref} className="btn-primary shrink-0">Candidatar-se<ArrowRight className="size-4" aria-hidden /></Link></div></div>}
     </div>
   )

@@ -13,13 +13,15 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const company = vaga?.nomeEmpresa ?? "Empresa confidencial"
   const titulo = vaga?.titulo ?? "Oportunidade na Selecta"
 
-  const tags = vaga
-    ? [
-      NIVEL_LABELS[vaga.nivelExperiencia],
-      MODALIDADE_LABELS[vaga.modalidade],
-      CATEGORIA_LABELS[vaga.categoria],
-    ]
-    : []
+  const tags = (
+    vaga
+      ? [
+        vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "",
+        MODALIDADE_LABELS[vaga.modalidade],
+        CATEGORIA_LABELS[vaga.categoria],
+      ]
+      : []
+  ).filter(Boolean)
 
   const salario = vaga?.salario
     ? vaga.salario.toLocaleString("pt-BR", {

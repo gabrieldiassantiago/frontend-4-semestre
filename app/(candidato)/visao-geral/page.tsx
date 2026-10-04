@@ -3,7 +3,7 @@ import { RouteSkeleton } from "@/components/ui/route-skeleton"
 import { CandidateOverviewScreen } from "@/components/candidate/dashboard/candidate-overview-screen"
 
 export const metadata = {
-  title: "Visão Geral | Selecta",
+  title: "Visão geral",
   description: "Visão geral e métricas do painel do candidato",
 }
 

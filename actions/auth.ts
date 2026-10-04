@@ -1,9 +1,10 @@
 "use server"
 
 import { cookies } from "next/headers"
-import { apiFetch, AUTH_COOKIE } from "@/lib/server/api"
+import { apiFetch, AUTH_COOKIE, getServerToken } from "@/lib/server/api"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
 import type {
+  UserRole,
   AuthTokenResponse,
   CompanyRegistrationPayload,
   LoginPayload,

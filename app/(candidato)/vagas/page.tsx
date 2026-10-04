@@ -3,7 +3,7 @@ import { Suspense } from "react"
 import { JobsDashboardScreen } from "@/components/candidate/jobs/jobs-dashboard-screen"
 
 export const metadata = {
-  title: "Vagas | Selecta",
+  title: "Vagas",
   description: "Encontre oportunidades que combinam com o seu perfil.",
 }
 

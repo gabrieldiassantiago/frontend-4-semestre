@@ -1,4 +1,5 @@
 "use client"
+import { ROUTES } from "@/lib/config/routes"
 
 import { useState } from "react"
 import Link from "next/link"
@@ -11,8 +12,8 @@ import { formatDate } from "@/lib/format"
 import { isWebUrl } from "@/lib/utils/profile-validation"
 import { Modal } from "@/components/ui/modal"
 import { ErrorState, Skeleton } from "@/components/ui/states"
-import { CompanyLogo } from "@/components/company/company-logo"
-import { FeedbackCard, StatusBadge } from "@/components/candidatura/candidatura-ui"
+import { CompanyLogo } from "@/components/shared/company-logo"
+import { FeedbackCard, StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
 import { ETAPA_HINTS, ETAPA_LABELS, STATUS_LABELS, STATUS_AGENDAMENTO_LABELS, etapasDaVaga, isFinalizada, type CandidaturaAgendamento } from "@/lib/types/candidatura.types"
 
 function DetailSkeleton() {
@@ -43,7 +44,7 @@ function AgendamentosCandidato({ agendamentos }: { agendamentos: CandidaturaAgen
       <div className="flex items-end justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-foreground">Entrevistas e agendamentos</h2>
-          <p className="mt-1 text-sm text-slate-500">Convites e próximos encontros deste processo.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Convites e próximos encontros deste processo.</p>
         </div>
         <CalendarClock className="size-5 text-primary" aria-hidden />
       </div>
@@ -51,7 +52,7 @@ function AgendamentosCandidato({ agendamentos }: { agendamentos: CandidaturaAgen
       {erro && <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{erro}</p>}
 
       {agendamentos.length === 0 ? (
-        <div className="mt-4 rounded-lg border border-border bg-surface p-5 text-sm text-slate-500">
+        <div className="mt-4 rounded-lg border border-border bg-surface p-5 text-sm text-muted-foreground">
           Ainda não há entrevistas ou reuniões agendadas.
         </div>
       ) : (
@@ -60,24 +61,24 @@ function AgendamentosCandidato({ agendamentos }: { agendamentos: CandidaturaAgen
             const pendente = agendamento.status === "PENDENTE"
             const encerrado = agendamento.status === "CANCELADO" || agendamento.status === "RECUSADO"
             return (
-              <article key={agendamento.id} className={cn("rounded-lg border p-5", pendente ? "border-[#ddd6fe] bg-[#faf8ff]" : "border-slate-200/80 bg-white")}>
+              <article key={agendamento.id} className={cn("rounded-lg border p-5", pendente ? "border-[#ddd6fe] bg-[#faf8ff]" : "border-border/80 bg-card")}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-bold text-slate-900">{agendamento.titulo}</h3>
-                      <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", pendente && "bg-amber-50 text-amber-700", agendamento.status === "CONFIRMADO" && "bg-emerald-50 text-emerald-700", encerrado && "bg-slate-100 text-slate-500", agendamento.status === "REALIZADO" && "bg-blue-50 text-blue-700", agendamento.status === "NAO_COMPARECEU" && "bg-red-50 text-red-700")}>
+                      <h3 className="font-bold text-foreground">{agendamento.titulo}</h3>
+                      <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", pendente && "bg-amber-50 text-amber-700", agendamento.status === "CONFIRMADO" && "bg-emerald-50 text-emerald-700", encerrado && "bg-muted text-muted-foreground", agendamento.status === "REALIZADO" && "bg-blue-50 text-blue-700", agendamento.status === "NAO_COMPARECEU" && "bg-red-50 text-red-700")}>
                         {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm font-medium text-slate-700">
+                    <p className="mt-2 text-sm font-medium text-strong-foreground">
                       {formatDate(agendamento.inicio, { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })} · {agendamento.duracaoMinutos} min
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">Etapa: {agendamento.etapaDescricao ?? ETAPA_LABELS[agendamento.etapa]}</p>
-                    {agendamento.mensagem && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">{agendamento.mensagem}</p>}
+                    <p className="mt-1 text-xs text-muted-foreground">Etapa: {agendamento.etapaDescricao ?? ETAPA_LABELS[agendamento.etapa]}</p>
+                    {agendamento.mensagem && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{agendamento.mensagem}</p>}
                   </div>
 
                   {!encerrado && isWebUrl(agendamento.link) && (
-                    <a href={agendamento.link} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50">
+                    <a href={agendamento.link} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs font-semibold text-strong-foreground shadow-xs transition-colors hover:bg-muted">
                       <ExternalLink className="size-3.5" aria-hidden />
                       Entrar na reunião
                     </a>
@@ -114,7 +115,7 @@ export function ApplicationDetailScreen({ id }: { id: string }) {
   const desistindo = desistirCandidatura.isPending
 
   if (loading) return <DetailSkeleton />
-  if (error || !detalhe) return <main className="mx-auto max-w-lg px-4 py-20"><ErrorState title="Não encontramos esta candidatura" description={error ?? "A candidatura não está disponível para esta conta."} action={<div className="flex flex-wrap justify-center gap-3"><button type="button" onClick={() => void refetch()} className="btn-secondary">Tentar novamente</button><Link href="/candidaturas" className="btn-primary">Minhas candidaturas</Link></div>} /></main>
+  if (error || !detalhe) return <main className="mx-auto max-w-lg px-4 py-20"><ErrorState title="Não encontramos esta candidatura" description={error ?? "A candidatura não está disponível para esta conta."} action={<div className="flex flex-wrap justify-center gap-3"><button type="button" onClick={() => void refetch()} className="btn-secondary">Tentar novamente</button><Link href={ROUTES.candidate.applications} className="btn-primary">Minhas candidaturas</Link></div>} /></main>
 
   const { candidatura, historico = [], feedbacks = [], agendamentos = [] } = detalhe
   const company = candidatura.nomeEmpresa || "Empresa confidencial"
@@ -142,12 +143,12 @@ export function ApplicationDetailScreen({ id }: { id: string }) {
   return (
     <main className="application-detail mx-auto w-full max-w-[1280px] px-4 py-7 sm:px-8 lg:py-10">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <Link href="/candidaturas" className="inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" aria-hidden />Minhas candidaturas</Link>
+        <Link href={ROUTES.candidate.applications} className="inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" aria-hidden />Minhas candidaturas</Link>
         <button type="button" onClick={() => void refetch()} className="btn-ghost" disabled={desistindo}><RefreshCw className="size-4" aria-hidden />Atualizar</button>
       </div>
       <header className="rounded-xl border border-border bg-card p-6 sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-start gap-4"><CompanyLogo url={vaga?.logoUrlEmpresa} name={company} className="size-14 rounded-lg" /><div className="min-w-0"><p className="text-sm text-muted-foreground">{company}</p><h1 className="mt-1 break-words text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">{candidatura.vagaTitulo}</h1>{candidatura.createdAt && <p className="mt-3 text-xs text-muted-foreground">Candidatura enviada em {formatDate(candidatura.createdAt)}</p>}</div></div>
+          <div className="flex min-w-0 items-start gap-4"><CompanyLogo url={vaga?.logoUrlEmpresa} name={company} size="lg" /><div className="min-w-0"><p className="text-sm text-muted-foreground">{company}</p><h1 className="mt-1 break-words text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">{candidatura.vagaTitulo}</h1>{candidatura.createdAt && <p className="mt-3 text-xs text-muted-foreground">Candidatura enviada em {formatDate(candidatura.createdAt)}</p>}</div></div>
           <Link href={"/vaga/" + candidatura.vagaId} className="btn-secondary self-start shrink-0">Ver vaga<ArrowUpRight className="size-4" aria-hidden /></Link>
         </div>
       </header>

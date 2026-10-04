@@ -1,3 +1,4 @@
+import { ROUTES } from "@/lib/config/routes"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
@@ -15,7 +16,7 @@ export default function AuthPage() {
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-20 w-full max-w-[1200px] items-center justify-between px-6 sm:px-10">
           <Link href="/" aria-label="Página inicial da Selecta"><SelectaLogo className="h-8" /></Link>
-          <Link href="/vagas" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">Explorar vagas<ArrowUpRight className="size-4" aria-hidden /></Link>
+          <Link href={ROUTES.candidate.jobs} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">Explorar vagas<ArrowUpRight className="size-4" aria-hidden /></Link>
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-[880px] flex-1 flex-col justify-center px-6 py-14 sm:px-10 sm:py-20">

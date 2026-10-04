@@ -1,4 +1,5 @@
 "use client"
+import { ROUTES } from "@/lib/config/routes"
 
 import { useId, useMemo, useState } from "react"
 import Link from "next/link"
@@ -66,7 +67,7 @@ export default function DashboardCharts({ vagas, candidaturas }: { vagas: Vaga[]
             <summary className="cursor-pointer font-medium text-muted-foreground">Consultar valores por etapa</summary>
             <dl className="mt-3 space-y-2">{funnel.map(item => <div key={item.label} className="flex justify-between"><dt>{item.label}</dt><dd className="font-semibold tabular-nums">{item.count}</dd></div>)}</dl>
           </details>
-          <Link href="/empresa/processos" className="mt-4 inline-block text-xs font-semibold text-primary hover:underline">Abrir processos →</Link>
+          <Link href={ROUTES.company.processes} className="mt-4 inline-block text-xs font-semibold text-primary hover:underline">Abrir processos →</Link>
         </motion.section>
         <motion.section {...entrance} aria-labelledby="modalities-title" className="min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6">
           <p className="text-xs font-medium text-muted-foreground">Seu portfólio</p>
@@ -93,7 +94,7 @@ export default function DashboardCharts({ vagas, candidaturas }: { vagas: Vaga[]
               </button>)}
             </div>
           </> : <EmptyChart text="Publique sua primeira vaga para acompanhar as modalidades." />}
-          <Link href="/empresa/vagas" className="mt-4 inline-block text-xs font-semibold text-primary hover:underline">Gerenciar vagas →</Link>
+          <Link href={ROUTES.company.jobs} className="mt-4 inline-block text-xs font-semibold text-primary hover:underline">Gerenciar vagas →</Link>
         </motion.section>
       </div>
       <motion.section {...entrance} aria-labelledby="activity-title" className="min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6">

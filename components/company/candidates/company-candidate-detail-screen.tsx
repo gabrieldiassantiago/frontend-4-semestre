@@ -1,4 +1,5 @@
 "use client"
+import { ROUTES } from "@/lib/config/routes"
 
 import Link from "next/link"
 import { ArrowLeft, ExternalLink, FileText, MapPin } from "lucide-react"
@@ -24,14 +25,14 @@ export function CompanyCandidateDetailScreen({ candidaturaId }: { candidaturaId:
   const userId = detalhe?.candidatura.candidatoUserId
   const { profile, loading: profileLoading, error: profileError, refetch: refetchProfile } = useCandidateProfileByUser(userId)
   if (loading) return <RouteSkeleton variant="detail" />
-  if (error || !detalhe) return <PageShell><Link href="/empresa/candidatos" className="mb-6 inline-flex items-center gap-2 text-sm text-primary"><ArrowLeft className="size-4" />Voltar aos candidatos</Link><ErrorState description={error ?? "Candidatura não encontrada."} action={<button className="btn-secondary" onClick={() => void refetch()}>Tentar novamente</button>} /></PageShell>
+  if (error || !detalhe) return <PageShell><Link href={ROUTES.company.candidates} className="mb-6 inline-flex items-center gap-2 text-sm text-primary"><ArrowLeft className="size-4" />Voltar aos candidatos</Link><ErrorState description={error ?? "Candidatura não encontrada."} action={<button className="btn-secondary" onClick={() => void refetch()}>Tentar novamente</button>} /></PageShell>
   const { candidatura } = detalhe
   const resume = documentUrl(candidatura.curriculoUrl)
   return (
     <PageShell className="max-w-7xl">
       <nav aria-label="Navegação do candidato" className="mb-6 flex flex-wrap gap-4 text-sm font-medium text-muted-foreground">
-        <Link href="/empresa/candidatos" className="inline-flex min-h-10 items-center gap-2 hover:text-primary"><ArrowLeft className="size-4" aria-hidden />Todos os candidatos</Link>
-        <Link href={"/empresa/processos?vaga=" + encodeURIComponent(candidatura.vagaId)} className="inline-flex min-h-10 items-center hover:text-primary">Voltar ao processo da vaga</Link>
+        <Link href={ROUTES.company.candidates} className="inline-flex min-h-10 items-center gap-2 hover:text-primary"><ArrowLeft className="size-4" aria-hidden />Todos os candidatos</Link>
+        <Link href={`${ROUTES.company.processes}?vaga=${encodeURIComponent(candidatura.vagaId)}`} className="inline-flex min-h-10 items-center hover:text-primary">Voltar ao processo da vaga</Link>
       </nav>
       <header className="mb-8 flex items-start gap-4 border-b border-border pb-6">
         <img

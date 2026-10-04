@@ -78,7 +78,7 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
         longitude: vagaToEdit.longitude ?? -46.6333,
         categoria: vagaToEdit.categoria,
         modalidade: vagaToEdit.modalidade,
-        nivelExperiencia: vagaToEdit.nivelExperiencia,
+        nivelExperiencia: vagaToEdit.nivelExperiencia ?? "JUNIOR",
         metaTags: vagaToEdit.metaTags?.join(", ") ?? "",
       })
     } else {

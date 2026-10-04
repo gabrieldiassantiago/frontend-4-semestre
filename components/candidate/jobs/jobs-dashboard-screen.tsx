@@ -21,7 +21,7 @@ import {
 import { cn } from "@/lib/utils"
 import { PageShell } from "@/components/ui/page"
 import { EmptyState, ErrorState, Skeleton } from "@/components/ui/states"
-import { ApplyModal } from "@/components/candidatura/apply-modal"
+import { ApplyModal } from "@/components/candidate/applications/apply-modal"
 import { useCandidaturasPorVaga } from "@/lib/queries/use-candidaturas"
 import { useVagas, useVagasProximas } from "@/lib/queries/use-vagas"
 import { CATEGORIA_LABELS } from "@/lib/types/vaga.types"
@@ -39,7 +39,7 @@ import { AnimatePresence, motion } from "framer-motion"
 
 function JobCardSkeleton() {
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs">
+    <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-xs">
       <div className="flex items-start gap-4">
         <Skeleton className="size-14 rounded-2xl" />
         <div className="flex flex-1 flex-col gap-2">
@@ -156,12 +156,20 @@ export function JobsDashboardScreen() {
 
   const searchParams = useSearchParams()
   const vagaParam = searchParams.get("vaga")
+  const queryParam = searchParams.get("q")
 
   useEffect(() => {
     if (!vagaParam) return
     setSelectedId(vagaParam)
     setDetailOpen(true)
   }, [vagaParam])
+
+  // Termo vindo da busca global da topbar.
+  useEffect(() => {
+    if (queryParam === null) return
+    setSearch((current) => ({ ...current, query: queryParam }))
+    setPage(0)
+  }, [queryParam])
 
   // Busca vagas próximas no backend quando o candidato ativar busca por proximidade
   const proximity = useVagasProximas(
@@ -383,11 +391,11 @@ export function JobsDashboardScreen() {
               className={cn(
                 "inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200 active:scale-95",
                 active
-                  ? "bg-[#7c3aed] text-white shadow-xs"
-                  : "border border-slate-200/90 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-primary text-white shadow-xs"
+                  : "border border-border/90 bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <ChipIcon className={cn("size-3.5", active ? "text-white" : "text-slate-500")} />
+              <ChipIcon className={cn("size-3.5", active ? "text-white" : "text-muted-foreground")} />
               <span>{chip.label}</span>
             </button>
           )
@@ -398,16 +406,16 @@ export function JobsDashboardScreen() {
           type="button"
           onClick={() => setFiltersOpen(true)}
           className={cn(
-            "inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-200 hover:bg-slate-50",
+            "inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-200 hover:bg-muted",
             activeFilterCount > 0
-              ? "border-[#7c3aed] bg-[#f3f0ff] text-[#7c3aed]"
-              : "border-slate-200/90 bg-white text-slate-600"
+              ? "border-primary bg-primary-subtle text-primary"
+              : "border-border/90 bg-card text-muted-foreground"
           )}
         >
           <SlidersHorizontal className="size-3.5" />
           <span>Mais filtros</span>
           {activeFilterCount > 0 && (
-            <span className="grid size-4 place-items-center rounded-full bg-[#7c3aed] text-[10px] font-bold text-white">
+            <span className="grid size-4 place-items-center rounded-full bg-primary text-[10px] font-bold text-white">
               {activeFilterCount}
             </span>
           )}
@@ -416,15 +424,15 @@ export function JobsDashboardScreen() {
 
       {/* 3. Linha de Contagem e Ordenação */}
       <div className="mt-5 flex items-center justify-between gap-4">
-        <p aria-live="polite" className="text-sm font-bold text-slate-800">
+        <p aria-live="polite" className="text-sm font-bold text-foreground">
           {results.length} {results.length === 1 ? "vaga encontrada" : "vagas encontradas"}
           {proximityCoords && (
-            <span className="font-normal text-slate-500"> em um raio de {raioKm} km</span>
+            <span className="font-normal text-muted-foreground"> em um raio de {raioKm} km</span>
           )}
         </p>
 
         <div className="flex items-center gap-2">
-          <span className="hidden text-xs font-medium text-slate-400 sm:inline">
+          <span className="hidden text-xs font-medium text-subtle-foreground sm:inline">
             Ordenar por:
           </span>
           <select
@@ -435,7 +443,7 @@ export function JobsDashboardScreen() {
                 sort: e.target.value as JobFiltersState["sort"],
               }))
             }
-            className="h-8 rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition-colors hover:border-slate-300 focus:border-[#7c3aed]"
+            className="h-8 rounded-xl border border-border/80 bg-card px-3 text-xs font-semibold text-strong-foreground outline-none transition-colors hover:border-border-strong focus:border-primary"
           >
             <option value="recent">Mais recentes</option>
             <option value="salary-desc">Maior salário</option>
@@ -515,11 +523,11 @@ export function JobsDashboardScreen() {
           {!isPageLoading && !pageError && displayedResults.length > 0 && totalPages > 1 && (
             <nav
               aria-label="Paginação de vagas"
-              className="mt-8 flex flex-col items-center justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-4 sm:px-6 shadow-xs sm:flex-row"
+              className="mt-8 flex flex-col items-center justify-between gap-4 rounded-3xl border border-border/80 bg-card p-4 sm:px-6 shadow-xs sm:flex-row"
             >
-              <p className="text-xs font-medium text-slate-500">
-                Página <span className="font-bold text-slate-900">{page + 1}</span> de{" "}
-                <span className="font-bold text-slate-900">{totalPages}</span>
+              <p className="text-xs font-medium text-muted-foreground">
+                Página <span className="font-bold text-foreground">{page + 1}</span> de{" "}
+                <span className="font-bold text-foreground">{totalPages}</span>
               </p>
 
               <div className="flex items-center gap-1.5 sm:gap-2">
@@ -527,7 +535,7 @@ export function JobsDashboardScreen() {
                   type="button"
                   onClick={() => handlePageChange(page - 1)}
                   disabled={!hasPrevPage || loading}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-strong-foreground shadow-xs transition-all hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="size-4" />
                   <span className="hidden sm:inline">Anterior</span>
@@ -540,7 +548,7 @@ export function JobsDashboardScreen() {
                       return (
                         <span
                           key={`ellipsis-${idx}`}
-                          className="grid size-8 sm:size-9 place-items-center text-xs font-semibold text-slate-400 select-none"
+                          className="grid size-8 sm:size-9 place-items-center text-xs font-semibold text-subtle-foreground select-none"
                         >
                           ...
                         </span>
@@ -560,8 +568,8 @@ export function JobsDashboardScreen() {
                         className={cn(
                           "grid size-8 sm:size-9 place-items-center rounded-xl text-xs font-semibold transition-all duration-200",
                           isActive
-                            ? "bg-[#7c3aed] text-white shadow-xs font-bold scale-105"
-                            : "border border-slate-200/70 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                            ? "bg-primary text-white shadow-xs font-bold scale-105"
+                            : "border border-border/70 bg-card text-strong-foreground hover:bg-muted hover:border-border-strong"
                         )}
                       >
                         {p}
@@ -574,7 +582,7 @@ export function JobsDashboardScreen() {
                   type="button"
                   onClick={() => handlePageChange(page + 1)}
                   disabled={!hasNextPage || loading}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-strong-foreground shadow-xs transition-all hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <span className="hidden sm:inline">Próxima</span>
                   <ChevronRight className="size-4" />
@@ -617,7 +625,7 @@ export function JobsDashboardScreen() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-3 backdrop-blur-xs sm:p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-strong/40 p-3 backdrop-blur-xs sm:p-4"
             role="dialog"
             aria-modal="true"
             onClick={() => setDetailOpen(false)}
@@ -628,7 +636,7 @@ export function JobsDashboardScreen() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 15 }}
               transition={{ type: "spring", duration: 0.3, bounce: 0.15 }}
-              className="relative max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+              className="relative max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-border bg-card shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <JobDetailPanel

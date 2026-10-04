@@ -1,4 +1,5 @@
 "use client"
+import { ROUTES } from "@/lib/config/routes"
 
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
 
@@ -7,7 +8,7 @@ import Link from "next/link"
 import { AlertCircle, ArrowLeft, CheckCircle2, X } from "lucide-react"
 import { useCreateVaga } from "@/lib/queries/use-vagas"
 import { useCompanyProfile } from "@/lib/queries/use-company-profile"
-import { ShareVagaButton } from "@/components/vaga/share-vaga-button"
+import { ShareVagaButton } from "@/components/shared/vaga/share-vaga-button"
 import {
   CATEGORIA_LABELS,
   MODALIDADE_LABELS,
@@ -219,7 +220,7 @@ export function NovaVagaForm() {
             Ver página pública
           </Link>
           <Link
-            href="/empresa/vagas"
+            href={ROUTES.company.jobs}
             className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             Minhas vagas
@@ -235,7 +236,7 @@ export function NovaVagaForm() {
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link
-              href="/empresa/vagas"
+              href={ROUTES.company.jobs}
               aria-label="Voltar para minhas vagas"
               className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-strong-foreground transition-colors hover:bg-muted"
             >

@@ -4,17 +4,9 @@ import { ProfessionalLinks } from "./professional-links"
 import { CityAutocomplete } from "./city-autocomplete"
 import { ProfilePhotoField } from "./profile-photo-field"
 
-import {
-  BookOpen,
-  ExternalLink,
-  Phone,
-} from "lucide-react"
+import { Phone } from "lucide-react"
 
-import {
-  Field,
-  FieldGroupHeader,
-  InputWithIcon,
-} from "@/components/ui/form-field"
+import { Field, InputWithIcon } from "@/components/ui/form-field"
 
 import type {
   CandidateProfile,
@@ -49,11 +41,6 @@ export function ProfileFields({
 }: ProfileFieldsProps) {
   return (
     <div className="max-w-3xl">
-      <FieldGroupHeader
-        title="Informações básicas"
-        description="É assim que as empresas vão te identificar nos processos."
-      />
-
       <ProfilePhotoField
         onUploadingChange={onUploadingChange}
         profile={profile}
@@ -87,6 +74,7 @@ export function ProfileFields({
         <Field
           label="Título profissional"
           wide
+          error={errors.headline}
           hint="Aparece logo abaixo do seu nome."
         >
           <input
@@ -102,7 +90,7 @@ export function ProfileFields({
           />
         </Field>
 
-        <Field label="Sobre você" wide>
+        <Field label="Sobre você" wide error={errors.summary} hint={`${(form.summary || "").trim().length} caracteres. Trajetória, interesses e o que você busca.`}>
           <textarea
             rows={5}
             value={form.summary || ""}
@@ -112,7 +100,7 @@ export function ProfileFields({
                 summary: event.target.value,
               }))
             }
-            className="field-input resize-none"
+            className="field-input resize-y"
             placeholder="Conte sobre sua trajetória e objetivos."
           />
         </Field>
@@ -161,14 +149,8 @@ export function EducationFields({
 }: FormProps) {
   return (
     <div className="max-w-3xl">
-      <FieldGroupHeader
-        icon={BookOpen}
-        title="Formação acadêmica"
-        description="Informações que ajudam empresas a entender seu momento de carreira."
-      />
-
-      <div className="mt-7 grid gap-5 sm:grid-cols-2">
-        <Field label="Instituição">
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Instituição" error={errors.institution}>
           <input
             value={form.institution || ""}
             onChange={(event) =>
@@ -182,7 +164,7 @@ export function EducationFields({
           />
         </Field>
 
-        <Field label="Curso">
+        <Field label="Curso" error={errors.course}>
           <input
             value={form.course || ""}
             onChange={(event) =>
@@ -237,13 +219,7 @@ export function LinksFields({
 }: FormProps) {
   return (
     <div className="max-w-3xl">
-      <FieldGroupHeader
-        icon={ExternalLink}
-        title="Presença profissional"
-        description="Adicione apenas links públicos que representem seu trabalho."
-      />
-
-      <div className="mt-7 flex flex-col gap-5">
+      <div className="flex flex-col gap-5">
         <ProfessionalLinks
           errors={errors}
           form={form}

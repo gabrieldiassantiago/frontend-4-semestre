@@ -1,4 +1,5 @@
 "use client"
+import { ROUTES } from "@/lib/config/routes"
 
 import Link from "next/link"
 import {
@@ -16,19 +17,19 @@ import {
   X,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { CompanyBrandLogo } from "./company-brand-logo"
+import { CompanyLogo } from "@/components/shared/company-logo"
 import {
   VagaBenefits,
   VagaHighlights,
   VagaTags,
-} from "@/components/vaga/vaga-facts"
-import { VagaDescription } from "@/components/vaga/vaga-description"
-import { ShareVagaButton } from "@/components/vaga/share-vaga-button"
+} from "@/components/shared/vaga/vaga-facts"
+import { VagaDescription } from "@/components/shared/vaga/vaga-description"
+import { ShareVagaButton } from "@/components/shared/vaga/share-vaga-button"
 import { formatCurrency, formatRelativeDate } from "@/lib/format"
 import { formatDistance } from "@/lib/utils/distance"
 import { cn } from "@/lib/utils"
 import type { Vaga } from "@/lib/types/vaga.types"
-import { StatusBadge } from "@/components/candidatura/candidatura-ui"
+import { StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
 import { ETAPA_LABELS, type Candidatura } from "@/lib/types/candidatura.types"
 import {
   CATEGORY_METADATA,
@@ -58,7 +59,7 @@ export function JobDetailPanel({
 }) {
   const company = vaga.nomeEmpresa ?? "Empresa confidencial"
   const categoryMeta = CATEGORY_METADATA[vaga.categoria]
-  const nivelMeta = NIVEL_METADATA[vaga.nivelExperiencia]
+  const nivelMeta = vaga.nivelExperiencia ? NIVEL_METADATA[vaga.nivelExperiencia] : undefined
 
   return (
     <aside
@@ -67,7 +68,7 @@ export function JobDetailPanel({
     >
       {/* Header */}
       <header className="flex items-start gap-4 border-b border-border-subtle p-5 sm:p-6">
-        <CompanyBrandLogo company={company} logoUrl={vaga.logoUrlEmpresa} className="size-14 rounded-xl ring-1 ring-border/80" />
+        <CompanyLogo name={company} url={vaga.logoUrlEmpresa} size="lg" />
 
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-semibold text-muted-foreground">{company}</p>
@@ -168,7 +169,7 @@ export function JobDetailPanel({
           {/* Botões de Ação Principal */}
           <div className="flex flex-col gap-2 sm:flex-row">
             {candidatura ? (
-              <Link href={`/candidaturas/${candidatura.id}`} className="btn-primary flex-1">
+              <Link href={ROUTES.candidate.application(candidatura.id)} className="btn-primary flex-1">
                 Acompanhar candidatura
                 <ArrowUpRight className="size-4" aria-hidden />
               </Link>

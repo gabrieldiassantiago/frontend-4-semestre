@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { ROUTES } from "@/lib/config/routes"
 import Link from "next/link"
 import {
   ChevronRight,
@@ -17,7 +18,7 @@ import {
   EtapaProgresso,
   FeedbackCount,
   StatusBadge,
-} from "@/components/candidatura/candidatura-ui"
+} from "@/components/shared/candidatura/candidatura-ui"
 import { useMinhasCandidaturas } from "@/lib/queries/use-candidaturas"
 import { formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -52,7 +53,7 @@ function ApplicationCard({ candidatura }: { candidatura: Candidatura }) {
   return (
     <li className="group">
       <Link
-        href={`/candidaturas/${candidatura.id}`}
+        href={ROUTES.candidate.application(candidatura.id)}
         className="flex items-center gap-4 px-5 py-4 transition-colors duration-150 hover:bg-surface sm:px-6 sm:gap-5"
       >
         {/* Avatar */}
@@ -304,7 +305,7 @@ export function ApplicationsScreen() {
                   title="Sua jornada começa aqui"
                   description="Explore as vagas disponíveis e candidate-se à sua primeira oportunidade."
                   action={
-                    <Link href="/dashboard" className="btn-primary">
+                    <Link href={ROUTES.candidate.overview} className="btn-primary">
                       Explorar vagas
                     </Link>
                   }
