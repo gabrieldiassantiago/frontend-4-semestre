@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Briefcase, DollarSign, Loader2, MapPin, X, Crosshair } from "lucide-react"
-import { createVaga, updateVaga } from "@/lib/services/vagas.service"
+import { useCreateVaga, useUpdateVaga } from "@/lib/queries/use-vagas"
 import { AddressAutocomplete } from "@/components/company/vagas/address-autocomplete"
 import {
   CATEGORIA_LABELS,
@@ -31,6 +31,7 @@ const EMPTY_FORM: FormState = {
   categoria: "DESENVOLVIMENTO_SOFTWARE",
   modalidade: "HIBRIDO",
   nivelExperiencia: "PLENO",
+  metaTags: "",
 }
 
 interface FormState {
@@ -45,6 +46,7 @@ interface FormState {
   categoria: VagaCategoria
   modalidade: VagaModalidade
   nivelExperiencia: NivelExperiencia
+  metaTags: string
 }
 
 interface VagaFormModalProps {
@@ -58,7 +60,9 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
   const isEditing = Boolean(vagaToEdit)
   const overlayRef = useRef<HTMLDivElement>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
-  const [saving, setSaving] = useState(false)
+  const createVaga = useCreateVaga()
+  const updateVaga = useUpdateVaga()
+  const saving = createVaga.isPending || updateVaga.isPending
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -75,6 +79,7 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
         categoria: vagaToEdit.categoria,
         modalidade: vagaToEdit.modalidade,
         nivelExperiencia: vagaToEdit.nivelExperiencia,
+        metaTags: vagaToEdit.metaTags?.join(", ") ?? "",
       })
     } else {
       setForm(EMPTY_FORM)
@@ -101,11 +106,10 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
     if (!form.cidade.trim()) { setError("Informe a cidade."); return }
     if (!form.estado.trim()) { setError("Informe o estado."); return }
 
-    setSaving(true)
     try {
       let saved: Vaga
       if (isEditing && vagaToEdit) {
-        saved = await updateVaga(vagaToEdit.id, {
+        saved = await updateVaga.mutateAsync({ id: vagaToEdit.id, dto: {
           titulo: form.titulo,
           salario: salarioNum,
           descricao: form.descricao,
@@ -117,7 +121,8 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
           categoria: form.categoria,
           modalidade: form.modalidade,
           nivelExperiencia: form.nivelExperiencia,
-        })
+          metaTags: form.metaTags.split(",").map((tag) => tag.trim()).filter(Boolean),
+        } })
       } else {
         const dto: CreateVagaDto = {
           titulo: form.titulo,
@@ -132,14 +137,13 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
           categoria: form.categoria,
           modalidade: form.modalidade,
           nivelExperiencia: form.nivelExperiencia,
+          metaTags: form.metaTags.split(",").map((tag) => tag.trim()).filter(Boolean),
         }
-        saved = await createVaga(dto)
+        saved = await createVaga.mutateAsync(dto)
       }
       onSuccess(saved)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao salvar vaga.")
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -233,6 +237,21 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
               placeholder="Ex: VR, VT, Plano de Saúde, Home Office"
               className="w-full rounded-xl border border-border bg-muted p-2.5 text-sm outline-none focus:bg-background focus:ring-4 focus:ring-primary/10"
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="vf-meta-tags" className="block text-sm font-semibold text-strong-foreground">
+              Competências e palavras-chave
+            </label>
+            <input
+              id="vf-meta-tags"
+              type="text"
+              value={form.metaTags}
+              onChange={(e) => set("metaTags", e.target.value)}
+              placeholder="Ex.: Java, Spring Boot, SQL, React"
+              className="w-full rounded-xl border border-border bg-muted p-2.5 text-sm outline-none focus:bg-background focus:ring-4 focus:ring-primary/10"
+            />
+            <p className="text-xs text-muted-foreground">Separe as tags por vírgula. Elas ajudam a recomendar a vaga aos candidatos certos.</p>
           </div>
 
           <div className="space-y-1.5">

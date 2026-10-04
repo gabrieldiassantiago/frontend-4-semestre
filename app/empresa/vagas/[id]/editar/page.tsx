@@ -2,33 +2,17 @@
 
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
 
-import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { AlertCircle, ArrowLeft } from "lucide-react"
-import { getVagaById } from "@/lib/services/vagas.service"
-import type { Vaga } from "@/lib/types/vaga.types"
+import { useVaga } from "@/lib/queries/use-vagas"
 import { EditVagaForm } from "@/components/company/vagas/edit-vaga/edit-vaga-form"
 
 export default function EditarVagaPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
 
-  const [vaga, setVaga] = useState<Vaga | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!id) return
-
-    setLoading(true)
-    getVagaById(id)
-      .then(setVaga)
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "Erro ao carregar a vaga.")
-      })
-      .finally(() => setLoading(false))
-  }, [id])
+  const { vaga, loading, error } = useVaga(id ?? null)
 
   if (loading) return <RouteSkeleton variant="form" />
 

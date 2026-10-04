@@ -2,617 +2,200 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  Bookmark,
-  Calendar,
-  Check,
-  CircleAlert,
-  Clock,
-  LoaderCircle,
-  MapPin,
-  MoreVertical,
-  RefreshCw,
-  Share2,
-  Trash2,
-  X,
-} from "lucide-react"
+import { ArrowLeft, ArrowUpRight, CalendarClock, Check, Clock, ExternalLink, FileText, LoaderCircle, MessageSquare, RefreshCw, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useCandidatura, revalidarCandidatura } from "@/lib/hooks/useCandidaturas"
-import { desistirCandidatura } from "@/lib/services/candidatura.service"
+import { useCandidatura, useConfirmarAgendamento, useDesistirCandidatura, useRecusarAgendamento } from "@/lib/queries/use-candidaturas"
+import { useVaga } from "@/lib/queries/use-vagas"
 import { getErrorMessage } from "@/lib/errors"
-import { formatDate, formatRelativeDate } from "@/lib/format"
+import { formatDate } from "@/lib/format"
+import { isWebUrl } from "@/lib/utils/profile-validation"
 import { Modal } from "@/components/ui/modal"
 import { ErrorState, Skeleton } from "@/components/ui/states"
-import {
-  ETAPA_HINTS,
-  ETAPA_LABELS,
-  STATUS_LABELS,
-  isFinalizada,
-  type EtapaProcesso,
-} from "@/lib/types/candidatura.types"
-import { CompanyBrandLogo } from "@/components/candidate/jobs/company-brand-logo"
-
-// Ilustração SVG vetorial de montanha com bandeira no pico
-function MountainIllustration() {
-  return (
-    <svg
-      viewBox="0 0 160 90"
-      className="h-16 w-28 shrink-0 select-none overflow-visible sm:h-20 sm:w-36"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <ellipse cx="28" cy="74" rx="20" ry="10" fill="#ede9fe" fillOpacity="0.8" />
-      <ellipse cx="132" cy="76" rx="22" ry="9" fill="#ede9fe" fillOpacity="0.8" />
-      <ellipse cx="44" cy="78" rx="16" ry="7" fill="#ede9fe" />
-
-      {/* Montanha secundária à esquerda */}
-      <path d="M10 82L42 34L68 82H10Z" fill="#c4b5fd" />
-      <path d="M42 34L68 82H42V34Z" fill="#a78bfa" />
-
-      {/* Montanha principal central / direita */}
-      <path d="M40 82L86 16L126 82H40Z" fill="#a78bfa" />
-      <path d="M86 16L126 82H86V16Z" fill="#8b5cf6" />
-
-      {/* Mastro e Bandeira roxa */}
-      <line x1="86" y1="16" x2="86" y2="4" stroke="#6d28d9" strokeWidth="2" strokeLinecap="round" />
-      <path d="M86 4L105 10L86 16V4Z" fill="#7c3aed" />
-
-      {/* Pico iluminado */}
-      <path d="M86 16L78 28L86 25L94 28L86 16Z" fill="#f5f3ff" />
-    </svg>
-  )
-}
-
-const ETAPAS_VISUAIS = [
-  { key: "INSCRICAO", label: "Candidatura" },
-  { key: "TRIAGEM", label: "Triagem" },
-  { key: "ENTREVISTA", label: "Entrevista" },
-  { key: "PROPOSTA", label: "Proposta" },
-  { key: "CONTRATACAO", label: "Contratação" },
-]
-
-function mapEtapaParaIndiceVisual(etapa: EtapaProcesso): number {
-  switch (etapa) {
-    case "INSCRICAO":
-      return 0
-    case "TRIAGEM":
-      return 1
-    case "ENTREVISTA_RH":
-    case "TESTE_TECNICO":
-    case "ENTREVISTA_TECNICA":
-      return 2
-    case "PROPOSTA":
-      return 3
-    case "CONTRATACAO":
-      return 4
-    default:
-      return 1
-  }
-}
+import { CompanyLogo } from "@/components/company/company-logo"
+import { FeedbackCard, StatusBadge } from "@/components/candidatura/candidatura-ui"
+import { ETAPA_HINTS, ETAPA_LABELS, STATUS_LABELS, STATUS_AGENDAMENTO_LABELS, etapasDaVaga, isFinalizada, type CandidaturaAgendamento } from "@/lib/types/candidatura.types"
 
 function DetailSkeleton() {
+  return <main className="mx-auto max-w-[1280px] px-4 py-8 sm:px-8" aria-busy="true"><span className="sr-only">Carregando candidatura</span><Skeleton className="h-5 w-44" /><Skeleton className="mt-6 h-40 rounded-xl" /><div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]"><Skeleton className="h-80 rounded-xl" /><Skeleton className="h-96 rounded-xl" /></div></main>
+}
+
+function AgendamentosCandidato({ agendamentos }: { agendamentos: CandidaturaAgendamento[] }) {
+  const confirmar = useConfirmarAgendamento()
+  const recusar = useRecusarAgendamento()
+  const [erro, setErro] = useState<string | null>(null)
+  const pending = confirmar.isPending || recusar.isPending
+
+  async function responder(agendamento: CandidaturaAgendamento, acao: "confirmar" | "recusar") {
+    setErro(null)
+    try {
+      if (acao === "confirmar") {
+        await confirmar.mutateAsync({ candidaturaId: agendamento.candidaturaId, agendamentoId: agendamento.id })
+      } else {
+        await recusar.mutateAsync({ candidaturaId: agendamento.candidaturaId, agendamentoId: agendamento.id })
+      }
+    } catch (requestError) {
+      setErro(getErrorMessage(requestError, "Não foi possível atualizar o agendamento."))
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-[1080px] px-4 py-6 sm:px-6 sm:py-8" aria-busy="true">
-      <Skeleton className="h-5 w-44" />
-      <Skeleton className="mt-6 h-36 rounded-3xl" />
-      <Skeleton className="mt-6 h-64 rounded-3xl" />
-      <div className="mt-8 space-y-4">
-        <Skeleton className="h-6 w-52" />
-        <Skeleton className="h-20 rounded-2xl" />
-        <Skeleton className="h-20 rounded-2xl" />
+    <section className="rounded-xl border border-border bg-card p-6 sm:p-7">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Entrevistas e agendamentos</h2>
+          <p className="mt-1 text-sm text-slate-500">Convites e próximos encontros deste processo.</p>
+        </div>
+        <CalendarClock className="size-5 text-primary" aria-hidden />
       </div>
-      <Skeleton className="mt-8 h-28 rounded-3xl" />
-    </div>
+
+      {erro && <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{erro}</p>}
+
+      {agendamentos.length === 0 ? (
+        <div className="mt-4 rounded-lg border border-border bg-surface p-5 text-sm text-slate-500">
+          Ainda não há entrevistas ou reuniões agendadas.
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-col gap-3">
+          {agendamentos.map((agendamento) => {
+            const pendente = agendamento.status === "PENDENTE"
+            const encerrado = agendamento.status === "CANCELADO" || agendamento.status === "RECUSADO"
+            return (
+              <article key={agendamento.id} className={cn("rounded-lg border p-5", pendente ? "border-[#ddd6fe] bg-[#faf8ff]" : "border-slate-200/80 bg-white")}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-bold text-slate-900">{agendamento.titulo}</h3>
+                      <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", pendente && "bg-amber-50 text-amber-700", agendamento.status === "CONFIRMADO" && "bg-emerald-50 text-emerald-700", encerrado && "bg-slate-100 text-slate-500", agendamento.status === "REALIZADO" && "bg-blue-50 text-blue-700", agendamento.status === "NAO_COMPARECEU" && "bg-red-50 text-red-700")}>
+                        {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm font-medium text-slate-700">
+                      {formatDate(agendamento.inicio, { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })} · {agendamento.duracaoMinutos} min
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">Etapa: {agendamento.etapaDescricao ?? ETAPA_LABELS[agendamento.etapa]}</p>
+                    {agendamento.mensagem && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">{agendamento.mensagem}</p>}
+                  </div>
+
+                  {!encerrado && isWebUrl(agendamento.link) && (
+                    <a href={agendamento.link} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50">
+                      <ExternalLink className="size-3.5" aria-hidden />
+                      Entrar na reunião
+                    </a>
+                  )}
+                </div>
+
+                {pendente && (
+                  <div className="mt-4 flex flex-col gap-2 border-t border-[#ddd6fe] pt-4 sm:flex-row sm:justify-end">
+                    <button type="button" onClick={() => void responder(agendamento, "recusar")} className="btn-secondary text-red-700" disabled={pending}>
+                      {recusar.isPending && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
+                      Recusar convite
+                    </button>
+                    <button type="button" onClick={() => void responder(agendamento, "confirmar")} className="btn-primary" disabled={pending}>
+                      {confirmar.isPending && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
+                      Confirmar presença
+                    </button>
+                  </div>
+                )}
+              </article>
+            )
+          })}
+        </div>
+      )}
+    </section>
   )
 }
 
 export function ApplicationDetailScreen({ id }: { id: string }) {
   const { detalhe, loading, error, refetch } = useCandidatura(id)
-
-  const [isSaved, setIsSaved] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const { vaga } = useVaga(detalhe?.candidatura.vagaId ?? null)
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [desistindo, setDesistindo] = useState(false)
   const [acaoErro, setAcaoErro] = useState<string | null>(null)
+  const desistirCandidatura = useDesistirCandidatura()
+  const desistindo = desistirCandidatura.isPending
 
   if (loading) return <DetailSkeleton />
+  if (error || !detalhe) return <main className="mx-auto max-w-lg px-4 py-20"><ErrorState title="Não encontramos esta candidatura" description={error ?? "A candidatura não está disponível para esta conta."} action={<div className="flex flex-wrap justify-center gap-3"><button type="button" onClick={() => void refetch()} className="btn-secondary">Tentar novamente</button><Link href="/candidaturas" className="btn-primary">Minhas candidaturas</Link></div>} /></main>
 
-  if (error || !detalhe) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-20">
-        <ErrorState
-          title="Não encontramos esta candidatura"
-          description={error ?? "Ela pode ter sido removida ou não pertence à sua conta."}
-          action={
-            <div className="flex flex-wrap items-center justify-center gap-2.5">
-              <button type="button" onClick={() => void refetch()} className="btn-secondary">
-                <RefreshCw className="size-4" aria-hidden />
-                Tentar novamente
-              </button>
-              <Link href="/candidaturas" className="btn-primary">
-                Ver minhas candidaturas
-              </Link>
-            </div>
-          }
-        />
-      </div>
-    )
-  }
-
-  const { candidatura, historico } = detalhe
-  const company = candidatura.nomeEmpresa ?? "Empresa confidencial"
+  const { candidatura, historico = [], feedbacks = [], agendamentos = [] } = detalhe
+  const company = candidatura.nomeEmpresa || "Empresa confidencial"
   const encerrada = isFinalizada(candidatura.status)
-  const currentStepIndex = mapEtapaParaIndiceVisual(candidatura.etapaAtual)
+  const etapas = etapasDaVaga(candidatura.etapasVaga)
+  const currentIndex = etapas.indexOf(candidatura.etapaAtual)
+  const currentLabel = ETAPA_LABELS[candidatura.etapaAtual] || candidatura.etapaAtual
+  const statusTone = candidatura.status === "APROVADA" ? "border-success-border bg-success-subtle text-success-foreground" : candidatura.status === "REPROVADA" ? "border-danger/20 bg-danger-subtle text-danger-foreground" : candidatura.status === "CANCELADA" ? "border-border bg-surface text-muted-foreground" : "border-primary/20 bg-primary-subtle text-primary"
+  const StatusIcon = candidatura.status === "APROVADA" ? Check : candidatura.status === "REPROVADA" || candidatura.status === "CANCELADA" ? X : Clock
+  const statusTitle = encerrada ? STATUS_LABELS[candidatura.status] : currentLabel
+  const statusDescription = encerrada
+    ? candidatura.motivoEncerramento || (candidatura.status === "APROVADA" ? "A empresa aprovou sua candidatura neste processo seletivo." : candidatura.status === "REPROVADA" ? "A empresa encerrou sua participação neste processo seletivo." : "Sua participação neste processo seletivo foi cancelada.")
+    : candidatura.etapaAtualDescricao || ETAPA_HINTS[candidatura.etapaAtual] || "Acompanhe as atualizações da empresa nesta página."
+  const history = [...historico].sort((a,b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0))
+  const feedbackList = [...feedbacks].sort((a,b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0))
+  const pendingInvites = agendamentos.filter(item => item.status === "PENDENTE").length
 
-  const desistir = async () => {
-    setDesistindo(true)
+  async function desistir() {
+    if (desistindo) return
     setAcaoErro(null)
-    try {
-      await desistirCandidatura(candidatura.id)
-      await revalidarCandidatura(candidatura.id)
-      setConfirmOpen(false)
-    } catch (requestError) {
-      setAcaoErro(getErrorMessage(requestError, "Não foi possível cancelar a candidatura."))
-    } finally {
-      setDesistindo(false)
-    }
+    try { await desistirCandidatura.mutateAsync(candidatura.id); setConfirmOpen(false) }
+    catch (requestError) { setAcaoErro(getErrorMessage(requestError, "Não foi possível cancelar a candidatura.")) }
   }
-
-  // Textos da caixa de status conforme a situação real da candidatura
-  const getStatusBoxContent = () => {
-    if (candidatura.status === "APROVADA") {
-      return {
-        title: "Parabéns! Sua candidatura foi aprovada!",
-        description:
-          candidatura.motivoEncerramento ||
-          "A empresa concluiu o processo seletivo e sua contratação foi confirmada.",
-      }
-    }
-
-    if (candidatura.status === "REPROVADA") {
-      return {
-        title: "Processo seletivo encerrado",
-        description:
-          candidatura.motivoEncerramento ||
-          "Agradecemos sua participação. A empresa decidiu seguir com outros perfis para esta oportunidade.",
-      }
-    }
-
-    if (candidatura.status === "CANCELADA") {
-      return {
-        title: "Candidatura cancelada",
-        description:
-          candidatura.motivoEncerramento ||
-          "Você cancelou sua participação neste processo seletivo.",
-      }
-    }
-
-    // EM_ANDAMENTO
-    const etapaNome = ETAPA_LABELS[candidatura.etapaAtual]?.toLowerCase() || "análise"
-    return {
-      title: `Sua candidatura está em ${etapaNome}`,
-      description:
-        candidatura.etapaAtualDescricao ||
-        ETAPA_HINTS[candidatura.etapaAtual] ||
-        "A empresa está analisando seu perfil e suas informações. Em breve, poderá entrar em contato para as próximas etapas.",
-    }
-  }
-
-  const statusBox = getStatusBoxContent()
-
-  const formattedInscricaoData = candidatura.createdAt
-    ? formatDate(candidatura.createdAt, { day: "numeric", month: "long", year: "numeric" })
-    : null
-
-  const formattedShortInscricao = candidatura.createdAt
-    ? formatDate(candidatura.createdAt, { day: "numeric", month: "short" })
-    : null
-
-  const relativeUpdated = candidatura.updatedAt
-    ? `Atualizado ${formatRelativeDate(candidatura.updatedAt)}`
-    : candidatura.createdAt
-    ? `Inscrito ${formatRelativeDate(candidatura.createdAt)}`
-    : "Atualizado recentemente"
-
-  // Monta lista de histórico visual: se não houver histórico gravado no banco, cria o item inicial da inscrição
-  const historicoOrdenado =
-    historico && historico.length > 0
-      ? [...historico].reverse()
-      : [
-          {
-            id: "inicial",
-            etapaNova: candidatura.etapaAtual,
-            statusNovo: candidatura.status,
-            observacao: "Sua candidatura foi enviada com sucesso. Boa sorte!",
-            createdAt: candidatura.createdAt,
-          },
-        ]
 
   return (
-    <div className="mx-auto max-w-[1080px] px-4 py-6 sm:px-6 sm:py-8">
-      {/* Voltar para candidaturas */}
-      <div className="mb-6">
-        <Link
-          href="/candidaturas"
-          className="group inline-flex items-center gap-2 text-sm font-medium text-[#7c3aed] transition-colors hover:text-[#6d28d9]"
-        >
-          <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" />
-          <span>Voltar para candidaturas</span>
-        </Link>
+    <main className="application-detail mx-auto w-full max-w-[1280px] px-4 py-7 sm:px-8 lg:py-10">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <Link href="/candidaturas" className="inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" aria-hidden />Minhas candidaturas</Link>
+        <button type="button" onClick={() => void refetch()} className="btn-ghost" disabled={desistindo}><RefreshCw className="size-4" aria-hidden />Atualizar</button>
       </div>
-
-      {/* Card Cabeçalho da Vaga */}
-      <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-7">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-4 sm:gap-5">
-            <CompanyBrandLogo
-              company={company}
-              className="size-16 rounded-2xl border-slate-100"
-            />
-
-            <div className="min-w-0">
-              <span className="text-sm font-medium text-slate-500">{company}</span>
-              <h1 className="mt-0.5 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                {candidatura.vagaTitulo}
-              </h1>
-
-              {/* Tags / Badges */}
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                  {ETAPA_LABELS[candidatura.etapaAtual]}
-                </span>
-                <span
-                  className={cn(
-                    "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium",
-                    candidatura.status === "EM_ANDAMENTO" && "bg-purple-50 text-[#7c3aed]",
-                    candidatura.status === "APROVADA" && "bg-emerald-50 text-emerald-700",
-                    candidatura.status === "REPROVADA" && "bg-red-50 text-red-700",
-                    candidatura.status === "CANCELADA" && "bg-slate-100 text-slate-600"
-                  )}
-                >
-                  {STATUS_LABELS[candidatura.status]}
-                </span>
-              </div>
-
-              {/* Metadados com ícones */}
-              <div className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="size-3.5 text-slate-400" />
-                  <span>Brasil</span>
-                </div>
-                {formattedInscricaoData && (
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="size-3.5 text-slate-400" />
-                    <span>Inscrita em {formattedInscricaoData}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Botões de Ação à Direita */}
-          <div className="flex items-center gap-2 self-start sm:self-center">
-            <button
-              type="button"
-              onClick={() => setIsSaved(!isSaved)}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-xs transition-colors",
-                isSaved
-                  ? "border-[#7c3aed] bg-[#f5f3ff] text-[#7c3aed]"
-                  : "border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50"
-              )}
-            >
-              <Bookmark className={cn("size-4", isSaved && "fill-current")} />
-              <span>{isSaved ? "Vaga salva" : "Salvar vaga"}</span>
-            </button>
-
-            {candidatura.vagaId && (
-              <Link
-                href={`/vaga/${candidatura.vagaId}`}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs"
-              >
-                <span>Ver vaga</span>
-                <ArrowUpRight className="size-3.5 text-slate-400" />
-              </Link>
-            )}
-
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setMenuOpen((prev) => !prev)}
-                className="grid size-9 place-items-center rounded-xl border border-slate-200/90 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-                aria-label="Mais opções"
-              >
-                <MoreVertical className="size-4" />
-              </button>
-
-              {menuOpen && (
-                <div className="absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false)
-                      if (typeof window !== "undefined") {
-                        void navigator.clipboard?.writeText?.(window.location.href)
-                      }
-                    }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-100"
-                  >
-                    <Share2 className="size-3.5 text-slate-400" />
-                    Copiar link do processo
-                  </button>
-
-                  {!encerrada && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false)
-                        setConfirmOpen(true)
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="size-3.5 text-red-500" />
-                      Desistir do processo
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+      <header className="rounded-xl border border-border bg-card p-6 sm:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-4"><CompanyLogo url={vaga?.logoUrlEmpresa} name={company} className="size-14 rounded-lg" /><div className="min-w-0"><p className="text-sm text-muted-foreground">{company}</p><h1 className="mt-1 break-words text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">{candidatura.vagaTitulo}</h1>{candidatura.createdAt && <p className="mt-3 text-xs text-muted-foreground">Candidatura enviada em {formatDate(candidatura.createdAt)}</p>}</div></div>
+          <Link href={"/vaga/" + candidatura.vagaId} className="btn-secondary self-start shrink-0">Ver vaga<ArrowUpRight className="size-4" aria-hidden /></Link>
         </div>
-      </section>
-
-      {/* Card do Stepper de Acompanhamento */}
-      <section className="mt-6 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8">
-        {/* Linha das etapas */}
-        <div className="relative overflow-x-auto pb-4 pt-2">
-          <div className="flex min-w-[580px] items-center justify-between">
-            {ETAPAS_VISUAIS.map((step, idx) => {
-              const isCompleted = idx < currentStepIndex
-              const isCurrent = idx === currentStepIndex
-              const isPending = idx > currentStepIndex
-
-              return (
-                <div key={step.key} className="flex flex-1 items-center last:flex-none">
-                  {/* Ícone e legendas do ponto */}
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={cn(
-                        "grid size-8 place-items-center rounded-full transition-all",
-                        isCompleted && "bg-[#7c3aed] text-white",
-                        isCurrent && !encerrada && "bg-[#7c3aed] ring-4 ring-purple-100",
-                        isCurrent && candidatura.status === "APROVADA" && "bg-emerald-600 text-white",
-                        isCurrent && candidatura.status === "REPROVADA" && "bg-red-600 text-white",
-                        isCurrent && candidatura.status === "CANCELADA" && "bg-slate-400 text-white",
-                        isPending && "border-2 border-slate-300 bg-white"
-                      )}
-                    >
-                      {isCompleted ? (
-                        <Check className="size-4 stroke-[3]" />
-                      ) : isCurrent ? (
-                        candidatura.status === "APROVADA" ? (
-                          <Check className="size-4 stroke-[3]" />
-                        ) : candidatura.status === "REPROVADA" ? (
-                          <X className="size-4 stroke-[3]" />
-                        ) : (
-                          <span className="size-2 rounded-full bg-white" />
-                        )
-                      ) : null}
-                    </div>
-
-                    <div className="mt-3 flex flex-col items-center text-center">
-                      <span
-                        className={cn(
-                          "text-sm font-medium",
-                          isCurrent
-                            ? "font-bold text-slate-900"
-                            : isCompleted
-                            ? "font-semibold text-slate-800"
-                            : "text-slate-500"
-                        )}
-                      >
-                        {step.label}
-                      </span>
-
-                      {idx === 0 && formattedShortInscricao && (
-                        <span className="mt-0.5 text-xs text-slate-400">
-                          {formattedShortInscricao}
-                        </span>
-                      )}
-
-                      {isCurrent && (
-                        <span
-                          className={cn(
-                            "mt-0.5 text-xs font-semibold",
-                            candidatura.status === "EM_ANDAMENTO" && "text-[#7c3aed]",
-                            candidatura.status === "APROVADA" && "text-emerald-700",
-                            candidatura.status === "REPROVADA" && "text-red-700",
-                            candidatura.status === "CANCELADA" && "text-slate-500"
-                          )}
-                        >
-                          {STATUS_LABELS[candidatura.status]}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Linha horizontal conectora */}
-                  {idx < ETAPAS_VISUAIS.length - 1 && (
-                    <div
-                      className={cn(
-                        "mx-3 h-[2px] flex-1 -translate-y-4 rounded-full transition-colors",
-                        idx < currentStepIndex ? "bg-[#7c3aed]" : "bg-slate-200"
-                      )}
-                    />
-                  )}
-                </div>
-              )
-            })}
-          </div>
+      </header>
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-6">
+          <section aria-labelledby="application-status-title" className={cn("rounded-xl border p-6 sm:p-7",statusTone)}>
+            <div className="flex items-start gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-lg border border-current/15 bg-card/60"><StatusIcon className="size-5" aria-hidden /></span><div className="min-w-0"><div className="flex flex-wrap items-center gap-3"><p className="text-xs font-medium">{encerrada ? "Resultado do processo" : "Etapa atual"}</p><StatusBadge status={candidatura.status} size="sm" /></div><h2 id="application-status-title" className="mt-2 text-xl font-semibold tracking-tight">{statusTitle}</h2><p className="mt-3 whitespace-pre-line break-words text-sm leading-7 text-strong-foreground">{statusDescription}</p>{candidatura.updatedAt && <p className="mt-4 text-xs text-muted-foreground">Última atualização em {formatDate(candidatura.updatedAt)}</p>}</div></div>
+          </section>
+          {pendingInvites > 0 && <a href="#application-appointments" className="flex items-center gap-3 rounded-xl border border-warning/25 bg-warning-subtle p-4 text-sm font-medium text-warning-foreground"><CalendarClock className="size-5 shrink-0" aria-hidden />{pendingInvites === 1 ? "Você tem um convite aguardando resposta." : "Você tem " + pendingInvites + " convites aguardando resposta."}<ArrowUpRight className="ml-auto size-4 shrink-0" aria-hidden /></a>}
+          <div id="application-appointments" className="scroll-mt-24"><AgendamentosCandidato agendamentos={agendamentos} /></div>
+          <section aria-labelledby="application-feedback-title" className="rounded-xl border border-border bg-card p-6 sm:p-7">
+            <div className="flex items-center justify-between gap-3"><h2 id="application-feedback-title" className="text-lg font-semibold tracking-tight">Retornos da empresa</h2><span className="text-xs text-muted-foreground">{feedbacks.length} {feedbacks.length === 1 ? "feedback" : "feedbacks"}</span></div>
+            {feedbackList.length ? <div className="mt-5 space-y-4">{feedbackList.map(feedback => <FeedbackCard key={feedback.id} feedback={feedback} />)}</div> : <div className="mt-5 flex items-start gap-3 rounded-lg bg-surface p-4 text-sm leading-6 text-muted-foreground"><MessageSquare className="mt-0.5 size-4 shrink-0" aria-hidden /><p>A empresa ainda não enviou feedbacks. Quando houver um retorno, ele aparecerá aqui.</p></div>}
+          </section>
+          <section aria-labelledby="application-history-title" className="rounded-xl border border-border bg-card p-6 sm:p-7">
+            <h2 id="application-history-title" className="text-lg font-semibold tracking-tight">Histórico da candidatura</h2>
+            <p className="mt-1 text-xs leading-6 text-muted-foreground">Atualizações registradas durante o processo, da mais recente para a mais antiga.</p>
+            {history.length ? <ol className="mt-6 space-y-0">{history.map((item,index) => <li key={item.id} className="relative flex gap-4 pb-6 last:pb-0">
+              {index < history.length-1 && <span aria-hidden className="absolute left-[7px] top-4 bottom-0 w-px bg-border" />}
+              <span aria-hidden className={cn("relative mt-1 size-4 shrink-0 rounded-full border-4",index===0?"border-primary-subtle bg-primary":"border-surface bg-border-strong")} />
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">{item.statusAnterior && item.statusAnterior!==item.statusNovo ? STATUS_LABELS[item.statusNovo] : ETAPA_LABELS[item.etapaNova] || "Atualização"}</h3>{!(item.statusAnterior && item.statusAnterior!==item.statusNovo) && <span className="text-xs text-muted-foreground">{STATUS_LABELS[item.statusNovo]}</span>}</div>{item.observacao && <p className="mt-2 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{item.observacao}</p>}{item.createdAt && <time dateTime={item.createdAt} className="mt-2 block text-xs text-muted-foreground">{formatDate(item.createdAt,{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</time>}</div>
+            </li>)}</ol> : <p className="mt-5 text-sm leading-6 text-muted-foreground">Ainda não há movimentações registradas no histórico.</p>}
+          </section>
         </div>
-
-        {/* Caixa de destaque da etapa atual */}
-        <div className="mt-6 flex items-start gap-4 rounded-2xl bg-[#f5f3ff] p-5 sm:gap-5 sm:p-6">
-          <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#ede9fe] text-[#7c3aed]">
-            <Clock className="size-6" />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <h3 className="text-base font-bold text-slate-900 sm:text-lg">
-              {statusBox.title}
-            </h3>
-            <p className="mt-1 text-sm leading-relaxed text-slate-600">
-              {statusBox.description}
-            </p>
-            <p className="mt-3 text-xs font-medium text-slate-400">
-              {relativeUpdated}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Histórico da Candidatura */}
-      <section className="mt-8">
-        <h2 className="text-lg font-bold tracking-tight text-slate-900">
-          Histórico da candidatura
-        </h2>
-
-        <div className="mt-6">
-          <ol className="relative flex flex-col">
-            {historicoOrdenado.map((item, idx) => {
-              const isLast = idx === historicoOrdenado.length - 1
-              const isFirst = idx === 0
-
-              const itemTitle = item.etapaNova
-                ? ETAPA_LABELS[item.etapaNova]
-                : STATUS_LABELS[item.statusNovo] || "Atualização"
-
-              const itemDate = item.createdAt
-                ? formatDate(item.createdAt, {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : ""
-
-              return (
-                <li key={item.id} className="relative flex gap-4 pb-8 last:pb-0">
-                  {/* Linha vertical conectora */}
-                  {!isLast && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-[11px] top-6 h-full w-[2px] -translate-x-1/2 bg-slate-200"
-                    />
-                  )}
-
-                  {/* Ponto indicador */}
-                  <div className="relative z-10 flex flex-col items-center">
-                    <div
-                      className={cn(
-                        "grid size-6 place-items-center rounded-full text-white",
-                        isFirst ? "bg-[#7c3aed] ring-4 ring-purple-100" : "bg-[#7c3aed]"
-                      )}
-                    >
-                      {!isFirst ? (
-                        <Check className="size-3.5 stroke-[3]" />
-                      ) : (
-                        <span className="size-1.5 rounded-full bg-white" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Conteúdo do item de histórico */}
-                  <div className="-mt-1 flex-1">
-                    <h3 className="text-base font-bold text-slate-900">
-                      {itemTitle}
-                    </h3>
-                    {itemDate && (
-                      <time className="mt-0.5 block text-xs text-slate-400">
-                        {itemDate}
-                      </time>
-                    )}
-                    <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
-                      {item.observacao || "Status atualizado pela equipe de recrutamento."}
-                    </p>
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
-        </div>
-      </section>
-
-      {/* Card Motivacional Inferior */}
-      <section className="mt-10 rounded-3xl border border-purple-100/90 bg-[#faf8ff] p-6 sm:p-7">
-        <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-            <MountainIllustration />
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">
-                Você está no caminho certo!
-              </h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Continue acompanhando por aqui. Avisaremos sobre qualquer novidade.
-              </p>
-            </div>
-          </div>
-
-          <div className="w-full rounded-2xl border border-purple-200/50 bg-[#ede9fe]/60 p-4 sm:max-w-xs md:max-w-sm">
-            <p className="text-center text-xs font-semibold leading-relaxed text-[#7c3aed] sm:text-left sm:text-[13px]">
-              “Grandes oportunidades levam tempo, mas chegam para quem está preparado.”
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Modal de confirmação de desistência */}
-      <Modal
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        title="Desistir do processo"
-        description="Sua candidatura fica registrada como cancelada e a empresa é avisada. O histórico continua disponível para você."
-        size="sm"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setConfirmOpen(false)}
-              disabled={desistindo}
-              className="btn-secondary"
-            >
-              Continuar no processo
-            </button>
-            <button
-              type="button"
-              onClick={() => void desistir()}
-              disabled={desistindo}
-              className="btn-primary bg-red-600 hover:bg-red-700"
-            >
-              {desistindo && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
-              {desistindo ? "Cancelando" : "Confirmar desistência"}
-            </button>
-          </>
-        }
-      >
-        <p className="text-sm leading-relaxed text-slate-600">
-          Você está no processo de <strong className="font-semibold text-slate-900">{candidatura.vagaTitulo}</strong> na{" "}
-          {company}. Essa ação não pode ser desfeita.
-        </p>
-
-        {acaoErro && (
-          <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-            <CircleAlert className="mt-0.5 size-4 shrink-0 text-red-600" aria-hidden />
-            <p role="alert" className="text-sm font-medium leading-relaxed text-red-600">
-              {acaoErro}
-            </p>
-          </div>
-        )}
+        <aside className="min-w-0 space-y-6 lg:sticky lg:top-24">
+          <section aria-labelledby="application-stages-title" className="rounded-xl border border-border bg-card p-6">
+            <h2 id="application-stages-title" className="text-base font-semibold tracking-tight">Etapas do processo</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">{encerrada ? "A etapa alcançada permanece no histórico." : "Acompanhe seu momento no processo seletivo."}</p>
+            <ol className="mt-6">{etapas.map((etapa,index) => {
+              const active = index === currentIndex
+              const previous = currentIndex >= 0 && index < currentIndex
+              return <li key={etapa} aria-current={active ? "step" : undefined} className="flex gap-3">
+                <div className="flex flex-col items-center"><span className={cn("grid size-8 shrink-0 place-items-center rounded-lg border text-xs font-medium",active ? encerrada ? "border-border-strong bg-surface text-foreground" : "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground")}>{index+1}</span>{index<etapas.length-1 && <span className="w-px flex-1 bg-border" aria-hidden />}</div>
+                <div className="min-w-0 pb-5"><p className={cn("text-sm",active?"font-semibold text-foreground":"text-muted-foreground")}>{ETAPA_LABELS[etapa]}</p><p className="mt-1 text-[11px] text-muted-foreground">{active ? encerrada ? "Etapa alcançada" : "Você está aqui" : previous ? "Etapa anterior" : encerrada ? "Não alcançada" : "A seguir"}</p></div>
+              </li>
+            })}</ol>
+            {currentIndex<0 && <p className="mt-3 text-xs text-muted-foreground">Etapa registrada: {currentLabel}.</p>}
+          </section>
+          <section aria-labelledby="application-documents-title" className="rounded-xl border border-border bg-card p-6"><h2 id="application-documents-title" className="text-base font-semibold tracking-tight">Sua candidatura</h2>
+            {candidatura.curriculoUrl && isWebUrl(candidatura.curriculoUrl) ? <a href={candidatura.curriculoUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary mt-4 w-full"><FileText className="size-4" aria-hidden />Currículo enviado<ExternalLink className="size-3.5" aria-hidden /></a> : <p className="mt-3 text-xs leading-6 text-muted-foreground">Nenhum currículo anexado a esta candidatura.</p>}
+            {candidatura.cartaApresentacao && <details className="mt-4 border-t border-border pt-4"><summary className="cursor-pointer text-sm font-medium">Carta de apresentação</summary><p className="mt-3 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{candidatura.cartaApresentacao}</p></details>}
+            {!encerrada && <div className="mt-5 border-t border-border pt-4"><button type="button" onClick={() => {setAcaoErro(null);setConfirmOpen(true)}} className="min-h-11 text-sm font-medium text-danger-foreground hover:underline">Desistir do processo</button></div>}
+          </section>
+        </aside>
+      </div>
+      <Modal open={confirmOpen} onClose={() => {if(!desistindo) setConfirmOpen(false)}} title="Desistir do processo" description="Sua candidatura será cancelada. O histórico continuará disponível." size="sm" footer={<><button type="button" onClick={()=>setConfirmOpen(false)} disabled={desistindo} className="btn-secondary">Continuar no processo</button><button type="button" onClick={()=>void desistir()} disabled={desistindo} className="btn-primary bg-danger hover:bg-danger">{desistindo && <LoaderCircle className="size-4 animate-spin" aria-hidden />}{desistindo?"Cancelando…":"Confirmar desistência"}</button></>}>
+        <p className="text-sm leading-7 text-muted-foreground">Você está se candidatando à vaga de <strong className="font-semibold text-foreground">{candidatura.vagaTitulo}</strong> na {company}. A desistência não pode ser desfeita.</p>
+        {acaoErro && <p role="alert" className="mt-4 rounded-lg bg-danger-subtle p-4 text-sm text-danger-foreground">{acaoErro}</p>}
       </Modal>
-    </div>
+    </main>
   )
 }

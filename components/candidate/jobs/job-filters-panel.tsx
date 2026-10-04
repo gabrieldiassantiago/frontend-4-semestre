@@ -8,36 +8,29 @@ import {
   Laptop,
   Globe,
   DollarSign,
-  Briefcase,
   Maximize2,
   RotateCcw,
   Check,
-  ChevronDown,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import {
   MODALIDADE_LABELS,
-  NIVEL_LABELS,
-  type NivelExperiencia,
   type VagaModalidade,
 } from "@/lib/types/vaga.types"
-import { NIVEL_METADATA } from "@/lib/constants/vaga-categories"
 
 export type JobSort = "recent" | "salary-desc" | "salary-asc"
 
 export interface JobFiltersState {
   sort: JobSort
   modalidades: VagaModalidade[]
-  niveis: NivelExperiencia[]
   salarioMin: number
 }
 
 export const EMPTY_FILTERS: JobFiltersState = {
   sort: "recent",
   modalidades: [],
-  niveis: [],
   salarioMin: 0,
 }
 
@@ -55,15 +48,12 @@ const MODALIDADE_ITEMS: { value: VagaModalidade; label: string; icon: React.Comp
   { value: "REMOTO", label: "Remoto", icon: Globe },
 ]
 
-const NIVEIS = Object.keys(NIVEL_LABELS) as NivelExperiencia[]
-
 const QUICK_SALARY_PRESETS = [0, 3000, 5000, 8000, 12000]
 
 /** Quantos filtros o usuário aplicou (a ordenação padrão não conta). */
 export function countActiveFilters(filters: JobFiltersState) {
   return (
     filters.modalidades.length +
-    filters.niveis.length +
     (filters.salarioMin > 0 ? 1 : 0) +
     (filters.sort !== "recent" ? 1 : 0)
   )
@@ -256,57 +246,6 @@ export function JobFiltersPanel({
                   )}
                 >
                   {val === 0 ? "Todos" : `${formatCurrency(val)}+`}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* 4. Nível de Experiência */}
-        <div className="p-4 sm:p-5">
-          <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            <Briefcase className="size-3 text-primary" />
-            <span>Nível</span>
-          </div>
-
-          <div className="space-y-1">
-            {NIVEIS.map((nivel) => {
-              const isSelected = filters.niveis.includes(nivel)
-              const meta = NIVEL_METADATA[nivel]
-              return (
-                <button
-                  key={nivel}
-                  type="button"
-                  onClick={() => patch({ niveis: toggle(filters.niveis, nivel) })}
-                  className={cn(
-                    "flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs transition-all",
-                    isSelected
-                      ? "bg-primary-subtle text-primary font-bold shadow-xs"
-                      : "text-foreground hover:bg-muted font-medium"
-                  )}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <span
-                      className={cn(
-                        "grid size-4 place-items-center rounded border transition-colors",
-                        isSelected
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-card"
-                      )}
-                    >
-                      {isSelected && <Check className="size-3" />}
-                    </span>
-                    <span className="truncate">{NIVEL_LABELS[nivel]}</span>
-                  </div>
-
-                  <span
-                    className={cn(
-                      "rounded px-1.5 py-0.2 text-[10px] font-bold border",
-                      meta?.bgStyle
-                    )}
-                  >
-                    {meta?.tag}
-                  </span>
                 </button>
               )
             })}

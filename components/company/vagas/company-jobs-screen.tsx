@@ -4,8 +4,7 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { BriefcaseBusiness, Plus, Search } from "lucide-react"
 
-import { useCompanyVagas } from "@/lib/hooks/useCompanyVagas"
-import { deleteVaga, updateVaga } from "@/lib/services/vagas.service"
+import { useCompanyVagas, useDeleteVaga, useUpdateVaga } from "@/lib/queries/use-vagas"
 import { getErrorMessage } from "@/lib/errors"
 import type { Vaga } from "@/lib/types/vaga.types"
 import { PageShell } from "@/components/ui/page"
@@ -14,7 +13,9 @@ import { Alert, CardSkeleton, EmptyState } from "@/components/ui/states"
 import { VagaRow } from "./vaga-row"
 
 export function CompanyJobsScreen() {
-  const { vagas, loading, error, refetch } = useCompanyVagas()
+  const { vagas, loading, error } = useCompanyVagas()
+  const deleteVaga = useDeleteVaga()
+  const toggleVaga = useUpdateVaga({ silent: true })
 
   const [query, setQuery] = useState("")
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -24,7 +25,7 @@ export function CompanyJobsScreen() {
     const term = query.trim().toLowerCase()
     if (!term) return vagas
 
-    return vagas.filter((vaga) =>
+    return vagas.filter((vaga: Vaga) =>
       `${vaga.titulo} ${vaga.cidade} ${vaga.estado}`.toLowerCase().includes(term)
     )
   }, [vagas, query])
@@ -35,8 +36,7 @@ export function CompanyJobsScreen() {
     setActionError(null)
     setDeletingId(vaga.id)
     try {
-      await deleteVaga(vaga.id)
-      void refetch()
+      await deleteVaga.mutateAsync(vaga.id)
     } catch (err) {
       setActionError(getErrorMessage(err, "Erro ao remover a vaga."))
     } finally {
@@ -47,32 +47,31 @@ export function CompanyJobsScreen() {
   const handleToggleActive = async (vaga: Vaga) => {
     setActionError(null)
     try {
-      await updateVaga(vaga.id, { ativa: !vaga.ativa })
-      void refetch()
+      await toggleVaga.mutateAsync({ id: vaga.id, dto: { ativa: !vaga.ativa } })
     } catch (err) {
       setActionError(getErrorMessage(err, "Erro ao atualizar a vaga."))
     }
   }
 
   return (
-    <PageShell className="max-w-6xl py-8">
+    <PageShell className="max-w-[1380px] py-8">
       {/* Top Header */}
-      <div className="flex flex-col justify-between gap-4 border-b border-border-subtle/50 pb-8 sm:flex-row sm:items-end">
+      <div className="flex flex-col justify-between gap-4 border-b border-border pb-8 sm:flex-row sm:items-end">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Recrutamento
           </span>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Catálogo de Vagas
+            Vagas
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Gerencie e monitore as oportunidades de contratação da sua empresa.
+            Publique oportunidades e gerencie suas vagas ativas ou pausadas.
           </p>
         </div>
 
         <Link
           href="/empresa/vagas/nova"
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-all duration-200 hover:opacity-95 active:scale-95"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground transition-all duration-200 hover:opacity-95 "
         >
           <Plus className="size-4" aria-hidden />
           Nova vaga
@@ -85,8 +84,8 @@ export function CompanyJobsScreen() {
         {actionError && <Alert tone="danger">{actionError}</Alert>}
       </div>
 
-      {/* Caixa de Pesquisa Estilo Airbnb Search Bar */}
-      <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-border-subtle/70 bg-card/60 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      {/* Busca e total de resultados */}
+      <div className="mt-6 flex flex-col gap-4 rounded-xl border border-border bg-card p-4  sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <InputWithIcon
           icon={Search}
           type="search"
@@ -104,7 +103,7 @@ export function CompanyJobsScreen() {
       </div>
 
       {/* Lista de Vagas */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border-subtle/70 bg-card/60 backdrop-blur-sm">
+      <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card ">
         {loading ? (
           <div className="p-6">
             <CardSkeleton rows={4} />
@@ -124,14 +123,14 @@ export function CompanyJobsScreen() {
                   <button
                     type="button"
                     onClick={() => setQuery("")}
-                    className="inline-flex h-9 items-center rounded-full border border-border-subtle/80 bg-background px-4 text-xs font-medium text-foreground transition-all hover:border-border active:scale-95"
+                    className="inline-flex h-9 items-center rounded-full border border-border-subtle/80 bg-background px-4 text-xs font-medium text-foreground transition-all hover:border-border "
                   >
                     Limpar busca
                   </button>
                 ) : (
                   <Link
                     href="/empresa/vagas/nova"
-                    className="inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-xs font-medium text-primary-foreground transition-all hover:opacity-95 active:scale-95"
+                    className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-medium text-primary-foreground transition-all hover:opacity-95 "
                   >
                     <Plus className="size-3.5" aria-hidden />
                     Nova vaga
@@ -143,7 +142,7 @@ export function CompanyJobsScreen() {
           </div>
         ) : (
           <ul className="divide-y divide-border-subtle/50">
-            {filtered.map((vaga) => (
+            {filtered.map((vaga: Vaga) => (
               <li key={vaga.id}>
                 <VagaRow
                   vaga={vaga}

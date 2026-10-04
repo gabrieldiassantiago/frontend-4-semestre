@@ -1,13 +1,17 @@
 "use client"
 
+import { toastSuccess } from "@/lib/toast"
+import { recordSearchMetadataAction } from "@/actions/vagas"
+
 import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   Building2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Clock4,
   Globe2,
-  GraduationCap,
   LayoutGrid,
   RefreshCw,
   SearchX,
@@ -18,8 +22,8 @@ import { cn } from "@/lib/utils"
 import { PageShell } from "@/components/ui/page"
 import { EmptyState, ErrorState, Skeleton } from "@/components/ui/states"
 import { ApplyModal } from "@/components/candidatura/apply-modal"
-import { useCandidaturasPorVaga } from "@/lib/hooks/useCandidaturas"
-import { useVagas } from "@/lib/hooks/useVagas"
+import { useCandidaturasPorVaga } from "@/lib/queries/use-candidaturas"
+import { useVagas, useVagasProximas } from "@/lib/queries/use-vagas"
 import { CATEGORIA_LABELS } from "@/lib/types/vaga.types"
 import type { Vaga } from "@/lib/types/vaga.types"
 import { JobCard } from "./job-card"
@@ -29,8 +33,6 @@ import { ProximityBanner } from "./proximity-banner"
 import { JobFiltersModal } from "./job-filters-modal"
 import { JobsSidebarWidgets } from "./jobs-sidebar-widgets"
 import { JobAlertsModal } from "./job-alerts-modal"
-import { MOCK_DESIGN_VAGAS, type ExtendedVaga } from "@/lib/data/mock-jobs"
-import { getVagasProximas } from "@/lib/services/vagas.service"
 import { calculateDistanceKm } from "@/lib/utils/distance"
 import { EMPTY_FILTERS, countActiveFilters, type JobFiltersState } from "./job-filters-panel"
 import { AnimatePresence, motion } from "framer-motion"
@@ -59,8 +61,23 @@ function JobCardSkeleton() {
   )
 }
 
+/** Gera a lista de páginas com reticências para paginação numerada */
+function getVisiblePages(currentPage: number, totalPages: number): (number | "...")[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1)
+  }
+  const current = currentPage + 1
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, "...", totalPages]
+  }
+  if (current >= totalPages - 3) {
+    return [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
+  }
+  return [1, "...", current - 1, current, current + 1, "...", totalPages]
+}
+
 /** Ordena conforme o filtro escolhido */
-function sortVagas(vagas: ExtendedVaga[], sort: JobFiltersState["sort"], isProximity = false) {
+function sortVagas(vagas: Vaga[], sort: JobFiltersState["sort"], isProximity = false) {
   return [...vagas].sort((a, b) => {
     if (sort === "salary-desc") return b.salario - a.salario
     if (sort === "salary-asc") return a.salario - b.salario
@@ -74,24 +91,67 @@ function sortVagas(vagas: ExtendedVaga[], sort: JobFiltersState["sort"], isProxi
 export function JobsDashboardScreen() {
   const [search, setSearch] = useState<JobSearchState>(EMPTY_SEARCH)
   const [filters, setFilters] = useState<JobFiltersState>(EMPTY_FILTERS)
-  const [savedIds, setSavedIds] = useState<string[]>(["mock-6"])
+  const [savedIds, setSavedIds] = useState<string[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const PAGE_SIZE = 10
   const [detailOpen, setDetailOpen] = useState(false)
   const [alertsOpen, setAlertsOpen] = useState(false)
   const [applyVagaId, setApplyVagaId] = useState<string | null>(null)
   const [quickChip, setQuickChip] = useState<string>("ALL")
+  const [page, setPage] = useState(0)
 
   // Estados de busca por proximidade
   const [proximityCoords, setProximityCoords] = useState<{ latitude: number; longitude: number } | null>(null)
   const [raioKm, setRaioKm] = useState<number>(25)
   const [isLocating, setIsLocating] = useState<boolean>(false)
   const [proximityError, setProximityError] = useState<string | null>(null)
-  const [proximityVagas, setProximityVagas] = useState<Vaga[] | null>(null)
-  const [loadingProximity, setLoadingProximity] = useState<boolean>(false)
-  const [proximityFetchError, setProximityFetchError] = useState<string | null>(null)
 
-  const { vagas, loading, error, refetch } = useVagas()
+  const serverFilters = useMemo(() => ({
+    titulo: search.query.trim() || undefined,
+    categoria: search.categoria === "TODAS" ? undefined : search.categoria,
+    modalidade: filters.modalidades.length === 1 ? filters.modalidades[0] : undefined,
+    salarioMin: filters.salarioMin > 0 ? filters.salarioMin : undefined,
+    cidade: search.cidade.trim() || undefined,
+    estado: search.estado.trim() || undefined,
+    ativa: true,
+    page,
+    size: PAGE_SIZE,
+  }), [filters.modalidades, filters.salarioMin, page, search])
+
+  const { vagas, totalPages: serverTotalPages, loading, error, refetch } = useVagas(serverFilters)
+  const filterSignature = JSON.stringify({ ...serverFilters, page: undefined })
+
+  useEffect(() => {
+    setPage(0)
+  }, [filterSignature])
+
+  useEffect(() => {
+    const hasSearchCriteria = Boolean(
+      serverFilters.titulo ||
+      serverFilters.categoria ||
+      serverFilters.modalidade ||
+      serverFilters.salarioMin ||
+      serverFilters.cidade ||
+      serverFilters.estado
+    )
+    if (!hasSearchCriteria) return
+
+    const timeout = setTimeout(() => {
+      const searchTag = serverFilters.categoria ?? serverFilters.titulo ?? "vagas"
+      void recordSearchMetadataAction({
+        query: serverFilters.titulo,
+        searchTag,
+        metadataJson: JSON.stringify({
+          filtros: serverFilters,
+          ordenacao: filters.sort,
+          proximidade: proximityCoords ? { raioKm } : null,
+        }),
+      })
+    }, 700)
+
+    return () => clearTimeout(timeout)
+  }, [filters.sort, raioKm, serverFilters, proximityCoords])
   const { porVaga: candidaturasPorVaga } = useCandidaturasPorVaga()
 
   const searchParams = useSearchParams()
@@ -104,51 +164,21 @@ export function JobsDashboardScreen() {
   }, [vagaParam])
 
   // Busca vagas próximas no backend quando o candidato ativar busca por proximidade
-  useEffect(() => {
-    if (!proximityCoords) {
-      setProximityVagas(null)
-      setProximityFetchError(null)
-      return
-    }
-
-    let active = true
-    setLoadingProximity(true)
-    setProximityFetchError(null)
-
-    getVagasProximas({
-      latitude: proximityCoords.latitude,
-      longitude: proximityCoords.longitude,
-      raioKm,
+  const proximity = useVagasProximas(
+    proximityCoords ? { latitude: proximityCoords.latitude, longitude: proximityCoords.longitude, raioKm } : null,
+  )
+  const proximityFetchError = proximity.error
+  const refetchProximity = proximity.refetch
+  const proximityVagas = useMemo<Vaga[] | null>(() => {
+    if (!proximityCoords || !proximity.vagas) return null
+    return proximity.vagas.map((v: Vaga) => {
+      let dist = v.distanciaKm
+      if (dist == null && v.latitude != null && v.longitude != null) {
+        dist = calculateDistanceKm(proximityCoords.latitude, proximityCoords.longitude, v.latitude, v.longitude)
+      }
+      return { ...v, distanciaKm: dist }
     })
-      .then((items) => {
-        if (!active) return
-        const enriched = items.map((v) => {
-          let dist = v.distanciaKm
-          if (dist == null && v.latitude != null && v.longitude != null) {
-            dist = calculateDistanceKm(
-              proximityCoords.latitude,
-              proximityCoords.longitude,
-              v.latitude,
-              v.longitude
-            )
-          }
-          return { ...v, distanciaKm: dist }
-        })
-        setProximityVagas(enriched)
-        setLoadingProximity(false)
-      })
-      .catch((err) => {
-        if (!active) return
-        setProximityFetchError(
-          err instanceof Error ? err.message : "Erro ao carregar vagas próximas."
-        )
-        setLoadingProximity(false)
-      })
-
-    return () => {
-      active = false
-    }
-  }, [proximityCoords, raioKm])
+  }, [proximityCoords, proximity.vagas])
 
   const handleRequestProximity = () => {
     setProximityError(null)
@@ -182,16 +212,13 @@ export function JobsDashboardScreen() {
 
   const handleClearProximity = () => {
     setProximityCoords(null)
-    setProximityVagas(null)
     setProximityError(null)
-    setProximityFetchError(null)
   }
 
-  // Se vagas da API estiverem vazias ou carregando, usamos as 6 vagas do mockup como base
-  const baseVagas: ExtendedVaga[] = useMemo(() => {
-    if (proximityCoords) return (proximityVagas as ExtendedVaga[]) ?? []
-    if (vagas && vagas.length > 0) return vagas as ExtendedVaga[]
-    return MOCK_DESIGN_VAGAS
+  // Apenas vagas buscadas do servidor (ou por proximidade)
+  const baseVagas: Vaga[] = useMemo(() => {
+    if (proximityCoords) return proximityVagas ?? []
+    return vagas ?? []
   }, [proximityCoords, proximityVagas, vagas])
 
   const results = useMemo(() => {
@@ -208,7 +235,6 @@ export function JobsDashboardScreen() {
         vaga.titulo.toLowerCase().includes(term) ||
         (vaga.nomeEmpresa ?? "").toLowerCase().includes(term) ||
         (CATEGORIA_LABELS[vaga.categoria] ?? "").toLowerCase().includes(term) ||
-        (vaga.displayCategory ?? "").toLowerCase().includes(term) ||
         (vaga.descricao ?? "").toLowerCase().includes(term)
 
       const matchesOutro =
@@ -235,10 +261,6 @@ export function JobsDashboardScreen() {
         filters.modalidades.length === 0 ||
         filters.modalidades.includes(vaga.modalidade)
 
-      const matchesNivel =
-        filters.niveis.length === 0 ||
-        filters.niveis.includes(vaga.nivelExperiencia)
-
       const matchesSalario =
         filters.salarioMin === 0 || vaga.salario >= filters.salarioMin
 
@@ -249,7 +271,6 @@ export function JobsDashboardScreen() {
         matchesEstado &&
         matchesCategoria &&
         matchesModalidade &&
-        matchesNivel &&
         matchesSalario
       )
     })
@@ -257,12 +278,42 @@ export function JobsDashboardScreen() {
     return sortVagas(matched, filters.sort, Boolean(proximityCoords))
   }, [baseVagas, search, filters, proximityCoords])
 
-  const selected = results.find((vaga) => vaga.id === selectedId) ?? results[0] ?? null
-  const applyVaga = (baseVagas.find((vaga) => vaga.id === applyVagaId) as Vaga) ?? null
+  const totalPages = useMemo(() => {
+    if (proximityCoords) {
+      return Math.max(1, Math.ceil(results.length / PAGE_SIZE))
+    }
+    if (serverTotalPages && serverTotalPages > 1) {
+      return serverTotalPages
+    }
+    if (vagas.length === PAGE_SIZE) {
+      return page + 2
+    }
+    return Math.max(1, page + 1)
+  }, [proximityCoords, results.length, serverTotalPages, vagas.length, page])
+
+  const displayedResults = useMemo(() => {
+    if (proximityCoords) {
+      return results.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+    }
+    return results
+  }, [proximityCoords, results, page])
+
+  const hasNextPage = page < totalPages - 1 || (!proximityCoords && vagas.length === PAGE_SIZE)
+  const hasPrevPage = page > 0
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const selected = displayedResults.find((vaga) => vaga.id === selectedId) ?? displayedResults[0] ?? null
+  const applyVaga = baseVagas.find((vaga) => vaga.id === applyVagaId) ?? null
   const activeFilterCount = countActiveFilters(filters) + (proximityCoords ? 1 : 0)
 
-  const toggleSave = (id: string) =>
+  const toggleSave = (id: string) => {
+    toastSuccess(savedIds.includes(id) ? "Vaga desmarcada nesta sessão." : "Vaga marcada nesta sessão.")
     setSavedIds((ids) => (ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]))
+  }
 
   const selectVaga = (id: string) => {
     setSelectedId(id)
@@ -279,15 +330,13 @@ export function JobsDashboardScreen() {
   const handleChipClick = (chipId: string) => {
     setQuickChip(chipId)
     if (chipId === "ALL") {
-      setFilters((prev) => ({ ...prev, modalidades: [], niveis: [] }))
+      setFilters((prev) => ({ ...prev, modalidades: [] }))
     } else if (chipId === "REMOTO") {
       setFilters((prev) => ({ ...prev, modalidades: ["REMOTO"] }))
     } else if (chipId === "HIBRIDO") {
       setFilters((prev) => ({ ...prev, modalidades: ["HIBRIDO"] }))
     } else if (chipId === "PRESENCIAL") {
       setFilters((prev) => ({ ...prev, modalidades: ["PRESENCIAL"] }))
-    } else if (chipId === "ESTAGIO") {
-      setFilters((prev) => ({ ...prev, niveis: ["ESTAGIO"] }))
     } else {
       // Outros chips rápidos
       setFilters((prev) => ({ ...prev, modalidades: [] }))
@@ -304,7 +353,6 @@ export function JobsDashboardScreen() {
     { id: "PRESENCIAL", label: "Presencial", icon: UserRound },
     { id: "FULL_TIME", label: "Tempo integral", icon: Clock },
     { id: "PART_TIME", label: "Meio período", icon: Clock4 },
-    { id: "ESTAGIO", label: "Estágio", icon: GraduationCap },
   ]
 
   return (
@@ -420,8 +468,8 @@ export function JobsDashboardScreen() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (proximityCoords) setRaioKm((r) => r)
-                    else refetch()
+                    if (proximityCoords) void refetchProximity()
+                    else void refetch()
                   }}
                   className="btn-primary"
                 >
@@ -441,9 +489,9 @@ export function JobsDashboardScreen() {
             </div>
           )}
 
-          {!isPageLoading && !pageError && results.length > 0 && (
+          {!isPageLoading && !pageError && displayedResults.length > 0 && (
             <ul className="grid list-none gap-4">
-              {results.map((vaga, index) => (
+              {displayedResults.map((vaga, index) => (
                 <motion.li
                   key={vaga.id}
                   initial={{ opacity: 0, y: 14 }}
@@ -461,6 +509,78 @@ export function JobsDashboardScreen() {
                 </motion.li>
               ))}
             </ul>
+          )}
+
+          {/* Paginação Numerada */}
+          {!isPageLoading && !pageError && displayedResults.length > 0 && totalPages > 1 && (
+            <nav
+              aria-label="Paginação de vagas"
+              className="mt-8 flex flex-col items-center justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-4 sm:px-6 shadow-xs sm:flex-row"
+            >
+              <p className="text-xs font-medium text-slate-500">
+                Página <span className="font-bold text-slate-900">{page + 1}</span> de{" "}
+                <span className="font-bold text-slate-900">{totalPages}</span>
+              </p>
+
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={!hasPrevPage || loading}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="size-4" />
+                  <span className="hidden sm:inline">Anterior</span>
+                </button>
+
+                {/* Números das páginas */}
+                <div className="flex items-center gap-1">
+                  {getVisiblePages(page, totalPages).map((p, idx) => {
+                    if (p === "...") {
+                      return (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="grid size-8 sm:size-9 place-items-center text-xs font-semibold text-slate-400 select-none"
+                        >
+                          ...
+                        </span>
+                      )
+                    }
+
+                    const pageIndex = p - 1
+                    const isActive = page === pageIndex
+
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => handlePageChange(pageIndex)}
+                        disabled={loading}
+                        aria-current={isActive ? "page" : undefined}
+                        className={cn(
+                          "grid size-8 sm:size-9 place-items-center rounded-xl text-xs font-semibold transition-all duration-200",
+                          isActive
+                            ? "bg-[#7c3aed] text-white shadow-xs font-bold scale-105"
+                            : "border border-slate-200/70 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                        )}
+                      >
+                        {p}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={!hasNextPage || loading}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="hidden sm:inline">Próxima</span>
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+            </nav>
           )}
 
           {!isPageLoading && !pageError && results.length === 0 && (
@@ -483,6 +603,7 @@ export function JobsDashboardScreen() {
           onSelectCompany={(companyName) => {
             setSearch((prev) => ({ ...prev, query: companyName }))
           }}
+          vagas={baseVagas}
         />
       </div>
 
@@ -511,7 +632,7 @@ export function JobsDashboardScreen() {
               onClick={(e) => e.stopPropagation()}
             >
               <JobDetailPanel
-                vaga={selected as Vaga}
+                vaga={selected}
                 saved={savedIds.includes(selected.id)}
                 candidatura={candidaturasPorVaga.get(selected.id) ?? null}
                 onToggleSave={() => toggleSave(selected.id)}

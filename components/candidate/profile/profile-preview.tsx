@@ -6,7 +6,7 @@ export function ProfilePreview({
   profile,
   form,
 }: {
-  profile: CandidateProfile
+  profile: CandidateProfile | null
   form: UpdateCandidateProfileDto
 }) {
   const local = [form.city, form.state].filter(Boolean).join(" · ")
@@ -19,7 +19,7 @@ export function ProfilePreview({
       </div>
 
       <h3 className="mt-4 text-base font-bold tracking-tight text-foreground text-pretty">
-        {profile.userName || "Seu nome"}
+        {profile?.userName || "Seu nome"}
       </h3>
       <p className="mt-0.5 text-sm font-semibold text-primary-subtle-foreground text-pretty">
         {form.headline || "Título profissional não informado"}
@@ -52,7 +52,7 @@ export function ProfilePreview({
         <div>
           <dt className="text-xs font-semibold text-subtle-foreground">Experiências e projetos</dt>
           <dd className="mt-0.5 text-sm text-strong-foreground">
-            {(profile.experiences?.length ?? 0)} · {(profile.projects?.length ?? 0)}
+            {(profile?.experiences?.length ?? 0)} · {(profile?.projects?.length ?? 0)}
           </dd>
         </div>
       </dl>

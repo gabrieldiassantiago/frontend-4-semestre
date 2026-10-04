@@ -1,5 +1,7 @@
 // ── Enums ──────────────────────────────────────────────────────────────────
 
+import type { EtapaProcesso } from "./candidatura.types"
+
 export type VagaModalidade = "PRESENCIAL" | "REMOTO" | "HIBRIDO"
 
 export type NivelExperiencia =
@@ -79,6 +81,7 @@ export interface Vaga {
   beneficios?: string
   companyProfileId: string
   nomeEmpresa?: string
+  logoUrlEmpresa?: string | null
   cidade: string
   estado: string
   latitude?: number
@@ -86,7 +89,9 @@ export interface Vaga {
   distanciaKm?: number
   categoria: VagaCategoria
   modalidade: VagaModalidade
-  nivelExperiencia: NivelExperiencia
+  metaTags?: string[]
+  nivelExperiencia?: NivelExperiencia
+  etapas?: EtapaVaga[]
   ativa: boolean
   createdAt?: string
   updatedAt?: string
@@ -105,7 +110,15 @@ export interface CreateVagaDto {
   estado?: string
   categoria: VagaCategoria
   modalidade: VagaModalidade
-  nivelExperiencia: NivelExperiencia
+  metaTags?: string[]
+  nivelExperiencia?: NivelExperiencia
+  etapas?: EtapaProcesso[]
+}
+
+export interface EtapaVaga {
+  etapa: EtapaProcesso
+  descricao: string
+  ordem: number
 }
 
 /** Payload para atualizar uma vaga (todos os campos são opcionais) */
@@ -120,7 +133,6 @@ export interface UpdateVagaDto {
   estado?: string
   categoria?: VagaCategoria
   modalidade?: VagaModalidade
-  nivelExperiencia?: NivelExperiencia
   ativa?: boolean
 }
 
@@ -136,7 +148,6 @@ export interface VagaFilters {
   titulo?: string
   modalidade?: VagaModalidade
   categoria?: VagaCategoria
-  nivelExperiencia?: NivelExperiencia
   cidade?: string
   estado?: string
   salarioMin?: number
@@ -144,4 +155,6 @@ export interface VagaFilters {
   latitude?: number
   longitude?: number
   raioKm?: number
+  page?: number
+  size?: number
 }

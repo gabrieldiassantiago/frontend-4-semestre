@@ -1,13 +1,24 @@
-import React from "react"
+"use client"
+
+import React, { useState } from "react"
 import { cn } from "@/lib/utils"
 
 interface CompanyBrandLogoProps {
   company: string
+  logoUrl?: string | null
   variant?: "unisal-purple" | "unisal-navy" | "itau" | "accenture" | "google" | "netflix"
   className?: string
 }
 
-export function CompanyBrandLogo({ company, variant, className }: CompanyBrandLogoProps) {
+export function CompanyBrandLogo({ company, logoUrl, variant, className }: CompanyBrandLogoProps) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  if (logoUrl && failedUrl !== logoUrl) {
+    return (
+      <div className={cn("grid size-12 shrink-0 place-items-center overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xs", className)}>
+        <img src={logoUrl} alt={`Logotipo de ${company}`} loading="lazy" className="size-full object-contain p-1" onError={() => setFailedUrl(logoUrl)} />
+      </div>
+    )
+  }
   const norm = company.toLowerCase()
 
   // Google SVG logo
@@ -74,11 +85,13 @@ export function CompanyBrandLogo({ company, variant, className }: CompanyBrandLo
     return (
       <div
         className={cn(
-          "grid size-12 shrink-0 place-items-center rounded-2xl bg-[#008080] text-white shadow-xs",
+          "grid size-12 shrink-0 place-items-center rounded-2xl bg-white border border-slate-100 shadow-xs",
           className
         )}
       >
-        <span className="font-bold text-xl leading-none">S</span>
+        <svg className="size-6 text-[#7c3aed]" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 3.5L16.5 12L6 20.5H10.5L21 12L10.5 3.5H6Z" />
+        </svg>
       </div>
     )
   }

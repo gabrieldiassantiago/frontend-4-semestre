@@ -19,12 +19,12 @@ import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { InputWithIcon } from "@/components/ui/form-field"
 import { VagaSelectionSkeleton, KanbanSkeleton, EmptyState, ErrorState } from "@/components/ui/states"
 import { StatusBadge } from "@/components/candidatura/candidatura-ui"
-import { useCandidaturasEmpresa } from "@/lib/hooks/useCandidaturas"
-import { useCompanyVagas } from "@/lib/hooks/useCompanyVagas"
+import { useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
+import { useCompanyVagas } from "@/lib/queries/use-vagas"
 import {
-  ETAPAS,
   ETAPA_DOT,
   ETAPA_LABELS,
+  etapasDaVaga,
   type Candidatura,
   type StatusCandidatura,
 } from "@/lib/types/candidatura.types"
@@ -53,14 +53,14 @@ function VagaSelectionScreen({
   }, [vagas, query])
 
   return (
-    <PageShell className="max-w-4xl py-8">
+    <PageShell className="max-w-[1380px] py-8">
       <PageHeader
         eyebrow="Pipeline"
         title="Processos seletivos"
         description="Selecione uma vaga para visualizar o funil de candidaturas."
       />
 
-      <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-border-subtle/70 bg-card/60 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:px-6">
+      <div className="mt-8 flex flex-col gap-4 rounded-xl border border-border bg-card p-4  sm:flex-row sm:items-center sm:px-6">
         <InputWithIcon
           icon={Search}
           type="search"
@@ -78,7 +78,7 @@ function VagaSelectionScreen({
 
       <div className="mt-6">
         {loading ? (
-          <div className="rounded-2xl border border-border-subtle/70 bg-card/60 p-6">
+          <div className="rounded-xl border border-border bg-card p-6">
             <VagaSelectionSkeleton rows={3} />
           </div>
         ) : filtered.length === 0 ? (
@@ -92,17 +92,18 @@ function VagaSelectionScreen({
             }
           />
         ) : (
-          <ul className="space-y-3">
-            {filtered.map((vaga) => (
+          <ul className="motion-stagger space-y-3">
+            {filtered.map((vaga, index) => (
               <li key={vaga.id}>
                 <button
                   type="button"
                   onClick={() => onSelect(vaga)}
-                  className="group w-full rounded-2xl border border-border-subtle/70 bg-card/60 p-5 text-left backdrop-blur-sm transition-all hover:border-primary/30 hover:bg-card hover:shadow-md active:scale-[0.99]"
+                  style={{ "--stagger-index": index } as React.CSSProperties}
+                  className="group w-full rounded-xl border border-border bg-card p-5 text-left  transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card hover:shadow-raised active:scale-[0.99]"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-4">
-                      <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                      <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                         <BriefcaseBusiness className="size-5" />
                       </div>
                       <div className="min-w-0">
@@ -170,11 +171,12 @@ function VagaKanbanScreen({
   )
 
   const { candidaturas, loading, refreshing, error, refetch } = useCandidaturasEmpresa(filters)
+  const fluxo = useMemo(() => etapasDaVaga(vaga.etapas), [vaga.etapas])
 
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase()
     if (!termo) return candidaturas
-    return candidaturas.filter((item) =>
+    return candidaturas.filter((item: Candidatura) =>
       [item.candidatoNome, item.candidatoEmail]
         .filter(Boolean)
         .some((campo) => (campo as string).toLowerCase().includes(termo)),
@@ -182,15 +184,15 @@ function VagaKanbanScreen({
   }, [candidaturas, busca])
 
   const colunas = useMemo(() => {
-    const map = new Map<string, Candidatura[]>(ETAPAS.map((etapa) => [etapa, []]))
-    visiveis.forEach((item) => map.get(item.etapaAtual)?.push(item))
+    const map = new Map<string, Candidatura[]>(fluxo.map((etapa) => [etapa, []]))
+    visiveis.forEach((item: Candidatura) => map.get(item.etapaAtual)?.push(item))
     return map
-  }, [visiveis])
+  }, [fluxo, visiveis])
 
   const temFiltro = Boolean(busca.trim()) || status !== ""
 
   return (
-    <PageShell>
+    <PageShell className="motion-enter">
       {/* Header com breadcrumb de volta */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
@@ -303,16 +305,17 @@ function VagaKanbanScreen({
       ) : (
         <div className="mt-6 -mx-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
           <div className="flex min-w-max gap-3 lg:min-w-0">
-            {ETAPAS.map((etapa) => {
+            {fluxo.map((etapa, index) => {
               const items = colunas.get(etapa) ?? []
               const isEmpty = items.length === 0
 
               return (
                 <section
                   key={etapa}
+                  style={{ "--stagger-index": index } as React.CSSProperties}
                   className={cn(
-                    "flex w-64 shrink-0 flex-col rounded-2xl border bg-card shadow-card lg:w-auto lg:flex-1",
-                    isEmpty ? "border-border-subtle/50" : "border-border",
+                    "motion-enter flex w-64 shrink-0 flex-col rounded-xl border bg-card shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-raised lg:w-auto lg:flex-1",
+                    isEmpty ? "border-border" : "border-border",
                   )}
                 >
                   {/* Cabeçalho da coluna */}
@@ -351,7 +354,7 @@ function VagaKanbanScreen({
                             href={`/empresa/candidatos/${encodeURIComponent(item.id)}`}
                             className={cn(
                               "flex w-full items-center gap-2.5 rounded-xl border p-2.5 text-left transition-all hover:shadow-sm active:scale-[0.98]",
-                              "border-border-subtle/70 bg-muted/40 hover:border-border hover:bg-muted/60",
+                              "border-border bg-muted/40 hover:border-border hover:bg-muted/60",
                             )}
                           >
                             <EntityAvatar name={item.candidatoNome} size="sm" />
@@ -385,7 +388,7 @@ function VagaKanbanScreen({
 export function CompanyProcessesScreen({ vagaId }: { vagaId?: string }) {
   const { vagas, loading } = useCompanyVagas()
   const router = useRouter()
-  const vagaSelecionada = vagas.find(vaga => vaga.id === vagaId)
+  const vagaSelecionada = vagas.find((vaga: Vaga) => vaga.id === vagaId)
 
   if (vagaSelecionada) {
     return (
@@ -400,7 +403,7 @@ export function CompanyProcessesScreen({ vagaId }: { vagaId?: string }) {
     <VagaSelectionScreen
       vagas={vagas}
       loading={loading}
-      onSelect={vaga => router.push(`/empresa/processos?vaga=${encodeURIComponent(vaga.id)}`)}
+      onSelect={(vaga: Vaga) => router.push(`/empresa/processos?vaga=${encodeURIComponent(vaga.id)}`)}
     />
   )
 }

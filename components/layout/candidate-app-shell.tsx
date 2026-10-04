@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
+  ArrowRight,
   Bell,
   Briefcase,
   ChevronLeft,
@@ -14,6 +15,7 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  Search,
   Settings,
   ShoppingBag,
   UserRound,
@@ -22,10 +24,11 @@ import {
 import { SelectaLogo } from "@/components/ui/selecta-logo"
 import { AppTabBar, SidebarNav, type NavItem } from "@/components/layout/app-nav"
 import { UserMenu } from "@/components/layout/user-menu"
-import { useLogout } from "@/lib/hooks/useLogout"
+import { useCurrentUser, useLogout } from "@/lib/queries/use-auth"
 import { getInitials } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import { useCandidateProfile } from "@/lib/hooks/useCandidateProfile"
+import { useCandidateProfile } from "@/lib/queries/use-candidate-profile"
+import { getProfileCompletion } from "@/lib/candidate-completion"
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/visao-geral", label: "Visão geral", icon: LayoutGrid },
@@ -37,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 const MOBILE_TAB_ITEMS: NavItem[] = [
+  { href: "/visao-geral", label: "Início", icon: LayoutGrid },
   { href: "/vagas", label: "Vagas", icon: Briefcase },
   { href: "/candidaturas", label: "Candidaturas", icon: FileText },
   { href: "/mensagens", label: "Mensagens", icon: MessageSquare, dotBadge: true },
@@ -50,14 +54,66 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const [greeting, setGreeting] = useState("Boa noite")
   const logout = useLogout("/auth")
+  const { user: currentUser } = useCurrentUser()
 
-  const displayName = profile?.userName?.trim() || "Gab"
-  const initials = getInitials(displayName) || "G"
+  const displayName = currentUser?.name?.trim() || profile?.userName?.trim() || "Usuário"
+  const displayEmail = currentUser?.email?.trim() || profile?.userEmail?.trim() || undefined
+  const initials = getInitials(displayName)
 
   useEffect(() => {
     const hour = new Date().getHours()
     setGreeting(hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite")
   }, [])
+
+  const headerInfo = useMemo(() => {
+    const firstName = displayName.split(" ")[0]
+    if (pathname.startsWith("/visao-geral")) {
+      return {
+        title: `${greeting}, ${firstName}! 👋`,
+        subtitle: "Aqui está o resumo do seu momento profissional e processos seletivos.",
+      }
+    }
+    if (pathname.startsWith("/vagas") || pathname === "/dashboard") {
+      return {
+        title: `${greeting}, ${firstName}!`,
+        subtitle: "Encontre oportunidades que combinam com o seu perfil.",
+      }
+    }
+    if (pathname.startsWith("/candidaturas")) {
+      return {
+        title: "Minhas Candidaturas",
+        subtitle: "Acompanhe a evolução de cada etapa dos seus processos seletivos.",
+      }
+    }
+    if (pathname.startsWith("/mensagens")) {
+      return {
+        title: "Mensagens",
+        subtitle: "Converse com recrutadores e acompanhe feedbacks.",
+      }
+    }
+    if (pathname.startsWith("/profile")) {
+      return {
+        title: "Meu Perfil",
+        subtitle: "Gerencie suas informações, experiências, habilidades e currículo.",
+      }
+    }
+    if (pathname.startsWith("/notificacoes")) {
+      return {
+        title: "Notificações",
+        subtitle: "Alertas e novidades sobre suas vagas e candidaturas.",
+      }
+    }
+    if (pathname.startsWith("/configuracoes")) {
+      return {
+        title: "Configurações",
+        subtitle: "Preferências e dados da sua conta.",
+      }
+    }
+    return {
+      title: `${greeting}, ${firstName}!`,
+      subtitle: "Bem-vindo ao seu painel da Selecta.",
+    }
+  }, [pathname, greeting, displayName])
 
   useEffect(() => {
     if (!mobileDrawerOpen) return
@@ -100,7 +156,7 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
           )}
         >
           <Link
-            href="/vagas"
+            href="/visao-geral"
             aria-label="Selecta - ir para o início"
             className={cn("flex flex-col overflow-hidden", collapsed && "items-center justify-center")}
           >
@@ -140,28 +196,43 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
         <div className="p-3.5 space-y-2">
           {!collapsed && (
             <Link
-              href="/profile/candidato"
+              href="/profile/candidato/completar"
               className="group relative block rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs transition-all hover:border-[#7c3aed]/40 hover:shadow-sm"
             >
-              <div className="flex items-start gap-2.5">
-                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-[#ede9fe] text-[#7c3aed]">
-                  <ShoppingBag className="size-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <p className="text-xs font-bold text-slate-900">Complete seu perfil</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="relative size-9 shrink-0">
+                    <svg className="size-9 -rotate-90" viewBox="0 0 36 36">
+                      <path
+                        className="text-slate-100"
+                        strokeWidth="3.5"
+                        stroke="currentColor"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                      <path
+                        className="text-[#7c3aed]"
+                        strokeDasharray={`${profile ? getProfileCompletion(profile).value : 70}, 100`}
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                        stroke="currentColor"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                    </svg>
                   </div>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <div className="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">
-                      <div className="h-full w-[70%] rounded-full bg-[#7c3aed]" />
-                    </div>
-                    <span className="text-[10px] font-bold text-[#7c3aed]">70%</span>
+                  <div>
+                    <p className="text-[11px] font-medium text-slate-500">Seu perfil</p>
+                    <p className="text-xs font-bold text-slate-900">
+                      {profile ? getProfileCompletion(profile).value : 70}% completo
+                    </p>
                   </div>
-                  <p className="mt-1.5 text-[10px] leading-tight text-slate-500">
-                    Aumente suas chances de ser encontrado.
-                  </p>
                 </div>
+                <ArrowRight className="size-4 text-[#7c3aed] transition-transform group-hover:translate-x-0.5" />
               </div>
+              <p className="mt-2 text-[10px] leading-snug text-slate-500">
+                Complete seu perfil para receber vagas mais alinhadas com você.
+              </p>
             </Link>
           )}
 
@@ -189,7 +260,7 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
         )}
       >
         <header className="sticky top-0 z-30 flex h-16 sm:h-20 items-center justify-between border-b border-slate-200/60 bg-[#fafafc]/95 px-4 backdrop-blur-md sm:px-8">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileDrawerOpen(true)}
@@ -199,16 +270,18 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
             >
               <Menu className="size-5" />
             </button>
-            <Link href="/vagas" className="shrink-0 lg:hidden">
+            <Link href="/visao-geral" className="shrink-0 lg:hidden">
               <SelectaLogo />
             </Link>
-            <div className="hidden min-w-0 flex-col leading-tight lg:flex">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                {greeting}, {displayName.split(" ")[0]}!
-              </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Encontre oportunidades que combinam com o seu perfil.
-              </p>
+
+            {/* Barra de Busca Top Navbar */}
+            <div className="relative hidden w-full max-w-lg lg:block">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar vagas, empresas ou palavras-chave..."
+                className="w-full rounded-xl bg-slate-100/80 py-2.5 pl-10 pr-4 text-xs text-slate-800 placeholder:text-slate-400 border border-slate-200/50 transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed]/40"
+              />
             </div>
           </div>
 
@@ -229,7 +302,7 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
             <div className="hidden lg:block">
               <UserMenu
                 name={displayName}
-                secondary={profile?.userEmail || undefined}
+                secondary={displayEmail}
                 side="bottom"
                 align="right"
                 avatar={
@@ -246,7 +319,7 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
             <div className="lg:hidden">
               <UserMenu
                 name={displayName}
-                secondary={profile?.userEmail || undefined}
+                secondary={displayEmail}
                 avatarOnly
                 side="bottom"
                 align="right"
@@ -262,7 +335,7 @@ export function CandidateAppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 pb-20 lg:pb-8">{children}</main>
+        <main className="min-w-0 flex-1 pb-20 lg:pb-8">{children}</main>
       </div>
 
       {/* DRAWER MOBILE */}

@@ -1,0 +1,10 @@
+"use client"
+import { useState } from "react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { CandidateProfileScreen } from "@/components/candidate/profile/candidate-profile-screen"
+import { SelectaLogo } from "@/components/ui/selecta-logo"
+import { queryKeys } from "@/lib/queries/keys"
+export function ProfilePreview() {
+ const [client] = useState(() => { const client = new QueryClient({defaultOptions:{queries:{staleTime:Infinity,retry:false,refetchOnMount:false,refetchOnWindowFocus:false}}}); client.setQueryData(queryKeys.candidateProfile.me(),{id:"profile-preview",userId:"preview",userName:"Marina Oliveira",userEmail:"marina@example.com",headline:"Estudante de Administração",summary:"Tenho interesse em gestão de projetos e experiência com atendimento ao cliente.",phone:"(11) 91234-5678",city:"Campinas",state:"SP",institution:"Universidade",course:"Administração",currentSemester:4,expectedGraduationYear:2028,skills:["Comunicação","Excel","Trabalho em equipe"],experiences:[{id:"experience-preview",companyName:"Horizonte Serviços",role:"Assistente administrativo",startDate:"2025-02",isCurrent:true,description:"Organização de documentos e apoio à equipe de atendimento."}],projects:[{id:"project-preview",title:"Planejamento de evento acadêmico",description:"Organização de um encontro de empreendedorismo para estudantes.",toolsAndSkills:["Planejamento","Comunicação"]}]}); return client })
+ return <QueryClientProvider client={client}><div className="min-h-dvh bg-surface" onClickCapture={event=>{const target=event.target as HTMLElement;if(target.closest('a[href]') || /Salvar alterações|Excluir|Remover experiência|Remover projeto/.test(target.closest('button')?.textContent || "")){event.preventDefault();event.stopPropagation()}}} onSubmitCapture={event=>{event.preventDefault();event.stopPropagation()}}><header className="border-b border-border bg-card px-6 py-5"><SelectaLogo className="h-7" /></header><CandidateProfileScreen /></div></QueryClientProvider>
+}

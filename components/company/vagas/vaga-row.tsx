@@ -19,10 +19,10 @@ export function VagaRow({
   onToggleActive,
 }: VagaRowProps) {
   return (
-    <div className="group flex items-center justify-between gap-4 p-4 transition-all duration-200 hover:bg-muted/30 sm:px-6">
+    <div className="group flex flex-col items-start justify-between gap-4 p-5 sm:flex-row sm:items-center transition-all duration-200 hover:bg-muted/30 sm:px-6">
       <div className="flex min-w-0 items-center gap-4">
         {/* Ícone com cantos suaves */}
-        <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-muted/60 text-muted-foreground transition-colors group-hover:text-primary">
+        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted/60 text-muted-foreground transition-colors group-hover:text-primary">
           <BriefcaseBusiness className="size-4" />
         </div>
 
@@ -44,14 +44,14 @@ export function VagaRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-3">
+      <div className="flex w-full shrink-0 items-center justify-between gap-3 sm:w-auto sm:justify-end">
         {/* Ponto de status sutil */}
         {onToggleActive ? (
           <button
             type="button"
             onClick={onToggleActive}
             aria-label={vaga.ativa ? "Pausar vaga" : "Publicar vaga"}
-            className="flex items-center gap-1.5 rounded-full border border-border-subtle/80 bg-background/50 px-3 py-1 text-xs font-medium text-foreground transition-all hover:border-border hover:bg-background active:scale-95"
+            className="flex items-center gap-1.5 rounded-md border border-border-subtle/80 bg-background/50 px-3 py-1 text-xs font-medium text-foreground transition-all hover:border-border hover:bg-background "
           >
             <span
               className={cn(
@@ -79,7 +79,7 @@ export function VagaRow({
             <Link
               href={`/empresa/vagas/${vaga.id}/editar`}
               aria-label={`Editar ${vaga.titulo}`}
-              className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95"
+              className="grid size-10 place-items-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground "
             >
               <Pencil className="size-3.5" />
             </Link>
@@ -89,7 +89,7 @@ export function VagaRow({
                 onClick={onDelete}
                 disabled={deleting}
                 aria-label={`Excluir ${vaga.titulo}`}
-                className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive active:scale-95 disabled:opacity-40"
+                className="grid size-10 place-items-center rounded-full text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive  disabled:opacity-40"
               >
                 <Trash2 className="size-3.5" />
               </button>

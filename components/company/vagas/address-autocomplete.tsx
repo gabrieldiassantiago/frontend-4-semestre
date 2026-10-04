@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef, useTransition } from "react"
-import { MapPin, Search, CheckCircle2, Navigation, Loader2, X, AlertCircle } from "lucide-react"
+import { MapPin, Search, Navigation, Loader2, X, AlertCircle } from "lucide-react"
 import { searchAddress, reverseGeocode, type GeocodingResult } from "@/lib/services/geocoding.service"
+import { hasCompanyLocation } from "@/lib/utils/company-location"
 
 interface AddressAutocompleteProps {
   onSelectLocation: (loc: {
@@ -17,6 +18,12 @@ interface AddressAutocompleteProps {
   initialCoords?: { latitude: number; longitude: number } | null
   error?: string
   disabled?: boolean
+  inputId?: string
+  label?: string
+  placeholder?: string
+  onClear?: () => void
+  requireCityAndState?: boolean
+  showCoordinates?: boolean
 }
 
 export function AddressAutocomplete({
@@ -26,6 +33,12 @@ export function AddressAutocomplete({
   initialCoords = null,
   error,
   disabled = false,
+  inputId,
+  label = "Buscar endereço da vaga",
+  placeholder = "Digite o endereço ou local da vaga (ex: Av. Paulista, São Paulo)",
+  onClear,
+  requireCityAndState = false,
+  showCoordinates = true,
 }: AddressAutocompleteProps) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<GeocodingResult[]>([])
@@ -38,19 +51,29 @@ export function AddressAutocomplete({
   const [, startTransition] = useTransition()
   const containerRef = useRef<HTMLDivElement>(null)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const requestRef = useRef(0)
+  const initialLatitude = initialCoords?.latitude
+  const initialLongitude = initialCoords?.longitude
 
   // Inicializa com dados recebidos se houver
   useEffect(() => {
-    if (initialCoords && (initialCity || initialState)) {
+    if (initialLatitude != null && initialLongitude != null && (initialCity || initialState)) {
       setSelectedResult({
-        latitude: initialCoords.latitude,
-        longitude: initialCoords.longitude,
+        latitude: initialLatitude,
+        longitude: initialLongitude,
         cidade: initialCity,
         estado: initialState,
         placeName: `${initialCity}${initialState ? ` - ${initialState}` : ""}`,
       })
+    } else {
+      setSelectedResult(null)
     }
-  }, [initialCoords, initialCity, initialState])
+  }, [initialLatitude, initialLongitude, initialCity, initialState])
+
+  useEffect(() => () => {
+    requestRef.current += 1
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
+  }, [])
 
   // Fecha dropdown ao clicar fora
   useEffect(() => {
@@ -64,7 +87,10 @@ export function AddressAutocomplete({
   }, [])
 
   const handleInputChange = (val: string) => {
+    const request = ++requestRef.current
     setQuery(val)
+    setResults([])
+    setIsOpen(false)
     setLocationError(null)
 
     if (debounceTimeoutRef.current) {
@@ -81,19 +107,31 @@ export function AddressAutocomplete({
     setIsSearching(true)
     debounceTimeoutRef.current = setTimeout(async () => {
       try {
-        const items = await searchAddress(val)
+        const found = await searchAddress(val)
+        if (request !== requestRef.current) return
+        const items = requireCityAndState ? found.filter((item) => hasCompanyLocation({ city: item.cidade, state: item.estado, latitude: item.latitude, longitude: item.longitude })) : found
         startTransition(() => {
           setResults(items)
           setIsOpen(items.length > 0)
           setIsSearching(false)
+          if (items.length === 0) setLocationError("Nenhum local encontrado. Tente a cidade e o estado ou um endereço mais completo.")
         })
       } catch {
+        if (request !== requestRef.current) return
         setIsSearching(false)
+        setLocationError("Não foi possível buscar agora. Tente novamente.")
       }
     }, 350)
   }
 
   const handleSelect = (item: GeocodingResult) => {
+    if (requireCityAndState && !hasCompanyLocation({ city: item.cidade, state: item.estado, latitude: item.latitude, longitude: item.longitude })) {
+      setLocationError("Não foi possível confirmar cidade e estado. Busque e selecione outro resultado.")
+      return
+    }
+    requestRef.current += 1
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
+    setIsSearching(false)
     setSelectedResult(item)
     setQuery("")
     setIsOpen(false)
@@ -149,31 +187,35 @@ export function AddressAutocomplete({
   }
 
   const handleClearSelected = () => {
+    requestRef.current += 1
     setSelectedResult(null)
     setQuery("")
+    setResults([])
+    setIsOpen(false)
+    onClear?.()
   }
 
   return (
     <div className="space-y-3" ref={containerRef}>
       {selectedResult ? (
         <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary-subtle/40 p-3.5 transition-colors">
-          <div className="flex items-start gap-3">
+          <div className="flex min-w-0 items-start gap-3">
             <div className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
               <MapPin className="size-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-bold text-strong-foreground">
                 {selectedResult.cidade} - {selectedResult.estado}
               </p>
               <p className="text-xs text-muted-foreground line-clamp-1">
                 {selectedResult.placeName}
               </p>
-              <div className="mt-1 flex items-center gap-2">
+              {showCoordinates && <div className="mt-1 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded bg-surface px-1.5 py-0.5 text-[11px] font-medium text-subtle-foreground border border-border">
                   <span className="size-1.5 rounded-full bg-success inline-block" />
                   Lat: {selectedResult.latitude.toFixed(4)}, Lng: {selectedResult.longitude.toFixed(4)}
                 </span>
-              </div>
+              </div>}
             </div>
           </div>
 
@@ -181,7 +223,7 @@ export function AddressAutocomplete({
             type="button"
             onClick={handleClearSelected}
             disabled={disabled}
-            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline px-2 py-1"
+            className="flex min-h-11 shrink-0 items-center gap-1 text-xs font-semibold text-primary hover:underline px-2 py-1"
           >
             <X className="size-3.5" />
             Alterar
@@ -198,16 +240,19 @@ export function AddressAutocomplete({
               )}
             </div>
             <input
+              id={inputId}
               type="text"
               value={query}
-              disabled={disabled}
+              disabled={disabled || isLocating}
               onChange={(e) => handleInputChange(e.target.value)}
               onFocus={() => {
                 if (results.length > 0) setIsOpen(true)
               }}
-              placeholder="Digite o endereço ou local da vaga (ex: Av. Paulista, São Paulo)"
-              aria-label="Buscar endereço da vaga"
-              className="field-input pl-10 pr-24"
+              placeholder={placeholder}
+              aria-label={label}
+              autoComplete="off"
+              onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); if (event.key === "Escape") setIsOpen(false) }}
+              className="field-input pl-10 pr-24 text-base"
             />
 
             <button
@@ -215,7 +260,7 @@ export function AddressAutocomplete({
               onClick={handleUseCurrentLocation}
               disabled={disabled || isLocating}
               title="Detectar minha localização"
-              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded-lg bg-surface border border-border px-2.5 py-1 text-xs font-semibold text-strong-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              className="absolute right-1 top-1/2 min-h-11 -translate-y-1/2 inline-flex items-center gap-1 rounded-lg bg-surface border border-border px-2.5 py-1 text-xs font-semibold text-strong-foreground hover:bg-muted transition-colors disabled:opacity-50"
             >
               {isLocating ? (
                 <Loader2 className="size-3.5 animate-spin text-primary" />
@@ -235,7 +280,7 @@ export function AddressAutocomplete({
 
           {isOpen && results.length > 0 && (
             <ul
-              role="listbox"
+              aria-label="Resultados da busca de localização"
               className="relative z-30 max-h-60 w-full overflow-y-auto rounded-xl border border-border bg-card p-1 shadow-overlay"
             >
               {results.map((item, idx) => (
@@ -243,7 +288,8 @@ export function AddressAutocomplete({
                   <button
                     type="button"
                     onClick={() => handleSelect(item)}
-                    className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-primary-subtle hover:text-primary-subtle-foreground"
+                    disabled={disabled || isLocating}
+                    className="flex min-h-11 w-full items-start gap-2.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-primary-subtle hover:text-primary-subtle-foreground"
                   >
                     <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
                     <div className="min-w-0 flex-1">
@@ -251,9 +297,9 @@ export function AddressAutocomplete({
                         <span className="text-sm font-semibold text-strong-foreground">
                           {item.cidade} - {item.estado}
                         </span>
-                        <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {showCoordinates && <span className="shrink-0 text-[11px] text-muted-foreground">
                           {item.latitude.toFixed(2)}, {item.longitude.toFixed(2)}
-                        </span>
+                        </span>}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">{item.placeName}</p>
                     </div>

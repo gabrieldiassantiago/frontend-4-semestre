@@ -18,8 +18,35 @@
 @keyframes skeleton-shimmer {
   to { transform: translateX(100%); }
 }
+
+@keyframes selecta-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes selecta-pop {
+  0% { opacity: 0; transform: scale(.98); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.motion-enter {
+  animation: selecta-enter 420ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.motion-pop {
+  animation: selecta-pop 280ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.motion-stagger > * {
+  animation: selecta-enter 420ms cubic-bezier(.22, 1, .36, 1) both;
+  animation-delay: calc(var(--stagger-index, 0) * 55ms);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .skeleton-shimmer::after { animation: none; display: none; }
+  .skeleton-shimmer::after,
+  .motion-enter,
+  .motion-pop,
+  .motion-stagger > * { animation: none; }
 }
 
 /*
@@ -227,7 +254,8 @@
       background-color 150ms ease,
       border-color 150ms ease,
       color 150ms ease,
-      transform 150ms ease;
+      transform 150ms ease,
+      box-shadow 150ms ease;
   }
 
   .btn-base:active:not(:disabled),
@@ -252,6 +280,8 @@
 
   .btn-primary:hover:not(:disabled) {
     background-color: var(--primary-hover);
+    box-shadow: 0 5px 14px -6px rgba(109, 40, 217, 0.75);
+    transform: translateY(-1px);
   }
 
   .btn-secondary {
@@ -263,6 +293,8 @@
   .btn-secondary:hover:not(:disabled) {
     background-color: var(--muted);
     border-color: var(--border-strong);
+    box-shadow: var(--shadow-card);
+    transform: translateY(-1px);
   }
 
   .btn-ghost {
@@ -272,6 +304,7 @@
   .btn-ghost:hover:not(:disabled) {
     background-color: var(--muted);
     color: var(--foreground);
+    transform: translateY(-1px);
   }
 }
 
@@ -296,3 +329,60 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Empresa: superfícies sólidas, controles consistentes e conteúdo mais amplo. */
+.company-workspace {
+  --radius: .5rem;
+  --radius-lg: .75rem;
+  --radius-xl: 1rem;
+  --surface: #f6f7f9;
+  --muted: #f3f4f6;
+  --border-subtle: #e9ebef;
+}
+.company-workspace .field-input {
+  min-height: 46px;
+  border-radius: 8px;
+  background: var(--card);
+  border-color: var(--border-strong);
+  font-size: 14px;
+}
+.company-workspace textarea.field-input { line-height: 1.75; }
+.company-workspace .btn-primary:hover:not(:disabled),
+.company-workspace .btn-secondary:hover:not(:disabled),
+.company-workspace .btn-ghost:hover:not(:disabled) { transform: none; box-shadow: none; }
+.company-panel { min-width: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+.company-panel-heading { border-bottom: 1px solid var(--border); padding: 20px 24px; }
+.company-panel-heading h2 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.company-panel-heading p { margin-top: 5px; font-size: 12px; line-height: 1.6; color: var(--muted-foreground); }
+.company-content > main > header h1 { font-weight: 600; }
+.company-profile .field-input:disabled { background: var(--surface); }
+@media (max-width: 639px) {
+  .company-panel-heading { padding: 18px 20px; }
+  .company-savebar { align-items: stretch; }
+  .company-savebar > div { width: 100%; }
+  .company-savebar button { flex: 1; }
+}
+
+/* Página pública de uma vaga: a mesma base visual das áreas internas. */
+.public-job { --radius: .5rem; --surface: #f6f7f9; }
+.public-job-description p,
+.public-job-description li { font-size: 15px; line-height: 1.85; }
+.public-job-description h3 { font-size: 16px; font-weight: 600; text-transform: none; letter-spacing: -.01em; color: var(--foreground); }
+.public-job .btn-primary:hover:not(:disabled),
+.public-job .btn-secondary:hover:not(:disabled) { transform: none; box-shadow: none; }
+.public-job-mobile-action { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
+@media (max-width: 1023px) { .public-job-with-action { padding-bottom: calc(82px + env(safe-area-inset-bottom)); } }
+
+.application-detail { --radius: .5rem; }
+.application-detail .btn-primary:hover:not(:disabled),
+.application-detail .btn-secondary:hover:not(:disabled),
+.application-detail .btn-ghost:hover:not(:disabled) { transform: none; box-shadow: none; }
+.application-detail summary::marker { color: var(--muted-foreground); }
+
+/* Candidate profile: flexible columns and comfortable touch controls. */
+.candidate-profile .field-input { min-width: 0; max-width: 100%; min-height: 48px; font-size: 16px; }
+.candidate-profile label, .candidate-profile form, .candidate-profile nav { min-width: 0; }
+.candidate-profile .btn-primary, .candidate-profile .btn-secondary, .candidate-profile .btn-ghost { min-height: 44px; }
+.candidate-profile li { max-width: 100%; overflow-wrap: anywhere; }
+.candidate-profile li > span { max-width: 100%; white-space: normal; }
+@media (max-width: 639px) { .candidate-profile footer > button { flex: 1; } .candidate-profile { padding-top: 24px; } }

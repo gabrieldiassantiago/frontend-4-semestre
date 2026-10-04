@@ -2,21 +2,23 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { cookies } from "next/headers"
 import { notFound } from "next/navigation"
-import { ArrowRight, CalendarDays, CheckCircle2, Gift, Lock, MapPin, Search } from "lucide-react"
+import { ArrowLeft, ArrowRight, CalendarDays, Check, MapPin } from "lucide-react"
 
 import { SelectaLogo } from "@/components/ui/selecta-logo"
-import { EntityAvatar } from "@/components/ui/entity-avatar"
-import { VagaBenefits, VagaHighlights, VagaTags } from "@/components/vaga/vaga-facts"
+import { CompanyLogo } from "@/components/company/company-logo"
+import { parseBeneficios } from "@/components/vaga/vaga-facts"
 import { VagaDescription } from "@/components/vaga/vaga-description"
 import { ShareVagaButton } from "@/components/vaga/share-vaga-button"
+import { normalizeVagaDescription } from "@/lib/utils/vaga-description"
 import { getVagaPublic } from "@/lib/services/vagas.public"
-import { formatDate, formatRelativeDate } from "@/lib/format"
+import { formatDate, formatCurrency } from "@/lib/format"
+import { ETAPA_LABELS } from "@/lib/types/candidatura.types"
 import { CATEGORIA_LABELS, MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
 
 type PageProps = { params: Promise<{ id: string }> }
 
 function toPlainText(markdown: string, limit = 200) {
-  const text = markdown
+  const text = normalizeVagaDescription(markdown)
     .replace(/#{1,6}\s+/g, "")
     .replace(/\*\*/g, "")
     .replace(/^[-*\u2022]\s+/gm, "")
@@ -38,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `${vaga.titulo} — ${company}`
   const description =
     toPlainText(vaga.descricao) ||
-    `Vaga de ${vaga.titulo} (${NIVEL_LABELS[vaga.nivelExperiencia]}) em ${vaga.cidade} - ${vaga.estado} — ${MODALIDADE_LABELS[vaga.modalidade]}.`
+    `Vaga de ${vaga.titulo} (${(vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "Nível não informado")}) em ${vaga.cidade} - ${vaga.estado} — ${MODALIDADE_LABELS[vaga.modalidade]}.`
 
   return {
     title,
@@ -66,212 +68,73 @@ export default async function VagaPublicaPage({ params }: PageProps) {
   const isAuthenticated = Boolean((await cookies()).get("token")?.value)
   const applyHref = isAuthenticated ? `/dashboard?vaga=${vaga.id}` : `/auth?from=/vaga/${vaga.id}`
 
-  const formattedSalary = vaga.salario
-    ? vaga.salario.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-      maximumFractionDigits: 0,
-    })
-    : null
+  const formattedSalary = vaga.salario > 0 ? formatCurrency(vaga.salario) : "A combinar"
+  const location = [vaga.cidade, vaga.estado].filter(Boolean).join(", ") || "Localização não informada"
+  const benefits = parseBeneficios(vaga.beneficios)
+  const steps = [...(vaga.etapas ?? [])].sort((a, b) => a.ordem - b.ordem)
+  const facts = [
+    { label: "Localização", value: location },
+    { label: "Modalidade", value: MODALIDADE_LABELS[vaga.modalidade] || "Não informada" },
+    { label: "Área de atuação", value: CATEGORIA_LABELS[vaga.categoria] || "Não informada" },
+    ...(vaga.nivelExperiencia ? [{ label: "Nível de experiência", value: NIVEL_LABELS[vaga.nivelExperiencia] }] : []),
+  ]
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface">
-      {/* Header Fino e Transparente */}
-      <header className="sticky top-0 z-40 border-b border-border-subtle/50 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link href="/" aria-label="Selecta — página inicial">
-            <SelectaLogo />
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <ShareVagaButton path={`/vaga/${vaga.id}`} title={`${vaga.titulo} — ${company}`} />
-            <Link
-              href={isAuthenticated ? "/dashboard" : "/auth"}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border-subtle/80 bg-card px-4 text-xs font-semibold text-foreground transition-all duration-200 hover:border-border hover:shadow-sm active:scale-95"
-            >
-              {isAuthenticated ? "Ir para o painel" : "Entrar"}
-              <ArrowRight className="size-3.5" aria-hidden />
-            </Link>
+    <div className={"public-job flex min-h-dvh flex-col bg-surface text-foreground" + (vaga.ativa ? " public-job-with-action" : "")}>
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto flex h-20 w-full max-w-[1240px] items-center justify-between gap-4 px-5 sm:px-8">
+          <Link href="/" aria-label="Selecta, página inicial"><SelectaLogo className="h-8" /></Link>
+          <div className="flex items-center gap-4"><Link href="/vagas" className="hidden text-sm font-medium text-muted-foreground hover:text-foreground sm:block">Explorar vagas</Link>
+            <Link href={isAuthenticated ? "/dashboard" : "/auth"} className="btn-secondary">{isAuthenticated ? "Meu painel" : "Entrar"}<ArrowRight className="size-4" aria-hidden /></Link>
           </div>
         </div>
       </header>
-
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 lg:py-12">
-        <article>
-          {/* Título e Cabeçalho Estilo Anúncio Airbnb */}
-          <header className="border-b border-border-subtle/60 pb-8">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <span>{company}</span>
-              <span>•</span>
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="size-3.5" />
-                {vaga.cidade} - {vaga.estado}
-              </span>
+      <main className="mx-auto w-full max-w-[1240px] flex-1 px-5 py-7 sm:px-8 lg:py-10">
+        <Link href="/vagas" className="inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" aria-hidden />Todas as vagas</Link>
+        <article className="mt-5">
+          <header className="rounded-xl border border-border bg-card p-6 sm:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-3"><CompanyLogo url={vaga.logoUrlEmpresa} name={company} className="size-14 rounded-lg" /><div className="min-w-0"><p className="break-words text-sm font-semibold">{company}</p><p className="mt-1 text-xs text-muted-foreground">Oportunidade de trabalho</p></div></div>
+              <span className={"rounded-md px-3 py-1.5 text-xs font-medium " + (vaga.ativa ? "bg-success-subtle text-success-foreground" : "bg-muted text-muted-foreground")}>{vaga.ativa ? "Inscrições abertas" : "Inscrições encerradas"}</span>
             </div>
-
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[40px] lg:leading-tight">
-              {vaga.titulo}
-            </h1>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <VagaTags vaga={vaga} />
-              {!vaga.ativa && (
-                <span className="inline-flex items-center rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
-                  Inscrições finalizadas
-                </span>
-              )}
+            <h1 className="mt-6 max-w-4xl break-words text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{vaga.titulo}</h1>
+            <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-2"><MapPin className="size-4 shrink-0" aria-hidden />{location}</span>
+              <span>{MODALIDADE_LABELS[vaga.modalidade]}</span>
+              {vaga.createdAt && <span className="inline-flex items-center gap-2"><CalendarDays className="size-4" aria-hidden />Publicada em {formatDate(vaga.createdAt)}</span>}
             </div>
           </header>
-
-          {/* Grid Principal: Conteúdo Aberto + Widget Lateral */}
-          <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-12">
-            {/* Coluna Esquerda: Narrativa Limpa */}
-            <div className="space-y-10">
-              {/* Card da Empresa */}
-              <div className="flex items-center gap-4 border-b border-border-subtle/60 pb-8">
-                <EntityAvatar name={company} size="lg" className="size-14 rounded-2xl sm:size-16" />
-                <div>
-                  <h3 className="text-base font-semibold text-foreground">
-                    Oportunidade oferecida por {company}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Publicada {formatRelativeDate(vaga.createdAt)} · {formatDate(vaga.createdAt)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Destaques Rápidos da Vaga */}
-              <div className="border-b border-border-subtle/60 pb-8">
-                <VagaHighlights vaga={vaga} />
-              </div>
-
-              {/* Descrição em Prosa Fluida */}
-              <section aria-labelledby="descricao-vaga" className="border-b border-border-subtle/60 pb-8">
-                <h2 id="descricao-vaga" className="text-xl font-semibold tracking-tight text-foreground">
-                  Sobre esta oportunidade
-                </h2>
-                <VagaDescription description={vaga.descricao} className="mt-5 leading-relaxed" />
+          <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="min-w-0 space-y-6">
+              <section aria-labelledby="descricao-vaga" className="rounded-xl border border-border bg-card p-6 sm:p-8">
+                <h2 id="descricao-vaga" className="text-lg font-semibold tracking-tight">Sobre a vaga</h2>
+                <VagaDescription description={vaga.descricao} className="public-job-description mt-6 break-words" />
               </section>
-
-              {/* Benefícios */}
-              {vaga.beneficios && (
-                <section aria-labelledby="beneficios-vaga" className="border-b border-border-subtle/60 pb-8">
-                  <div className="flex items-center gap-2">
-                    <Gift className="size-5 text-primary" aria-hidden />
-                    <h2 id="beneficios-vaga" className="text-xl font-semibold tracking-tight text-foreground">
-                      O que a posição oferece
-                    </h2>
-                  </div>
-                  <VagaBenefits beneficios={vaga.beneficios} className="mt-5" />
-                </section>
-              )}
+              {benefits.length > 0 && <section aria-labelledby="beneficios-vaga" className="rounded-xl border border-border bg-card p-6 sm:p-8">
+                <h2 id="beneficios-vaga" className="text-lg font-semibold tracking-tight">Benefícios</h2>
+                <ul className="mt-5 grid gap-4 sm:grid-cols-2">{benefits.map((benefit,index) => <li key={index} className="flex items-start gap-3 text-sm leading-6 text-strong-foreground"><Check className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden /><span className="min-w-0 break-words">{benefit}</span></li>)}</ul>
+              </section>}
+              {steps.length > 0 && <section aria-labelledby="etapas-vaga" className="rounded-xl border border-border bg-card p-6 sm:p-8">
+                <h2 id="etapas-vaga" className="text-lg font-semibold tracking-tight">Etapas do processo seletivo</h2>
+                <ol className="mt-6 space-y-5">{steps.map((step,index) => <li key={step.etapa + index} className="flex gap-4"><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-surface text-xs font-medium text-muted-foreground">{index+1}</span><div className="min-w-0"><h3 className="text-sm font-medium">{ETAPA_LABELS[step.etapa] || step.etapa}</h3>{step.descricao && <p className="mt-1 break-words text-sm leading-6 text-muted-foreground">{step.descricao}</p>}</div></li>)}</ol>
+              </section>}
             </div>
-
-            {/* Coluna Direita: Sticky Widget Estilo Reserva Airbnb */}
-            <aside className="lg:sticky lg:top-24 lg:self-start">
-              <div className="rounded-3xl border border-border-subtle/80 bg-card/70 p-6 shadow-xl shadow-black/5 backdrop-blur-sm">
-                <div className="flex items-baseline justify-between border-b border-border-subtle/60 pb-5">
-                  <div>
-                    {formattedSalary ? (
-                      <div>
-                        <span className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                          {formattedSalary}
-                        </span>
-                        <span className="text-xs text-muted-foreground"> / mês</span>
-                      </div>
-                    ) : (
-                      <span className="text-lg font-semibold text-foreground">Salário a combinar</span>
-                    )}
-                  </div>
-                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                    {vaga.ativa ? "Aberta" : "Encerrada"}
-                  </span>
+            <aside aria-label="Resumo da vaga e candidatura" className="min-w-0 space-y-4 lg:sticky lg:top-6">
+              <section className="overflow-hidden rounded-xl border border-border bg-card">
+                <div className="border-b border-border p-6"><p className="text-xs font-medium text-muted-foreground">Remuneração mensal</p><p className="mt-2 text-2xl font-semibold tracking-tight">{formattedSalary}</p></div>
+                <dl className="space-y-5 p-6">{facts.map(fact => <div key={fact.label}><dt className="text-xs text-muted-foreground">{fact.label}</dt><dd className="mt-1 break-words text-sm font-medium leading-6">{fact.value}</dd></div>)}</dl>
+                <div className="border-t border-border p-6">
+                  {vaga.ativa ? <Link href={applyHref} className="btn-primary w-full">Candidatar-se<ArrowRight className="size-4" aria-hidden /></Link> : <p className="rounded-lg bg-surface px-4 py-3 text-center text-sm font-medium text-muted-foreground">Inscrições encerradas</p>}
+                  <p className="mt-3 text-xs leading-6 text-muted-foreground">{vaga.ativa ? isAuthenticated ? "Revise seu perfil antes de enviar a candidatura." : "Entre ou crie uma conta de candidato para participar do processo." : "Esta vaga não está recebendo novas candidaturas."}</p>
                 </div>
-
-                {/* Bloco de Atributos com Bordas Suaves */}
-                <div className="mt-5 divide-y divide-border-subtle/60 rounded-2xl border border-border-subtle/70 bg-background/50 text-xs">
-                  <div className="flex items-center justify-between p-3.5">
-                    <span className="text-muted-foreground">Modalidade</span>
-                    <span className="font-semibold text-foreground">{MODALIDADE_LABELS[vaga.modalidade]}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3.5">
-                    <span className="text-muted-foreground">Experiência</span>
-                    <span className="font-semibold text-foreground">{NIVEL_LABELS[vaga.nivelExperiencia]}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3.5">
-                    <span className="text-muted-foreground">Área</span>
-                    <span className="text-right font-semibold text-foreground">{CATEGORIA_LABELS[vaga.categoria]}</span>
-                  </div>
-                </div>
-
-                {/* Botão de Candidatura Principal */}
-                <div className="mt-6">
-                  {vaga.ativa ? (
-                    <Link
-                      href={applyHref}
-                      className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-md transition-all hover:opacity-95 active:scale-95"
-                    >
-                      {isAuthenticated ? "Enviar candidatura" : "Entrar para se candidatar"}
-                      {!isAuthenticated && <Lock className="size-4" aria-hidden />}
-                    </Link>
-                  ) : (
-                    <div
-                      aria-disabled
-                      className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground"
-                    >
-                      Inscrições encerradas
-                    </div>
-                  )}
-                  <p className="mt-3 text-center text-[11px] text-muted-foreground">
-                    Você não será cobrado por enviar seu perfil
-                  </p>
-                </div>
-
-                {/* Card de Segurança/Garantia */}
-                <div className="mt-6 flex items-start gap-2.5 border-t border-border-subtle/60 pt-5 text-xs text-muted-foreground">
-                  <CheckCircle2 className="size-4 shrink-0 text-primary" />
-                  <span>Processo verificado pela Selecta. Dados protegidos e sem intermediários.</span>
-                </div>
-              </div>
+              </section>
+              <ShareVagaButton path={"/vaga/" + vaga.id} title={vaga.titulo + " — " + company} className="w-full" />
             </aside>
           </div>
         </article>
       </main>
-
-      {/* Floating Bottom Bar no Mobile (Estilo Airbnb Mobile Booking) */}
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between border-t border-border-subtle/60 bg-card/95 px-5 py-3 shadow-lg backdrop-blur-md lg:hidden">
-        <div>
-          {formattedSalary ? (
-            <p className="text-base font-bold text-foreground">
-              {formattedSalary}
-              <span className="text-xs font-normal text-muted-foreground">/mês</span>
-            </p>
-          ) : (
-            <p className="text-xs font-semibold text-foreground">A combinar</p>
-          )}
-          <p className="text-[11px] text-muted-foreground">{company}</p>
-        </div>
-
-        {vaga.ativa ? (
-          <Link
-            href={applyHref}
-            className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-xs font-semibold text-primary-foreground active:scale-95"
-          >
-            Candidatar-se
-          </Link>
-        ) : (
-          <span className="text-xs font-medium text-muted-foreground">Encerrada</span>
-        )}
-      </div>
-
-      <footer className="mt-12 border-t border-border-subtle/50 bg-background/50">
-        <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-2 px-4 py-8 text-center sm:px-6">
-          <SelectaLogo />
-          <p className="text-xs text-muted-foreground">
-            Conectando profissionais talentosos a empresas inovadoras.
-          </p>
-        </div>
-      </footer>
+      <footer className="mt-8 border-t border-border bg-card"><div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-3 px-5 py-7 text-xs text-muted-foreground sm:px-8"><p>Selecta · Recrutamento e seleção</p><Link href="/vagas" className="hover:text-foreground">Ver outras oportunidades</Link></div></footer>
+      {vaga.ativa && <div className="public-job-mobile-action fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card px-5 py-3 lg:hidden"><div className="mx-auto flex max-w-lg items-center justify-between gap-4"><div className="min-w-0"><p className="text-[11px] text-muted-foreground">Remuneração mensal</p><p className="truncate text-sm font-semibold">{formattedSalary}</p></div><Link href={applyHref} className="btn-primary shrink-0">Candidatar-se<ArrowRight className="size-4" aria-hidden /></Link></div></div>}
     </div>
   )
 }

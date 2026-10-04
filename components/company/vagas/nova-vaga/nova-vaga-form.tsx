@@ -5,8 +5,8 @@ import { RouteSkeleton } from "@/components/ui/route-skeleton"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { AlertCircle, ArrowLeft, CheckCircle2, X } from "lucide-react"
-import { createVaga } from "@/lib/services/vagas.service"
-import { useCompanyProfile } from "@/lib/hooks/useCompanyProfile"
+import { useCreateVaga } from "@/lib/queries/use-vagas"
+import { useCompanyProfile } from "@/lib/queries/use-company-profile"
 import { ShareVagaButton } from "@/components/vaga/share-vaga-button"
 import {
   CATEGORIA_LABELS,
@@ -17,12 +17,14 @@ import {
   type NivelExperiencia,
   type CreateVagaDto,
 } from "@/lib/types/vaga.types"
+import type { EtapaProcesso } from "@/lib/types/candidatura.types"
 
 import { Stepper, TOTAL_STEPS } from "./wizard"
 import { StepCargo } from "./step-cargo"
 import { StepLocalSalario } from "./step-local-salario"
 import { StepBeneficios } from "./step-beneficios"
 import { StepDescricao } from "./step-descricao"
+import { StepEtapas } from "./step-etapas"
 import { NovaVagaFooter } from "./nova-vaga-footer"
 
 const DEFAULT_BENEFITS = [
@@ -66,6 +68,7 @@ export function NovaVagaForm() {
   const [maxReached, setMaxReached] = useState(1)
 
   const { profile, error: profileError, isLoading: loadingCompany } = useCompanyProfile()
+  const createVaga = useCreateVaga()
   const companyProfileId = profile?.id ?? null
   const companyName = profile?.companyName || "Sua empresa"
 
@@ -82,6 +85,12 @@ export function NovaVagaForm() {
   const [descricao, setDescricao] = useState(() =>
     buildTemplate("", "DESENVOLVIMENTO_SOFTWARE", "PLENO", "HIBRIDO"),
   )
+  const [etapas, setEtapas] = useState<EtapaProcesso[]>([
+    "TRIAGEM",
+    "ENTREVISTA_RH",
+    "PROPOSTA",
+  ])
+  const [metaTags, setMetaTags] = useState("")
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
@@ -140,7 +149,7 @@ export function NovaVagaForm() {
     }
 
     // Revalida tudo: a empresa pode ter voltado e apagado um campo anterior.
-    for (const step of [1, 2, 4]) {
+    for (const step of [1, 2, 4, 5]) {
       const errors = validateStep(step)
       if (Object.keys(errors).length > 0) {
         goToStep(step)
@@ -167,9 +176,11 @@ export function NovaVagaForm() {
         categoria,
         modalidade,
         nivelExperiencia,
+        metaTags: metaTags.split(",").map((tag) => tag.trim()).filter(Boolean),
+        etapas,
       }
 
-      const vaga = await createVaga(dto)
+      const vaga = await createVaga.mutateAsync(dto)
       setPublishedId(vaga.id)
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Erro ao publicar a vaga.")
@@ -220,7 +231,7 @@ export function NovaVagaForm() {
 
   return (
     <div className="min-h-screen bg-surface pb-28">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-border bg-card">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link
@@ -242,7 +253,7 @@ export function NovaVagaForm() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 pt-8 sm:px-6">
+      <main className="mx-auto max-w-[1100px] px-4 pt-8 sm:px-6">
         {visibleError && (
           <div
             role="alert"
@@ -323,6 +334,19 @@ export function NovaVagaForm() {
             }
             error={fieldErrors.descricao}
           />
+        )}
+
+        {currentStep === 5 && (
+          <div className="space-y-6">
+            <section className="rounded-xl border border-border bg-card p-5">
+              <label htmlFor="vaga-meta-tags" className="block text-sm font-semibold text-foreground">
+                Competências e palavras-chave
+              </label>
+              <p className="mt-1 text-xs text-muted-foreground">Separe por vírgulas para ajudar a recomendar esta vaga aos candidatos.</p>
+              <input id="vaga-meta-tags" value={metaTags} onChange={(event) => setMetaTags(event.target.value)} placeholder="Java, SQL, React, atendimento" className="field-input mt-3" />
+            </section>
+            <StepEtapas etapas={etapas} setEtapas={setEtapas} />
+          </div>
         )}
       </main>
 

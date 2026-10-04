@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, Save, X } from "lucide-react"
-import { updateVaga } from "@/lib/services/vagas.service"
-import { useCompanyProfile } from "@/lib/hooks/useCompanyProfile"
+import { useUpdateVaga } from "@/lib/queries/use-vagas"
+import { useCompanyProfile } from "@/lib/queries/use-company-profile"
 import {
   CATEGORIA_LABELS,
   MODALIDADE_LABELS,
@@ -34,6 +34,7 @@ export function EditVagaForm({ vaga }: EditVagaFormProps) {
   const [maxReached, setMaxReached] = useState(4) // Edição: todos os steps acessíveis
 
   const { profile } = useCompanyProfile()
+  const updateVaga = useUpdateVaga()
   const companyName = profile?.companyName || "Sua empresa"
 
   // Campos do formulário pré-preenchidos com a vaga existente
@@ -104,7 +105,7 @@ export function EditVagaForm({ vaga }: EditVagaFormProps) {
     setFormError(null)
 
     try {
-      await updateVaga(vaga.id, {
+      await updateVaga.mutateAsync({ id: vaga.id, dto: {
         titulo: titulo.trim(),
         salario: Number(salario),
         descricao: descricao.trim(),
@@ -116,7 +117,7 @@ export function EditVagaForm({ vaga }: EditVagaFormProps) {
         categoria,
         modalidade,
         nivelExperiencia,
-      })
+      } })
       setSaved(true)
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Erro ao salvar a vaga.")
@@ -162,7 +163,7 @@ export function EditVagaForm({ vaga }: EditVagaFormProps) {
   return (
     <div className="min-h-screen bg-surface pb-28">
       {/* Header sticky */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-border bg-card">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link
@@ -188,7 +189,7 @@ export function EditVagaForm({ vaga }: EditVagaFormProps) {
       </header>
 
       {/* Conteúdo */}
-      <main className="mx-auto max-w-4xl px-4 pt-8 sm:px-6">
+      <main className="mx-auto max-w-[1100px] px-4 pt-8 sm:px-6">
         {formError && (
           <div
             role="alert"
@@ -268,8 +269,8 @@ export function EditVagaForm({ vaga }: EditVagaFormProps) {
       </main>
 
       {/* Footer sticky com navegação */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card">
+        <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
           <button
             type="button"
             disabled={currentStep === 1 || submitting}

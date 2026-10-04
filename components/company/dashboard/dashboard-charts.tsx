@@ -47,7 +47,7 @@ export default function DashboardCharts({ vagas, candidaturas }: { vagas: Vaga[]
   return (
     <div className="mt-8 space-y-5">
       <div className="grid gap-5 lg:grid-cols-2">
-        <motion.section {...entrance} aria-labelledby="funnel-title" className="min-w-0 rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <motion.section {...entrance} aria-labelledby="funnel-title" className="min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6">
           <p className="text-xs font-medium text-muted-foreground">Funil de seleção</p>
           <h2 id="funnel-title" className="mt-1 text-base font-semibold tracking-tight">Candidaturas por etapa</h2>
           <p className="mt-1 text-xs text-muted-foreground">Distribuição atual de todas as candidaturas.</p>
@@ -62,13 +62,13 @@ export default function DashboardCharts({ vagas, candidaturas }: { vagas: Vaga[]
               </BarChart>
             </ResponsiveContainer>
           </div> : <EmptyChart text="As etapas aparecerão quando suas vagas receberem candidaturas." />}
-          <details className="mt-4 border-t border-border-subtle pt-3 text-xs">
+          <details className="mt-4 border-t border-border pt-3 text-xs">
             <summary className="cursor-pointer font-medium text-muted-foreground">Consultar valores por etapa</summary>
             <dl className="mt-3 space-y-2">{funnel.map(item => <div key={item.label} className="flex justify-between"><dt>{item.label}</dt><dd className="font-semibold tabular-nums">{item.count}</dd></div>)}</dl>
           </details>
           <Link href="/empresa/processos" className="mt-4 inline-block text-xs font-semibold text-primary hover:underline">Abrir processos →</Link>
         </motion.section>
-        <motion.section {...entrance} aria-labelledby="modalities-title" className="min-w-0 rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <motion.section {...entrance} aria-labelledby="modalities-title" className="min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6">
           <p className="text-xs font-medium text-muted-foreground">Seu portfólio</p>
           <h2 id="modalities-title" className="mt-1 text-base font-semibold tracking-tight">Vagas por modalidade</h2>
           <p className="mt-1 text-xs text-muted-foreground">Selecione uma modalidade para destacar sua participação.</p>
@@ -96,7 +96,7 @@ export default function DashboardCharts({ vagas, candidaturas }: { vagas: Vaga[]
           <Link href="/empresa/vagas" className="mt-4 inline-block text-xs font-semibold text-primary hover:underline">Gerenciar vagas →</Link>
         </motion.section>
       </div>
-      <motion.section {...entrance} aria-labelledby="activity-title" className="min-w-0 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <motion.section {...entrance} aria-labelledby="activity-title" className="min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div><p className="text-xs font-medium text-muted-foreground">Atividade ao longo do tempo</p><h2 id="activity-title" className="mt-1 text-base font-semibold tracking-tight">O ritmo do seu recrutamento</h2></div>
           <label className="flex items-center gap-2 text-xs text-muted-foreground">Período
@@ -126,8 +126,8 @@ export default function DashboardCharts({ vagas, candidaturas }: { vagas: Vaga[]
           </ResponsiveContainer>
         </div> : <EmptyChart text={"Nenhuma " + (metric === "vagas" ? "vaga publicada" : "candidatura recebida") + " neste período. Experimente ampliar o intervalo."} />}
         <p className="mt-3 text-xs text-muted-foreground">Contagem semanal pela data de criação, incluindo a semana atual.{undated > 0 ? " " + undated + " registros sem data válida não entram nesta série." : ""}</p>
-        <details className="mt-4 border-t border-border-subtle pt-3 text-xs"><summary className="cursor-pointer font-medium text-muted-foreground">Consultar dados por semana</summary>
-          <div className="mt-3 overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Atividade nas últimas {weeks} semanas</caption><thead><tr><th scope="col" className="py-2">Semana</th><th scope="col">Vagas</th><th scope="col">Candidaturas</th></tr></thead><tbody>{timeline.map(item => <tr key={item.period} className="border-t border-border-subtle"><th scope="row" className="py-2 font-normal">{item.period}</th><td>{item.vagas}</td><td>{item.candidaturas}</td></tr>)}</tbody></table></div>
+        <details className="mt-4 border-t border-border pt-3 text-xs"><summary className="cursor-pointer font-medium text-muted-foreground">Consultar dados por semana</summary>
+          <div className="mt-3 overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Atividade nas últimas {weeks} semanas</caption><thead><tr><th scope="col" className="py-2">Semana</th><th scope="col">Vagas</th><th scope="col">Candidaturas</th></tr></thead><tbody>{timeline.map(item => <tr key={item.period} className="border-t border-border"><th scope="row" className="py-2 font-normal">{item.period}</th><td>{item.vagas}</td><td>{item.candidaturas}</td></tr>)}</tbody></table></div>
         </details>
       </motion.section>
     </div>

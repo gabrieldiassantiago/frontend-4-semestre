@@ -4,15 +4,17 @@ import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, CheckCircle2, Mail, RefreshCw } from "lucide-react"
+import { ArrowLeft, Mail, RefreshCw } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { verifyEmail, resendCode } from "@/lib/services/auth.service"
+import { useResendCode, useVerifyEmail } from "@/lib/queries/use-auth"
 import { finishRegistration, profileDestination } from "@/lib/auth-flow"
 import { getErrorMessage } from "@/lib/errors"
 
 export function VerifyEmailScreen() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const verifyEmail = useVerifyEmail()
+  const resendCode = useResendCode()
   const emailParam = searchParams.get("email") || ""
   const roleParam = searchParams.get("role") === "COMPANY" ? "COMPANY" : "CANDIDATE"
 
@@ -21,7 +23,6 @@ export function VerifyEmailScreen() {
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [countdown, setCountdown] = useState(60)
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
@@ -65,7 +66,6 @@ export function VerifyEmailScreen() {
   const handleVerify = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     setErrorMessage(null)
-    setSuccessMessage(null)
 
     const fullCode = code.join("")
     if (fullCode.length < 5) {
@@ -80,7 +80,7 @@ export function VerifyEmailScreen() {
 
     setLoading(true)
     try {
-      await verifyEmail({ email, code: fullCode })
+      await verifyEmail.mutateAsync({ email, code: fullCode })
       const authenticated = await finishRegistration(email, roleParam)
       router.replace(authenticated ? profileDestination(roleParam) : `${roleParam === "COMPANY" ? "/auth/empresa" : "/auth/candidato"}?setup=1`)
     } catch (err: unknown) {
@@ -93,12 +93,10 @@ export function VerifyEmailScreen() {
   const handleResend = async () => {
     if (countdown > 0 || resending || !email) return
     setErrorMessage(null)
-    setSuccessMessage(null)
     setResending(true)
 
     try {
-      await resendCode({ email })
-      setSuccessMessage("Um novo código foi enviado para o seu e-mail.")
+      await resendCode.mutateAsync({ email })
       setCountdown(60)
     } catch (err: unknown) {
       setErrorMessage(getErrorMessage(err, "Erro ao reenviar o código."))
@@ -159,18 +157,6 @@ export function VerifyEmailScreen() {
               className="mt-4 rounded-xl border border-danger-border bg-danger-subtle p-3.5 text-sm text-danger-foreground"
             >
               {errorMessage}
-            </motion.div>
-          )}
-
-          {successMessage && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-success-border bg-success-subtle p-3.5 text-sm text-success-foreground font-medium"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              {successMessage}
             </motion.div>
           )}
         </AnimatePresence>

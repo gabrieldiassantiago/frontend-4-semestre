@@ -21,7 +21,10 @@ import type {
   UpdateCandidateProfileDto,
 } from "@/lib/types/candidate.types"
 
+import { formatPhone } from "@/lib/utils/profile-validation"
+
 type FormProps = {
+  errors?: Partial<Record<keyof UpdateCandidateProfileDto, string>>
   form: UpdateCandidateProfileDto
   setForm: React.Dispatch<
     React.SetStateAction<UpdateCandidateProfileDto>
@@ -29,6 +32,7 @@ type FormProps = {
 }
 
 type ProfileFieldsProps = FormProps & {
+  onUploadingChange?: (uploading: boolean) => void
   profile: CandidateProfile
   onProfileUpdated: (
     profile: CandidateProfile,
@@ -38,8 +42,10 @@ type ProfileFieldsProps = FormProps & {
 export function ProfileFields({
   form,
   setForm,
+  errors = {},
   profile,
   onProfileUpdated,
+  onUploadingChange,
 }: ProfileFieldsProps) {
   return (
     <div className="max-w-3xl">
@@ -49,6 +55,7 @@ export function ProfileFields({
       />
 
       <ProfilePhotoField
+        onUploadingChange={onUploadingChange}
         profile={profile}
         onProfileUpdated={onProfileUpdated}
 
@@ -110,15 +117,17 @@ export function ProfileFields({
           />
         </Field>
 
-        <Field label="Telefone">
+        <Field label="Telefone" error={errors.phone}>
           <InputWithIcon
             icon={Phone}
             type="tel"
+            autoComplete="tel-national"
+            aria-invalid={Boolean(errors.phone)}
             value={form.phone || ""}
             onChange={(event) =>
               setForm((current) => ({
                 ...current,
-                phone: event.target.value,
+                phone: formatPhone(event.target.value),
               }))
             }
             placeholder="(11) 99999-9999"
@@ -148,6 +157,7 @@ export function ProfileFields({
 export function EducationFields({
   form,
   setForm,
+  errors = {},
 }: FormProps) {
   return (
     <div className="max-w-3xl">
@@ -186,11 +196,8 @@ export function EducationFields({
           />
         </Field>
 
-        <Field label="Semestre atual">
-          <input
-            type="number"
-            min={1}
-            max={20}
+        <Field label="Semestre atual" error={errors.currentSemester}>
+          <select
             value={form.currentSemester || ""}
             onChange={(event) =>
               setForm((current) => ({
@@ -201,15 +208,11 @@ export function EducationFields({
                     : Number(event.target.value),
               }))
             }
-            className="field-input"
-          />
+            className="field-input"><option value="">Selecione o semestre</option>{Array.from({length:20}, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}º semestre</option>)}</select>
         </Field>
 
-        <Field label="Previsão de formatura">
-          <input
-            type="number"
-            min={new Date().getFullYear()}
-            max={new Date().getFullYear() + 10}
+        <Field label="Previsão de formatura" error={errors.expectedGraduationYear}>
+          <select
             value={form.expectedGraduationYear || ""}
             onChange={(event) =>
               setForm((current) => ({
@@ -220,8 +223,7 @@ export function EducationFields({
                     : Number(event.target.value),
               }))
             }
-            className="field-input"
-          />
+            className="field-input"><option value="">Selecione o ano</option>{Array.from({length:11}, (_, index) => new Date().getFullYear() + index).map(year => <option key={year} value={year}>{year}</option>)}</select>
         </Field>
       </div>
     </div>
@@ -231,6 +233,7 @@ export function EducationFields({
 export function LinksFields({
   form,
   setForm,
+  errors = {},
 }: FormProps) {
   return (
     <div className="max-w-3xl">
@@ -242,6 +245,7 @@ export function LinksFields({
 
       <div className="mt-7 flex flex-col gap-5">
         <ProfessionalLinks
+          errors={errors}
           form={form}
           onChange={(patch) =>
             setForm((current) => ({

@@ -17,6 +17,8 @@ export interface CompanyRegistrationPayload {
   website?: string
   city: string
   state: string
+  latitude: number
+  longitude: number
   description?: string
 }
 
@@ -39,4 +41,13 @@ export interface AuthTokenResponse {
   token: string
   expiresIn?: number
   role: UserRole
+}
+
+export interface CurrentUser {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  active: boolean
+  avatarUrl?: string
 }

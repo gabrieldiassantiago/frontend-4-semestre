@@ -1,25 +1,36 @@
-import React from "react"
+import React, { useMemo } from "react"
 import Link from "next/link"
 import { ArrowRight, ChevronRight, ShoppingBag, Sparkles } from "lucide-react"
 import { CompanyBrandLogo } from "./company-brand-logo"
+import type { Vaga } from "@/lib/types/vaga.types"
 
 interface JobsSidebarWidgetsProps {
   onOpenAlertsModal: () => void
   onSelectCompany: (companyName: string) => void
+  vagas?: Vaga[]
 }
-
-const FEATURED_COMPANIES = [
-  { name: "Google", count: "312 vagas", variant: "google" as const },
-  { name: "Itaú", count: "128 vagas", variant: "itau" as const },
-  { name: "Accenture", count: "97 vagas", variant: "accenture" as const },
-  { name: "Netflix", count: "56 vagas", variant: "netflix" as const },
-  { name: "UNISAL", count: "42 vagas", variant: "unisal-purple" as const },
-]
 
 export function JobsSidebarWidgets({
   onOpenAlertsModal,
   onSelectCompany,
+  vagas = [],
 }: JobsSidebarWidgetsProps) {
+  const featuredCompanies = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const v of vagas) {
+      const name = v.nomeEmpresa?.trim()
+      if (name) {
+        map.set(name, (map.get(name) ?? 0) + 1)
+      }
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count]) => ({
+        name,
+        count: `${count} ${count === 1 ? "vaga" : "vagas"}`,
+      }))
+  }, [vagas])
   return (
     <aside className="w-full space-y-5 lg:w-[320px] shrink-0">
       {/* Widget 1: Receba vagas no seu e-mail */}
@@ -48,42 +59,43 @@ export function JobsSidebarWidgets({
         </button>
       </div>
 
-      {/* Widget 2: Empresas em destaque */}
-      <div className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-xs">
-        <h3 className="text-sm font-bold text-slate-900">Empresas em destaque</h3>
+      {/* Widget 2: Empresas com vagas abertas */}
+      {featuredCompanies.length > 0 && (
+        <div className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-xs">
+          <h3 className="text-sm font-bold text-slate-900">Empresas com vagas</h3>
 
-        <div className="mt-3.5 space-y-2">
-          {FEATURED_COMPANIES.map((company) => (
-            <button
-              key={company.name}
-              type="button"
-              onClick={() => onSelectCompany(company.name)}
-              className="flex w-full items-center gap-3 rounded-2xl p-2 text-left transition-colors hover:bg-slate-50 active:scale-[0.99]"
-            >
-              <CompanyBrandLogo
-                company={company.name}
-                variant={company.variant}
-                className="size-9 rounded-xl text-sm"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-bold text-slate-800">
-                  {company.name}
-                </p>
-                <p className="text-[11px] text-slate-400">{company.count}</p>
-              </div>
-            </button>
-          ))}
+          <div className="mt-3.5 space-y-2">
+            {featuredCompanies.map((company) => (
+              <button
+                key={company.name}
+                type="button"
+                onClick={() => onSelectCompany(company.name)}
+                className="flex w-full items-center gap-3 rounded-2xl p-2 text-left transition-colors hover:bg-slate-50 active:scale-[0.99]"
+              >
+                <CompanyBrandLogo
+                  company={company.name}
+                  className="size-9 rounded-xl text-sm"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-bold text-slate-800">
+                    {company.name}
+                  </p>
+                  <p className="text-[11px] text-slate-400">{company.count}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onSelectCompany("")}
+            className="mt-3 flex items-center gap-1.5 text-xs font-bold text-[#7c3aed] transition-colors hover:text-[#6d28d9]"
+          >
+            Ver todas as empresas
+            <ArrowRight className="size-3" />
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => onSelectCompany("")}
-          className="mt-3 flex items-center gap-1.5 text-xs font-bold text-[#7c3aed] transition-colors hover:text-[#6d28d9]"
-        >
-          Ver todas as empresas
-          <ArrowRight className="size-3" />
-        </button>
-      </div>
+      )}
 
       {/* Widget 3: Dicas para você */}
       <div className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-xs">

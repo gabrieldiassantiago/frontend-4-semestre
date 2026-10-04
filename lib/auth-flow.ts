@@ -1,5 +1,5 @@
-import { loginUser } from "@/lib/services/auth.service"
-import { getCandidateProfileMe } from "@/lib/services/candidate.service"
+import { loginAction } from "@/actions/auth"
+import { getCandidateProfileMeAction } from "@/actions/candidate"
 import { getProfileCompletion } from "@/lib/candidate-completion"
 import type { LoginPayload, UserRole } from "@/lib/types/auth.types"
 
@@ -18,21 +18,14 @@ export async function finishRegistration(email: string, role: LoginPayload["role
   const credentials = registration
   registration = null
   if (!credentials || credentials.email !== email || credentials.role !== role) return false
-  try {
-    const response = await loginUser(credentials)
-    return Boolean(response.token)
-  } catch {
-    return false
-  }
+  const result = await loginAction(credentials)
+  return result.ok
 }
 
 export async function loginDestination(role: UserRole, setup = false) {
   if (setup) return profileDestination(role)
   if (role === "COMPANY") return "/empresa/dashboard"
-  try {
-    const profile = await getCandidateProfileMe()
-    return getProfileCompletion(profile).ready ? "/dashboard" : profileDestination(role)
-  } catch {
-    return profileDestination(role)
-  }
+  const result = await getCandidateProfileMeAction()
+  if (!result.ok || !result.data) return profileDestination(role)
+  return getProfileCompletion(result.data).ready ? "/dashboard" : profileDestination(role)
 }

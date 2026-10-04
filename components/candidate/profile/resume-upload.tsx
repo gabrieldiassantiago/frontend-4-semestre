@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { CheckCircle2, ExternalLink, FileText, LoaderCircle, Upload } from "lucide-react"
 import { Alert } from "@/components/ui/states"
-import { uploadCandidateResume } from "@/lib/services/candidate.service"
+import { useUploadCandidateResume } from "@/lib/queries/use-candidate-profile"
 import { API_BASE_URL } from "@/lib/http/config"
 import { getErrorMessage } from "@/lib/errors"
 import { validateResume } from "@/lib/utils/resume"
@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 import type { CandidateProfile } from "@/lib/types/candidate.types"
 
 interface ResumeUploadProps {
-  profile: CandidateProfile
+  profile: CandidateProfile | null
   onProfileChange: (profile: CandidateProfile) => void
   onUploadingChange?: (uploading: boolean) => void
 }
@@ -33,6 +33,8 @@ export function ResumeUpload({ profile, onProfileChange, onUploadingChange }: Re
   const reduceMotion = useReducedMotion()
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const uploadResume = useUploadCandidateResume()
+  // Cobre também a validação local do PDF, que acontece antes da mutação.
   const [uploading, setUploading] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +61,7 @@ export function ResumeUpload({ profile, onProfileChange, onUploadingChange }: Re
       }
       setFile(selected)
       setSaved(false)
-      const updated = await uploadCandidateResume(selected)
+      const updated = await uploadResume.mutateAsync(selected)
       onProfileChange(updated)
       setSaved(true)
     } catch (requestError) {
@@ -72,7 +74,7 @@ export function ResumeUpload({ profile, onProfileChange, onUploadingChange }: Re
     }
   }
 
-  const source = previewUrl || resumeLink(profile.resumeUrl)
+  const source = previewUrl || resumeLink(profile?.resumeUrl)
 
   return (
     <div className="min-w-0 space-y-5">

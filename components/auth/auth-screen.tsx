@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { ArrowLeft, Loader2 } from "lucide-react"
 
-import { getLinkedInAuthorizationUrl, loginUser, registerUser } from "@/lib/services/auth.service"
+import { useLogin, useRegisterUser } from "@/lib/queries/use-auth"
+import { API_BASE_URL } from "@/lib/http/config"
 import { rememberRegistration, loginDestination } from "@/lib/auth-flow"
 import type { UserRole } from "@/lib/types/auth.types"
 import { getErrorMessage } from "@/lib/errors"
@@ -27,10 +28,10 @@ const SUBTITLES: Record<Role, string> = {
   recrutador: "Encontre os melhores talentos e monte o seu time",
 }
 
-const LINKEDIN_ERRORS: Record<string, string> = {
+const OAUTH_ERRORS: Record<string, string> = {
   account_type: "Esta conta pertence a uma empresa e não pode entrar como candidato.",
-  email_unavailable: "O LinkedIn não disponibilizou um e-mail verificado para continuar.",
-  oauth_failed: "Não foi possível concluir o login com o LinkedIn. Tente novamente.",
+  email_unavailable: "O provedor não disponibilizou um e-mail verificado para continuar.",
+  oauth_failed: "Não foi possível concluir o login social. Tente novamente.",
 }
 
 interface AuthScreenProps {
@@ -47,7 +48,9 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" })
   const [remember, setRemember] = useState(false)
 
-  const [loading, setLoading] = useState(false)
+  const login = useLogin()
+  const register = useRegisterUser()
+  const loading = login.isPending || register.isPending
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -64,8 +67,9 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
   }
 
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get("linkedinError")
-    if (code) setError(LINKEDIN_ERRORS[code] ?? LINKEDIN_ERRORS.oauth_failed)
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get("oauthError") ?? params.get("linkedinError")
+    if (code) setError(OAUTH_ERRORS[code] ?? OAUTH_ERRORS.oauth_failed)
   }, [])
 
   const handleLogin = async (event: React.FormEvent) => {
@@ -78,21 +82,15 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
       return
     }
 
-    setLoading(true)
     try {
-      const response = await loginUser({
+      const response = await login.mutateAsync({
         email: form.email,
         password: form.password,
         role: apiRole,
       })
-
-      if (response.token) {
-        router.replace(await loginDestination(response.role, new URLSearchParams(window.location.search).get("setup") === "1"))
-      }
+      router.replace(await loginDestination(response.role, new URLSearchParams(window.location.search).get("setup") === "1"))
     } catch (err) {
       setError(getErrorMessage(err, "E-mail ou senha incorretos."))
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -111,9 +109,8 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
       return
     }
 
-    setLoading(true)
     try {
-      await registerUser({
+      await register.mutateAsync({
         name: form.name,
         email: form.email,
         password: form.password,
@@ -124,8 +121,6 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
       router.replace(`/auth/verify-email?email=${encodeURIComponent(form.email)}&role=${apiRole}`)
     } catch (err) {
       setError(getErrorMessage(err, "Erro ao realizar cadastro. Tente novamente."))
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -235,13 +230,15 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                 </div>
 
                 <div className="space-y-3">
-                  <button type="button" className="btn-secondary w-full">
-                    <GoogleIcon />
-                    Continuar com o Google
-                  </button>
+                  {role === "candidato" && (
+                    <a href={`${API_BASE_URL}/oauth2/authorization/google`} className="btn-secondary w-full">
+                      <GoogleIcon />
+                      Continuar com o Google
+                    </a>
+                  )}
 
                   {role === "candidato" && (
-                    <a href={getLinkedInAuthorizationUrl()} className="btn-secondary w-full">
+                    <a href={`${API_BASE_URL}/oauth2/authorization/linkedin`} className="btn-secondary w-full">
                       <LinkedInIcon />
                       Continuar com o LinkedIn
                     </a>

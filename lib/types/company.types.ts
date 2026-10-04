@@ -8,6 +8,8 @@ export interface CompanyProfile {
   website?: string
   city?: string
   state?: string
+  latitude?: number
+  longitude?: number
   logoUrl?: string
   createdAt?: string
   updatedAt?: string
@@ -21,5 +23,6 @@ export interface UpdateCompanyProfileDto {
   website?: string
   city?: string
   state?: string
-  logoUrl?: string
+  latitude?: number
+  longitude?: number
 }

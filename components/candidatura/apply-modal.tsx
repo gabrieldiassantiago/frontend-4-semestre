@@ -20,11 +20,9 @@ import { Field } from "@/components/ui/form-field"
 import { Alert, Skeleton } from "@/components/ui/states"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { Badge } from "@/components/ui/badge"
-import { useCandidateProfile } from "@/lib/hooks/useCandidateProfile"
-import { revalidarCandidatura } from "@/lib/hooks/useCandidaturas"
+import { useCandidateProfile, useUploadCandidateResume } from "@/lib/queries/use-candidate-profile"
+import { useCriarCandidatura } from "@/lib/queries/use-candidaturas"
 import { ApplicationResumePicker, type ResumeSelection } from "./application-resume-picker"
-import { uploadCandidateResume } from "@/lib/services/candidate.service"
-import { criarCandidatura } from "@/lib/services/candidatura.service"
 import { getProfileCompletion } from "@/lib/candidate-completion"
 import { getErrorMessage, isApiError } from "@/lib/errors"
 import { formatCurrency } from "@/lib/format"
@@ -100,7 +98,9 @@ export function ApplyModal({
   onClose: () => void
   onApplied?: (candidatura: Candidatura) => void
 }) {
-  const { profile, loading: loadingProfile, setProfile } = useCandidateProfile()
+  const { profile, loading: loadingProfile } = useCandidateProfile()
+  const uploadResume = useUploadCandidateResume({ silent: true })
+  const criarCandidatura = useCriarCandidatura()
   const reduceMotion = useReducedMotion()
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const stepContent = useRef<HTMLDivElement>(null)
@@ -165,20 +165,18 @@ export function ApplyModal({
       let curriculoUrl = resume?.source === "profile" ? resume.url : undefined
       if (resume?.source === "file") {
         if (!uploadedResume.current) {
-          const updated = await uploadCandidateResume(resume.file)
+          const updated = await uploadResume.mutateAsync(resume.file)
           if (!updated.resumeUrl) throw new Error("O envio do currículo não foi confirmado. Tente novamente.")
           uploadedResume.current = updated.resumeUrl
-          await setProfile(updated)
         }
-        curriculoUrl = uploadedResume.current
+        curriculoUrl = uploadedResume.current ?? undefined
       }
-      const candidatura = await criarCandidatura({
+      const candidatura = await criarCandidatura.mutateAsync({
         vagaId: vaga.id,
         cartaApresentacao: carta.trim() || undefined,
         curriculoUrl,
       })
       setCriada(candidatura)
-      await revalidarCandidatura(candidatura.id)
       onApplied?.(candidatura)
     } catch (requestError) {
       if (isApiError(requestError, 409)) {
@@ -393,7 +391,7 @@ export function ApplyModal({
 
                         {(profile.skills ?? []).length > 0 && (
                           <div className="mt-3.5 flex flex-wrap gap-1.5">
-                            {(profile.skills ?? []).slice(0, 8).map((skill) => (
+                            {(profile.skills ?? []).slice(0, 8).map((skill: string) => (
                               <Badge key={skill} variant="primary" size="sm">
                                 {skill}
                               </Badge>

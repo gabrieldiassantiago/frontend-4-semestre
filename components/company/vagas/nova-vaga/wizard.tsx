@@ -10,6 +10,7 @@ export const WIZARD_STEPS = [
   { label: "Local e salário", title: "Local e salário" },
   { label: "Benefícios", title: "Benefícios" },
   { label: "Descrição", title: "Descrição" },
+  { label: "Etapas", title: "Etapas" },
 ] as const
 
 export const TOTAL_STEPS = WIZARD_STEPS.length

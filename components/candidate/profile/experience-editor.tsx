@@ -1,20 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { BriefcaseBusiness, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { Field } from "@/components/ui/form-field"
 import { Alert, EmptyState } from "@/components/ui/states"
 import {
-  addCandidateExperience,
-  deleteCandidateExperience,
-  updateCandidateExperience,
-} from "@/lib/services/candidate.service"
-import { formatDate } from "@/lib/format"
+  useAddCandidateExperience,
+  useDeleteCandidateExperience,
+  useUpdateCandidateExperience,
+} from "@/lib/queries/use-candidate-profile"
+function formatExperienceMonth(value: string) {
+  const match = /^(\d{4})-(\d{2})/.exec(value)
+  if (!match) return "—"
+  return new Intl.DateTimeFormat("pt-BR", {month:"short", year:"numeric"}).format(new Date(Number(match[1]), Number(match[2]) - 1, 1))
+}
 import type {
   CandidateExperience,
   CandidateProfile,
   CreateExperienceDto,
 } from "@/lib/types/candidate.types"
+import { validateExperience } from "@/lib/utils/profile-validation"
 import { messageFrom } from "./profile-form.utils"
 
 type Rascunho = CreateExperienceDto & { id?: string }
@@ -34,8 +39,8 @@ function paraMes(valor?: string) {
 }
 
 function periodo(item: CandidateExperience) {
-  const inicio = formatDate(item.startDate)
-  const fim = item.isCurrent ? "Atual" : item.endDate ? formatDate(item.endDate) : "—"
+  const inicio = formatExperienceMonth(item.startDate)
+  const fim = item.isCurrent ? "Atual" : item.endDate ? formatExperienceMonth(item.endDate) : "—"
   return `${inicio} · ${fim}`
 }
 
@@ -46,24 +51,35 @@ function periodo(item: CandidateExperience) {
 export function ExperienceEditor({
   experiences,
   onProfileChange,
+  onEditingChange,
 }: {
   experiences: CandidateExperience[]
   onProfileChange: (profile: CandidateProfile) => void
+  onEditingChange?: (editing: boolean) => void
 }) {
   const [rascunho, setRascunho] = useState<Rascunho | null>(null)
-  const [saving, setSaving] = useState(false)
+  const addExperience = useAddCandidateExperience()
+  const updateExperience = useUpdateCandidateExperience()
+  const deleteExperience = useDeleteCandidateExperience()
+  const saving = addExperience.isPending || updateExperience.isPending
   const [removendo, setRemovendo] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const busy = saving || removendo !== null
+  useEffect(() => {
+    onEditingChange?.(Boolean(rascunho) || busy)
+    return () => onEditingChange?.(false)
+  }, [Boolean(rascunho), busy, onEditingChange])
 
   async function salvar() {
-    if (!rascunho) return
+    if (!rascunho || busy) return
 
-    if (!rascunho.companyName.trim() || !rascunho.role.trim() || !rascunho.startDate) {
-      setErro("Empresa, cargo e data de início são obrigatórios.")
-      return
-    }
+    const now = new Date()
+    const currentMonth = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0")
+    const errors = validateExperience(rascunho, currentMonth)
+    setFieldErrors(errors)
+    if (Object.keys(errors).length) { setErro("Revise os campos destacados."); return }
 
-    setSaving(true)
     setErro(null)
 
     const dto: CreateExperienceDto = {
@@ -77,22 +93,21 @@ export function ExperienceEditor({
 
     try {
       const atualizado = rascunho.id
-        ? await updateCandidateExperience(rascunho.id, dto)
-        : await addCandidateExperience(dto)
+        ? await updateExperience.mutateAsync({ id: rascunho.id, dto })
+        : await addExperience.mutateAsync(dto)
       onProfileChange(atualizado)
       setRascunho(null)
     } catch (error) {
       setErro(messageFrom(error, "Não foi possível salvar a experiência."))
-    } finally {
-      setSaving(false)
     }
   }
 
   async function remover(id: string) {
+    if (busy || rascunho) return
     setRemovendo(id)
     setErro(null)
     try {
-      onProfileChange(await deleteCandidateExperience(id))
+      onProfileChange(await deleteExperience.mutateAsync(id))
     } catch (error) {
       setErro(messageFrom(error, "Não foi possível remover a experiência."))
     } finally {
@@ -110,7 +125,7 @@ export function ExperienceEditor({
           title="Nenhuma experiência adicionada"
           description="Estágios, trabalhos formais, voluntariado e projetos acadêmicos contam como experiência."
           action={
-            <button type="button" onClick={() => setRascunho(VAZIO)} className="btn-primary">
+            <button type="button" onClick={() => { setErro(null); setFieldErrors({}); setRascunho({ ...VAZIO }) }} className="btn-primary">
               <Plus className="size-4" aria-hidden />
               Adicionar experiência
             </button>
@@ -121,9 +136,9 @@ export function ExperienceEditor({
           {experiences.map((item) => (
             <li
               key={item.id}
-              className="flex items-start gap-4 rounded-card border border-border bg-card p-4"
+              className="flex flex-wrap items-start gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm sm:flex-nowrap"
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-strong-foreground">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-subtle text-primary">
                 <BriefcaseBusiness className="size-5" aria-hidden />
               </span>
 
@@ -155,7 +170,8 @@ export function ExperienceEditor({
                       isCurrent: item.isCurrent,
                     })
                   }
-                  className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  disabled={busy || Boolean(rascunho)}
+                  className="grid size-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <Pencil className="size-4" aria-hidden />
                 </button>
@@ -163,8 +179,8 @@ export function ExperienceEditor({
                   type="button"
                   aria-label={`Remover experiência ${item.role}`}
                   onClick={() => remover(item.id)}
-                  disabled={removendo === item.id}
-                  className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-danger-subtle hover:text-danger-foreground disabled:opacity-50"
+                  disabled={busy || Boolean(rascunho)}
+                  className="grid size-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-danger-subtle hover:text-danger-foreground disabled:opacity-50"
                 >
                   {removendo === item.id ? (
                     <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -179,52 +195,63 @@ export function ExperienceEditor({
       )}
 
       {rascunho ? (
-        <section className="rounded-card border border-border bg-muted/50 p-5">
-          <h4 className="text-sm font-bold text-foreground">
+        <section aria-label="Formulário de experiência" className="overflow-hidden rounded-2xl border border-primary/25 bg-card p-5 shadow-sm sm:p-6">
+          <fieldset disabled={busy} className="min-w-0">
+          <h4 className="text-lg font-bold tracking-tight text-foreground">
             {rascunho.id ? "Editar experiência" : "Nova experiência"}
           </h4>
 
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <Field label="Empresa ou organização">
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">Conte onde você atuou e como contribuiu. Estágio e voluntariado também valem.</p>
+          <p className="mt-3 text-xs text-muted-foreground">* Campo obrigatório · salvo ao clicar no botão abaixo.</p>
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            <Field label="Empresa ou organização *" error={fieldErrors.companyName}>
               <input
                 className="field-input"
+                aria-invalid={Boolean(fieldErrors.companyName)}
                 value={rascunho.companyName}
                 onChange={(event) =>
                   setRascunho({ ...rascunho, companyName: event.target.value })
                 }
-                placeholder="Ex.: Vercel"
+                placeholder="Ex.: Hospital Santa Casa, Loja Central"
               />
             </Field>
 
-            <Field label="Cargo">
+            <Field label="Cargo ou atividade *" error={fieldErrors.role}>
               <input
                 className="field-input"
+                aria-invalid={Boolean(fieldErrors.role)}
                 value={rascunho.role}
                 onChange={(event) => setRascunho({ ...rascunho, role: event.target.value })}
                 placeholder="Ex.: Assistente de vendas"
               />
             </Field>
 
-            <Field label="Início">
+            <Field label="Data de início *" error={fieldErrors.startDate}>
               <input
                 type="month"
+                min="1900-01"
+                max={new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0")}
                 className="field-input"
+                aria-invalid={Boolean(fieldErrors.startDate)}
                 value={rascunho.startDate}
                 onChange={(event) => setRascunho({ ...rascunho, startDate: event.target.value })}
               />
             </Field>
 
-            <Field label="Término" hint={rascunho.isCurrent ? "Desativado: é o seu trabalho atual." : undefined}>
+            <Field error={fieldErrors.endDate} label="Data de término" hint={rascunho.isCurrent ? "Desativado: é o seu trabalho atual." : undefined}>
               <input
                 type="month"
+                min="1900-01"
+                max={new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0")}
                 className="field-input"
+                aria-invalid={Boolean(fieldErrors.endDate)}
                 value={rascunho.endDate ?? ""}
                 disabled={rascunho.isCurrent}
                 onChange={(event) => setRascunho({ ...rascunho, endDate: event.target.value })}
               />
             </Field>
 
-            <label className="flex cursor-pointer items-center gap-2.5 sm:col-span-2">
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface p-4 sm:col-span-2">
               <input
                 type="checkbox"
                 checked={rascunho.isCurrent}
@@ -255,27 +282,28 @@ export function ExperienceEditor({
             </Field>
           </div>
 
-          <div className="mt-5 flex justify-end gap-2">
+          <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-border pt-5">
             <button
               type="button"
-              onClick={() => setRascunho(null)}
+              onClick={() => { setRascunho(null); setErro(null); setFieldErrors({}) }}
               className="btn-ghost"
-              disabled={saving}
+              disabled={busy}
             >
               Cancelar
             </button>
-            <button type="button" onClick={salvar} className="btn-primary" disabled={saving}>
+            <button type="button" onClick={salvar} className="btn-primary" disabled={busy}>
               {saving && <Loader2 className="size-4 animate-spin" aria-hidden />}
               Salvar experiência
             </button>
           </div>
+          </fieldset>
         </section>
       ) : (
         experiences.length > 0 && (
           <button
             type="button"
-            onClick={() => setRascunho(VAZIO)}
-            className="btn-secondary self-start"
+            onClick={() => { setErro(null); setFieldErrors({}); setRascunho({ ...VAZIO }) }}
+            className="btn-secondary w-full border-dashed py-4"
           >
             <Plus className="size-4" aria-hidden />
             Adicionar experiência

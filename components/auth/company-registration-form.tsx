@@ -2,13 +2,15 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, ArrowRight, Building2, Check, Loader2, MapPin, ShieldCheck } from "lucide-react"
+import { ArrowLeft, ArrowRight, Building2, Check, Loader2, ShieldCheck } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { rememberRegistration } from "@/lib/auth-flow"
-import { registerCompany } from "@/lib/services/auth.service"
+import { useRegisterCompany } from "@/lib/queries/use-auth"
 import { getErrorMessage } from "@/lib/errors"
 import { PasswordInput } from "@/components/ui/password-input"
 import { cn } from "@/lib/utils"
+import { AddressAutocomplete } from "@/components/company/vagas/address-autocomplete"
+import { hasCompanyLocation } from "@/lib/utils/company-location"
 
 type Step = 1 | 2 | 3
 
@@ -27,6 +29,8 @@ interface CompanyFormData {
   website: string
   city: string
   state: string
+  latitude?: number
+  longitude?: number
   description: string
 }
 
@@ -66,7 +70,8 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
   const router = useRouter()
   const [step, setStep] = useState<Step>(1)
   const [form, setForm] = useState<CompanyFormData>(INITIAL_FORM)
-  const [loading, setLoading] = useState(false)
+  const registerCompany = useRegisterCompany()
+  const loading = registerCompany.isPending
   const [error, setError] = useState<string | null>(null)
 
   const updateField = <K extends keyof CompanyFormData>(field: K, value: CompanyFormData[K]) => {
@@ -95,8 +100,8 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
     }
 
     if (step === 3) {
-      if (!form.city.trim() || form.state.trim().length !== 2) {
-        return "Informe a cidade e a UF da empresa."
+      if (!hasCompanyLocation(form)) {
+        return "Selecione a localização da empresa nos resultados da busca."
       }
     }
 
@@ -120,16 +125,21 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (loading) return
+    if (step < 3) { goForward(); return }
     const validationError = validateStep()
     if (validationError) {
       setError(validationError)
       return
     }
 
-    setLoading(true)
+    if (form.latitude == null || form.longitude == null) {
+      setError("Selecione a localização da empresa nos resultados da busca.")
+      return
+    }
     setError(null)
     try {
-      await registerCompany({
+      await registerCompany.mutateAsync({
         responsibleName: form.responsibleName.trim(),
         email: form.email.trim(),
         password: form.password,
@@ -137,6 +147,8 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
         cnpj: form.cnpj,
         industry: form.industry,
         website: form.website.trim() || undefined,
+        latitude: form.latitude,
+        longitude: form.longitude,
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
         description: form.description.trim() || undefined,
@@ -145,8 +157,6 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
       router.replace(`/auth/verify-email?email=${encodeURIComponent(form.email.trim())}&role=COMPANY`)
     } catch (requestError: unknown) {
       setError(getErrorMessage(requestError, "Não foi possível criar a conta empresarial."))
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -319,31 +329,28 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
 
           {step === 3 && (
             <div className="space-y-4">
-              <div className="grid grid-cols-[1fr_88px] gap-3 sm:grid-cols-[1fr_100px] sm:gap-4">
-                <Field label="Cidade" htmlFor="company-city">
-                  <div className="relative flex items-center">
-                    <MapPin className="pointer-events-none absolute left-3.5 h-4 w-4 text-subtle-foreground" />
-                    <input
-                      id="company-city"
-                      className="auth-input pl-11"
-                      placeholder="Campinas"
-                      value={form.city}
-                      onChange={(e) => updateField("city", e.target.value)}
-                    />
-                  </div>
-                </Field>
-                <Field label="UF" htmlFor="company-state">
-                  <input
-                    id="company-state"
-                    maxLength={2}
-                    className="auth-input text-center uppercase"
-                    placeholder="SP"
-                    value={form.state}
-                    onChange={(e) =>
-                      updateField("state", e.target.value.replace(/[^a-zA-Z]/g, "").slice(0, 2).toUpperCase())
-                    }
-                  />
-                </Field>
+              <div className="space-y-2">
+                <label htmlFor="company-location" className="block text-sm font-semibold text-foreground">Localização da empresa</label>
+                <AddressAutocomplete
+                  inputId="company-location"
+                  label="Buscar localização da empresa"
+                  placeholder="Busque cidade ou endereço"
+                  disabled={loading}
+                  requireCityAndState
+                  showCoordinates={false}
+                  initialCity={form.city}
+                  initialState={form.state}
+                  initialCoords={form.latitude != null && form.longitude != null ? { latitude: form.latitude, longitude: form.longitude } : null}
+                  onSelectLocation={(location) => {
+                    setForm((current) => ({ ...current, city: location.cidade, state: location.estado, latitude: location.latitude, longitude: location.longitude }))
+                    setError(null)
+                  }}
+                  onClear={() => {
+                    setForm((current) => ({ ...current, city: "", state: "", latitude: undefined, longitude: undefined }))
+                    setError(null)
+                  }}
+                />
+                <p className="text-xs leading-5 text-muted-foreground">Selecione um resultado para confirmar a cidade e o estado da empresa.</p>
               </div>
               <Field label="Sobre a empresa (opcional)" htmlFor="company-description">
                 <textarea

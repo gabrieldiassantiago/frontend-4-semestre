@@ -1,11 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import {
   ArrowRight,
   BriefcaseBusiness,
-  Check,
   Code2,
   FileText,
   GraduationCap,
@@ -18,10 +17,10 @@ import { PageHeader, PageShell } from "@/components/ui/page"
 import { Alert, ErrorState, Skeleton } from "@/components/ui/states"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { Field } from "@/components/ui/form-field"
-import { updateCandidateProfileMe } from "@/lib/services/candidate.service"
-import { useCandidateProfile } from "@/lib/hooks/useCandidateProfile"
+import { useCandidateProfile, useUpdateCandidateProfile } from "@/lib/queries/use-candidate-profile"
 import { getProfileCompletion, type ProfileStepId } from "@/lib/candidate-completion"
 import type { CandidateProfile, UpdateCandidateProfileDto } from "@/lib/types/candidate.types"
+import { validateProfile } from "@/lib/utils/profile-validation"
 import { cn } from "@/lib/utils"
 import { EducationFields, LinksFields, ProfileFields } from "./profile-sections"
 import { ExperienceEditor } from "./experience-editor"
@@ -49,13 +48,15 @@ type SectionId = (typeof SECTIONS)[number]["id"]
 
 function ProfileSkeleton() {
   return (
-    <PageShell aria-busy="true">
-      <span className="sr-only">Carregando perfil</span>
-      <Skeleton className="h-4 w-24" />
-      <Skeleton className="mt-3 h-9 w-56" />
-      <div className="mt-8 grid gap-6 lg:grid-cols-[300px_1fr]">
-        <Skeleton className="h-80 rounded-card" />
-        <Skeleton className="h-[520px] rounded-card" />
+    <PageShell>
+      <div aria-busy="true" aria-live="polite">
+        <span className="sr-only">Carregando perfil</span>
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="mt-3 h-9 w-56" />
+        <div className="mt-8 grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+          <Skeleton className="h-80 rounded-card" />
+          <Skeleton className="h-[520px] rounded-card" />
+        </div>
       </div>
     </PageShell>
   )
@@ -66,20 +67,23 @@ export function CandidateProfileScreen() {
 
   const [form, setForm] = useState<UpdateCandidateProfileDto>({})
   const [section, setSection] = useState<SectionId>("basico")
-  const [saving, setSaving] = useState(false)
+  const updateProfile = useUpdateCandidateProfile()
+  const saving = updateProfile.isPending
+  const initialized = useRef<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof UpdateCandidateProfileDto, string>>>({})
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
 
-  // Sincroniza o rascunho quando o perfil chega ou é substituído por uma
-  // operação de coleção (experiência/projeto devolvem o perfil inteiro).
+  // Inicializa por perfil, preservando o rascunho durante uploads e atualizações de coleções.
   useEffect(() => {
-    if (profile) setForm(toForm(profile))
+    if (profile && initialized.current !== profile.id) { initialized.current = profile.id; setForm(toForm(profile)) }
   }, [profile])
 
   const completion = useMemo(
     () =>
       getProfileCompletion({
         ...form,
+        resumeUrl: profile?.resumeUrl,
         experiences: profile?.experiences,
         projects: profile?.projects,
       }),
@@ -87,6 +91,18 @@ export function CandidateProfileScreen() {
   )
 
   if (loading) return <ProfileSkeleton />
+
+  if (!profile && !error) {
+    return (
+      <PageShell className="max-w-lg py-20">
+        <PageHeader title="Vamos criar seu perfil" description="Complete suas informações para se apresentar às empresas." />
+        <Link href="/profile/candidato/completar" className="btn-primary mt-6">
+          Preencher perfil
+          <ArrowRight className="size-4" aria-hidden />
+        </Link>
+      </PageShell>
+    )
+  }
 
   if (!profile) {
     return (
@@ -109,26 +125,32 @@ export function CandidateProfileScreen() {
 
   function aplicarPerfil(atualizado: CandidateProfile) {
     setProfile(atualizado)
-    setForm(toForm(atualizado))
+
   }
 
   async function salvar(event: React.FormEvent) {
     event.preventDefault()
-    setSaving(true)
     setSaveError(null)
+    const errors = validateProfile(form)
+    setFieldErrors(errors)
+    if (Object.keys(errors).length) {
+      const first = Object.keys(errors)[0]
+      setSection(first === "phone" ? "basico" : ["currentSemester", "expectedGraduationYear"].includes(first) ? "formacao" : "links")
+      setSaveError("Revise os campos indicados antes de salvar."); return
+    }
     try {
-      aplicarPerfil(await updateCandidateProfileMe(form))
-      setSaved(true)
-      window.setTimeout(() => setSaved(false), 2500)
+      const updated = await updateProfile.mutateAsync(form)
+      aplicarPerfil(updated)
+      setForm(toForm(updated))
     } catch (requestError) {
       setSaveError(messageFrom(requestError, "Não foi possível salvar as alterações."))
-    } finally {
-      setSaving(false)
     }
   }
 
+  const dirty = JSON.stringify(form) !== JSON.stringify(toForm(profile))
+
   return (
-    <PageShell>
+    <PageShell className="candidate-profile min-w-0 max-w-[1440px]">
       <PageHeader
         eyebrow="Sua conta"
         title="Meu perfil"
@@ -136,11 +158,11 @@ export function CandidateProfileScreen() {
 
       />
 
-      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[300px_1fr]">
-        <aside className="flex flex-col gap-5 lg:sticky lg:top-24">
+      <div className="mt-6 grid min-w-0 items-start gap-5 sm:mt-8 sm:gap-7 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-24">
           <div className="rounded-card border border-border bg-card p-5 shadow-card">
             <div className="flex items-center gap-3">
-              <EntityAvatar name={profile.userName} size="lg" className="rounded-full" />
+              {profile.profileImageUrl ? <img src={profile.profileImageUrl} alt="Sua foto de perfil" className="size-14 shrink-0 rounded-full object-cover" /> : <EntityAvatar name={profile.userName} size="lg" className="rounded-full" />}
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-foreground">
                   {profile.userName || "Minha conta"}
@@ -163,7 +185,7 @@ export function CandidateProfileScreen() {
                     completion.complete ? "text-success-foreground" : "text-strong-foreground"
                   }
                 >
-                  Perfil completo
+                  {completion.complete ? "Perfil completo" : "Preenchimento do perfil"}
                 </span>
                 <span
                   className={cn(
@@ -217,9 +239,10 @@ export function CandidateProfileScreen() {
             </div>
           </div>
 
+          <label className="block xl:hidden"><span className="mb-2 block text-sm font-semibold">O que você quer editar?</span><select className="field-input" value={section} disabled={busy || saving} onChange={event => {setSection(event.target.value as SectionId);setSaveError(null);setFieldErrors({})}}>{SECTIONS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
           <nav
             aria-label="Seções do perfil"
-            className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 lg:mx-0 lg:flex-col lg:px-0"
+            className="hidden flex-col gap-1 rounded-xl border border-border bg-card p-2 xl:flex"
           >
             {SECTIONS.map((item) => {
               const active = section === item.id
@@ -229,7 +252,8 @@ export function CandidateProfileScreen() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setSection(item.id)}
+                  disabled={busy || saving}
+                  onClick={() => {setSection(item.id);setSaveError(null);setFieldErrors({})}}
                   aria-current={active ? "true" : undefined}
                   className={cn(
                     "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-3.5 py-2.5 text-sm font-semibold transition-colors lg:w-full",
@@ -252,34 +276,25 @@ export function CandidateProfileScreen() {
           </nav>
         </aside>
 
-        <section className="overflow-hidden rounded-card border border-border bg-card shadow-card">
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-card">
           <header className="flex items-center justify-between gap-4 border-b border-border px-5 py-5 sm:px-7">
             <div>
               <h2 className="text-lg font-bold tracking-tight text-foreground">
                 {activeSection?.label}
               </h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Mantenha suas informações verdadeiras e atualizadas.
+                {activeSection?.editavel ? "Edite seus dados e salve as alterações." : "As alterações desta seção são salvas automaticamente."}
               </p>
             </div>
-            {saved && (
-              <span
-                role="status"
-                className="flex shrink-0 items-center gap-1.5 text-xs font-bold text-success-foreground"
-              >
-                <Check className="size-4" aria-hidden />
-                Salvo
-              </span>
-            )}
           </header>
 
-          <form onSubmit={salvar}>
-            <div className="px-5 py-7 sm:px-7">
+          <form onSubmit={salvar} noValidate>
+            <div className="min-w-0 px-4 py-6 sm:px-8 sm:py-8">
               {section === "basico" && (
-                <ProfileFields onProfileUpdated={aplicarPerfil} form={form} setForm={setForm} profile={profile} />
+                <ProfileFields errors={fieldErrors} onUploadingChange={setBusy} onProfileUpdated={aplicarPerfil} form={form} setForm={setForm} profile={profile} />
               )}
 
-              {section === "formacao" && <EducationFields form={form} setForm={setForm} />}
+              {section === "formacao" && <EducationFields errors={fieldErrors} form={form} setForm={setForm} />}
 
               {section === "skills" && (
                 <div className="max-w-3xl">
@@ -295,21 +310,22 @@ export function CandidateProfileScreen() {
                 </div>
               )}
 
-              {section === "links" && <LinksFields form={form} setForm={setForm} />}
+              {section === "links" && <LinksFields errors={fieldErrors} form={form} setForm={setForm} />}
 
               {section === "curriculo" && (
-                <ResumeUpload profile={profile} onProfileChange={aplicarPerfil} />
+                <ResumeUpload profile={profile} onProfileChange={aplicarPerfil} onUploadingChange={setBusy} />
               )}
 
               {section === "experiencias" && (
                 <ExperienceEditor
+                  onEditingChange={setBusy}
                   experiences={profile.experiences ?? []}
                   onProfileChange={aplicarPerfil}
                 />
               )}
 
               {section === "projetos" && (
-                <ProjectEditor projects={profile.projects ?? []} onProfileChange={aplicarPerfil} />
+                <ProjectEditor onEditingChange={setBusy} projects={profile.projects ?? []} onProfileChange={aplicarPerfil} />
               )}
 
               {saveError && (
@@ -320,16 +336,17 @@ export function CandidateProfileScreen() {
             </div>
 
             {activeSection?.editavel && (
-              <footer className="flex items-center justify-end gap-3 border-t border-border px-5 py-4 sm:px-7">
+              <footer className="flex flex-wrap items-center gap-3 border-t border-border bg-muted/30 px-4 py-4 sm:px-8">
+                <p role="status" className="w-full text-xs text-muted-foreground sm:mr-auto sm:w-auto">{dirty ? "Alterações ainda não salvas" : "Suas informações estão salvas"}</p>
                 <button
                   type="button"
-                  onClick={() => setForm(toForm(profile))}
+                  onClick={() => {setForm(toForm(profile));setFieldErrors({});setSaveError(null)}}
                   className="btn-ghost"
-                  disabled={saving}
+                  disabled={saving || busy || !dirty}
                 >
                   Descartar
                 </button>
-                <button type="submit" className="btn-primary" disabled={saving}>
+                <button type="submit" className="btn-primary" disabled={saving || busy || !dirty}>
                   {saving && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
                   {saving ? "Salvando" : "Salvar alterações"}
                 </button>

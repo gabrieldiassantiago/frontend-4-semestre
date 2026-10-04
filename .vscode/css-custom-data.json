@@ -1,0 +1,15 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@theme",
+      "description": "Define as variáveis de tema e utilitários do Tailwind CSS.",
+      "references": [
+        {
+          "name": "Tailwind CSS: theme variables",
+          "url": "https://tailwindcss.com/docs/theme"
+        }
+      ]
+    }
+  ]
+}

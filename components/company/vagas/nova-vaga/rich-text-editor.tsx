@@ -25,14 +25,6 @@ export function RichTextEditor({ value, onChange, error, placeholder }: RichText
         extensions: [
             StarterKit.configure({
                 heading: { levels: [2, 3] },
-                // Desabilita atalhos de teclado que podem causar formatação acidental
-                keyboardShortcuts: {
-                    // Mantém apenas os essenciais, remove outros
-                    "Mod-b": () => editor?.chain().focus().toggleBold().run(),
-                    "Mod-i": () => editor?.chain().focus().toggleItalic().run(),
-                    "Mod-z": () => editor?.chain().focus().undo().run(),
-                    "Mod-Shift-z": () => editor?.chain().focus().redo().run(),
-                },
             }),
         ],
         content: value,

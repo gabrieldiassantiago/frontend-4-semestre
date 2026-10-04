@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { EntityAvatar } from "@/components/ui/entity-avatar"
+import { CompanyBrandLogo } from "./company-brand-logo"
 import {
   VagaBenefits,
   VagaHighlights,
@@ -67,7 +67,7 @@ export function JobDetailPanel({
     >
       {/* Header */}
       <header className="flex items-start gap-4 border-b border-border-subtle p-5 sm:p-6">
-        <EntityAvatar name={company} size="lg" className="rounded-xl ring-1 ring-border/80" />
+        <CompanyBrandLogo company={company} logoUrl={vaga.logoUrlEmpresa} className="size-14 rounded-xl ring-1 ring-border/80" />
 
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-semibold text-muted-foreground">{company}</p>

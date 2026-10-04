@@ -3,12 +3,11 @@ import { Badge } from "@/components/ui/badge"
 import { formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import {
-  ETAPAS,
   ETAPA_HINTS,
   ETAPA_LABELS,
   STATUS_BADGE,
   STATUS_LABELS,
-  etapaIndex,
+  etapasDaVaga,
   type Candidatura,
   type CandidaturaFeedback,
   type CandidaturaHistorico,
@@ -57,13 +56,16 @@ export function NotaEstrelas({ nota }: { nota: number }) {
 export function EtapaProgresso({
   etapa,
   status,
+  etapasVaga,
   className,
 }: {
   etapa: EtapaProcesso
   status: StatusCandidatura
+  etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number }>
   className?: string
 }) {
-  const current = etapaIndex(etapa)
+  const etapas = etapasDaVaga(etapasVaga)
+  const current = etapas.indexOf(etapa)
   const tone =
     status === "REPROVADA"
       ? "bg-danger"
@@ -77,9 +79,9 @@ export function EtapaProgresso({
     <div className={cn("flex items-center gap-2", className)}>
       <ol
         className="flex items-center gap-1"
-        aria-label={`Etapa ${current + 1} de ${ETAPAS.length}: ${ETAPA_LABELS[etapa]}`}
+        aria-label={`Etapa ${current + 1} de ${etapas.length}: ${ETAPA_LABELS[etapa]}`}
       >
-        {ETAPAS.map((item, index) => (
+        {etapas.map((item, index) => (
           <li key={item}>
             <span
               className={cn(
@@ -107,18 +109,21 @@ export function EtapaProgresso({
 export function EtapaTrilha({
   etapa,
   status,
+  etapasVaga,
   className,
 }: {
   etapa: EtapaProcesso
   status: StatusCandidatura
+  etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number }>
   className?: string
 }) {
-  const current = etapaIndex(etapa)
+  const etapas = etapasDaVaga(etapasVaga)
+  const current = etapas.indexOf(etapa)
   const encerradaSemAprovacao = status === "REPROVADA" || status === "CANCELADA"
 
   return (
     <ol className={cn("flex flex-col", className)}>
-      {ETAPAS.map((item, index) => {
+      {etapas.map((item, index) => {
         const done = index < current
         const active = index === current
         const pending = index > current
@@ -146,7 +151,7 @@ export function EtapaTrilha({
                 )}
               </span>
 
-              {index < ETAPAS.length - 1 && (
+              {index < etapas.length - 1 && (
                 <span
                   aria-hidden
                   className={cn("w-px flex-1 self-stretch", done ? "bg-success" : "bg-border")}
@@ -154,7 +159,7 @@ export function EtapaTrilha({
               )}
             </div>
 
-            <div className={cn("min-w-0 pb-6", index === ETAPAS.length - 1 && "pb-0")}>
+            <div className={cn("min-w-0 pb-6", index === etapas.length - 1 && "pb-0")}>
               <p
                 className={cn(
                   "text-sm font-bold",

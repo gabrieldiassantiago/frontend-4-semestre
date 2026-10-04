@@ -6,14 +6,13 @@ import {
   ArrowRight,
   BriefcaseBusiness,
   Plus,
-  Sparkles,
   TrendingUp,
   Users,
   Activity,
 } from "lucide-react"
 
-import { useCompanyVagas } from "@/lib/hooks/useCompanyVagas"
-import { useCandidaturasEmpresa } from "@/lib/hooks/useCandidaturas"
+import { useCompanyVagas } from "@/lib/queries/use-vagas"
+import { useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
 import { PageShell } from "@/components/ui/page"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import {
@@ -25,6 +24,8 @@ import {
 import { VagaRow } from "../vagas/vaga-row"
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
 import { ErrorState } from "@/components/ui/states"
+import type { Vaga } from "@/lib/types/vaga.types"
+import type { Candidatura } from "@/lib/types/candidatura.types"
 
 const DashboardCharts = dynamic(() => import("./dashboard-charts"), {
   loading: () => <div className="mt-8 space-y-5"><div className="grid gap-5 lg:grid-cols-2"><BarChartSkeleton /><BarChartSkeleton /></div><BarChartSkeleton bars={12} /></div>,
@@ -36,14 +37,14 @@ export function CompanyDashboardScreen() {
 
   const loading = vagasLoading || candidaturasLoading
 
-  const activeCount = vagas.filter((v) => v.ativa).length
+  const activeCount = vagas.filter((v: Vaga) => v.ativa).length
   const pausedCount = vagas.length - activeCount
   const recentVagas = vagas.slice(0, 4)
 
   // Taxa de aprovação (candidaturas aprovadas / total finalizadas)
-  const aprovadas = candidaturas.filter((c) => c.status === "APROVADA").length
+  const aprovadas = candidaturas.filter((c: Candidatura) => c.status === "APROVADA").length
   const finalizadas = candidaturas.filter(
-    (c) => c.status === "APROVADA" || c.status === "REPROVADA",
+    (c: Candidatura) => c.status === "APROVADA" || c.status === "REPROVADA",
   ).length
   const taxaAprovacao = finalizadas > 0 ? Math.round((aprovadas / finalizadas) * 100) : 0
 
@@ -51,24 +52,24 @@ export function CompanyDashboardScreen() {
   if (vagasError || candidaturasError) return <PageShell><ErrorState description={vagasError || candidaturasError || undefined} action={<button type="button" className="btn-primary" onClick={() => { refetchVagas(); void refetchCandidaturas() }}>Tentar novamente</button>} /></PageShell>
 
   return (
-    <PageShell className="max-w-6xl py-8">
+    <PageShell className="max-w-[1380px] py-8">
       {/* ── Header ── */}
-      <div className="flex flex-col justify-between gap-4 border-b border-border-subtle/50 pb-8 sm:flex-row sm:items-end">
+      <div className="flex flex-col justify-between gap-4 border-b border-border pb-8 sm:flex-row sm:items-end">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Painel de Gestão
           </span>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Visão Geral
+            Visão geral
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Acompanhe a tração das suas posições e os candidatos em destaque.
+            Acompanhe as vagas publicadas e o andamento das candidaturas.
           </p>
         </div>
 
         <Link
           href="/empresa/vagas/nova"
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-all duration-200 hover:opacity-95 active:scale-95"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground transition-all duration-200 hover:opacity-95 "
         >
           <Plus className="size-4" aria-hidden />
           Criar vaga
@@ -82,10 +83,10 @@ export function CompanyDashboardScreen() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Vagas ativas */}
-            <div className="rounded-2xl border border-border-subtle/60 bg-card/60 p-5 backdrop-blur-sm transition-all hover:bg-card">
+            <div className="rounded-xl border border-border bg-card p-5  transition-all hover:bg-card">
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-muted-foreground">Vagas ativas</span>
-                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface text-muted-foreground">
                   <BriefcaseBusiness className="size-4" />
                 </span>
               </div>
@@ -98,10 +99,10 @@ export function CompanyDashboardScreen() {
             </div>
 
             {/* Candidaturas */}
-            <div className="rounded-2xl border border-border-subtle/60 bg-card/60 p-5 backdrop-blur-sm transition-all hover:bg-card">
+            <div className="rounded-xl border border-border bg-card p-5  transition-all hover:bg-card">
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-muted-foreground">Candidaturas</span>
-                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-info-subtle text-info">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface text-muted-foreground">
                   <Users className="size-4" />
                 </span>
               </div>
@@ -115,10 +116,10 @@ export function CompanyDashboardScreen() {
             </div>
 
             {/* Taxa de aprovação */}
-            <div className="rounded-2xl border border-border-subtle/60 bg-card/60 p-5 backdrop-blur-sm transition-all hover:bg-card">
+            <div className="rounded-xl border border-border bg-card p-5  transition-all hover:bg-card">
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-muted-foreground">Taxa de aprovação</span>
-                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-success-subtle text-success-foreground">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface text-muted-foreground">
                   <Activity className="size-4" />
                 </span>
               </div>
@@ -132,29 +133,10 @@ export function CompanyDashboardScreen() {
               </span>
             </div>
 
-            {/* Dica de recrutamento */}
-            <div className="flex flex-col justify-between rounded-2xl border border-primary/20 bg-primary-subtle/40 p-5">
-              <div className="flex items-start gap-3">
-                <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                  <Sparkles className="size-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-                    Dica
-                  </p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-foreground/80">
-                    Inclua a faixa salarial e as responsabilidades da vaga para ajudar candidatos a avaliar a oportunidade.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <Link
-                  href="/empresa/vagas/nova"
-                  className="text-xs font-semibold text-primary transition-colors hover:underline"
-                >
-                  Publicar com detalhes →
-                </Link>
-              </div>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <div className="flex items-start justify-between gap-3"><span className="text-xs font-medium text-muted-foreground">Em andamento</span><span className="grid size-9 place-items-center rounded-lg bg-surface text-muted-foreground"><Activity className="size-4" /></span></div>
+              <p className="mt-4 text-3xl font-bold tracking-tight tabular-nums">{candidaturas.filter(c => c.status === "EM_ANDAMENTO").length}</p>
+              <span className="mt-1 block text-xs text-muted-foreground">Candidaturas em avaliação</span>
             </div>
           </div>
         )}
@@ -183,9 +165,9 @@ export function CompanyDashboardScreen() {
           {loading ? (
             <VagasListSkeleton rows={4} />
           ) : recentVagas.length === 0 ? (
-            <div className="overflow-hidden rounded-2xl border border-border-subtle/70 bg-card/60 py-12">
+            <div className="overflow-hidden rounded-xl border border-border bg-card py-12">
               <div className="flex flex-col items-center gap-3 text-center px-6">
-                <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                <span className="grid size-12 place-items-center rounded-xl bg-surface text-muted-foreground">
                   <BriefcaseBusiness className="size-5" />
                 </span>
                 <p className="text-sm font-semibold text-foreground">Nenhuma vaga ativa</p>
@@ -194,7 +176,7 @@ export function CompanyDashboardScreen() {
                 </p>
                 <Link
                   href="/empresa/vagas/nova"
-                  className="mt-2 inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-xs font-medium text-primary-foreground transition-all hover:opacity-95 active:scale-95"
+                  className="mt-2 inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-xs font-medium text-primary-foreground transition-all hover:opacity-95 "
                 >
                   <Plus className="size-3.5" />
                   Criar primeira vaga
@@ -202,9 +184,9 @@ export function CompanyDashboardScreen() {
               </div>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-border-subtle/70 bg-card/60 backdrop-blur-sm">
+            <div className="overflow-hidden rounded-xl border border-border bg-card ">
               <ul className="divide-y divide-border-subtle/50">
-                {recentVagas.map((vaga) => (
+                {recentVagas.map((vaga: Vaga) => (
                   <li key={vaga.id} className="transition-colors hover:bg-muted/30">
                     <VagaRow vaga={vaga} />
                   </li>
@@ -232,10 +214,10 @@ export function CompanyDashboardScreen() {
           {loading ? (
             <CandidatesListSkeleton rows={4} />
           ) : (
-            <div className="rounded-2xl border border-border-subtle/70 bg-card/60 backdrop-blur-sm">
+            <div className="rounded-xl border border-border bg-card ">
               <ul className="divide-y divide-border-subtle/50">
                 {candidaturas.length === 0 && <li className="p-6 text-sm text-muted-foreground">As candidaturas recebidas aparecerão aqui.</li>}
-                {candidaturas.slice(0, 4).map((candidate) => (
+                {candidaturas.slice(0, 4).map((candidate: Candidatura) => (
                   <li
                     key={candidate.id}
                     className="group flex items-center justify-between gap-3 p-4 transition-colors hover:bg-muted/30"
@@ -256,7 +238,7 @@ export function CompanyDashboardScreen() {
                 ))}
               </ul>
 
-              <div className="border-t border-border-subtle/50 p-3 text-center">
+              <div className="border-t border-border p-3 text-center">
                 <Link
                   href="/empresa/candidatos"
                   className="inline-block text-xs font-medium text-muted-foreground transition-colors hover:text-primary"

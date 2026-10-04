@@ -1,3 +1,4 @@
+import { normalizeVagaDescription } from "@/lib/utils/vaga-description"
 import { cn } from "@/lib/utils"
 
 /*
@@ -110,7 +111,7 @@ export function VagaDescription({
   description: string
   className?: string
 }) {
-  const blocks = parseBlocks(description)
+  const blocks = parseBlocks(normalizeVagaDescription(description))
 
   if (blocks.length === 0) {
     return (

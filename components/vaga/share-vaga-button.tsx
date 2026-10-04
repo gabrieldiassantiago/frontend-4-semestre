@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Check, Link2, Share2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { toastSuccess } from "@/lib/toast"
 
 /**
  * Compartilha o link público da vaga.
@@ -29,6 +30,7 @@ export function ShareVagaButton({
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ title, url })
+        toastSuccess("Link compartilhado!")
         return
       } catch (error) {
         // Usuário cancelou o menu nativo: não faz sentido copiar em seguida.
@@ -38,6 +40,7 @@ export function ShareVagaButton({
 
     try {
       await navigator.clipboard.writeText(url)
+      toastSuccess("Link copiado!")
       setCopied(true)
       window.setTimeout(() => setCopied(false), 2000)
     } catch {

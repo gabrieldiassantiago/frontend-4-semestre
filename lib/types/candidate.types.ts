@@ -62,6 +62,11 @@ export interface UpdateCandidateProfileDto {
   skills?: string[]
 }
 
+export interface CreateProfileDto extends UpdateCandidateProfileDto {
+  experiences?: CreateExperienceDto[]
+  projects?: CreateProjectDto[]
+}
+
 export interface CreateExperienceDto {
   companyName: string
   role: string

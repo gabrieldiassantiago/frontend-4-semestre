@@ -12,12 +12,11 @@ import {
   Sparkles,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatRelativeDate } from "@/lib/format"
-import { MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
+import { formatCurrency, formatRelativeDate } from "@/lib/format"
+import { CATEGORIA_LABELS, MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
+import type { Vaga } from "@/lib/types/vaga.types"
 import type { StatusCandidatura } from "@/lib/types/candidatura.types"
 import { CompanyBrandLogo } from "./company-brand-logo"
-import { ApplicantFacepile } from "./applicant-facepile"
-import type { ExtendedVaga } from "@/lib/data/mock-jobs"
 
 export function JobCard({
   vaga,
@@ -27,7 +26,7 @@ export function JobCard({
   onSelect,
   onToggleSave,
 }: {
-  vaga: ExtendedVaga
+  vaga: Vaga
   saved: boolean
   selected: boolean
   applied?: StatusCandidatura
@@ -39,14 +38,14 @@ export function JobCard({
     vaga.cidade && vaga.estado ? `${vaga.cidade} - ${vaga.estado}` : vaga.cidade || "Brasil"
 
   const salaryText =
-    vaga.salario && vaga.salario > 0 ? `${(vaga.salario)} / mês` : "A combinar"
+    vaga.salario && vaga.salario > 0 ? `${formatCurrency(vaga.salario)} / mês` : "A combinar"
 
   const relativeDateText =
-    vaga.relativeTimeText || (vaga.createdAt ? `Publicado ${formatRelativeDate(vaga.createdAt)}` : "Recente")
+    vaga.createdAt ? `Publicado ${formatRelativeDate(vaga.createdAt)}` : "Recente"
 
-  // Determina o status badge (Prioridade: aplicado real -> badge mock/definido -> novo)
+  // Determina o status badge (Prioridade: aplicado real -> salvo -> nova)
   const renderStatusBadge = () => {
-    if (applied === "EM_ANDAMENTO" || vaga.initialBadge === "CANDIDATURA_ENVIADA") {
+    if (applied === "EM_ANDAMENTO") {
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
           <Check className="size-3.5" />
@@ -55,7 +54,7 @@ export function JobCard({
       )
     }
 
-    if (vaga.initialBadge === "EM_ANALISE") {
+    if (applied === "EM_ANALISE") {
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
           <Hourglass className="size-3.5" />
@@ -64,16 +63,24 @@ export function JobCard({
       )
     }
 
-    if (vaga.initialBadge === "NOVA") {
+    if (applied === "APROVADO") {
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-[#7c3aed]">
-          <Sparkles className="size-3.5" />
-          Nova
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          <Check className="size-3.5" />
+          Aprovado
         </span>
       )
     }
 
-    if (vaga.initialBadge === "SALVA" || saved) {
+    if (applied === "REJEITADO") {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+          Rejeitado
+        </span>
+      )
+    }
+
+    if (saved) {
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
           <Bookmark className="size-3.5 fill-current" />
@@ -82,13 +89,25 @@ export function JobCard({
       )
     }
 
+    if (vaga.createdAt) {
+      const days = Math.floor((Date.now() - new Date(vaga.createdAt).getTime()) / 86_400_000)
+      if (days <= 3) {
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-[#7c3aed]">
+            <Sparkles className="size-3.5" />
+            Nova
+          </span>
+        )
+      }
+    }
+
     return null
   }
 
   // Tags do card (Nível, Modalidade, Categoria)
   const nivelLabel = NIVEL_LABELS[vaga.nivelExperiencia] || "Pleno"
   const modalidadeLabel = MODALIDADE_LABELS[vaga.modalidade] || "Híbrido"
-  const categoriaLabel = vaga.displayCategory || "Tecnologia"
+  const categoriaLabel = CATEGORIA_LABELS[vaga.categoria] || "Geral"
 
   return (
     <article
@@ -103,7 +122,7 @@ export function JobCard({
         <div className="flex items-start gap-4 min-w-0 flex-1">
           <CompanyBrandLogo
             company={company}
-            variant={vaga.logoVariant}
+            logoUrl={vaga.logoUrlEmpresa}
             className="size-14 rounded-2xl shrink-0"
           />
 
@@ -157,7 +176,7 @@ export function JobCard({
           </div>
         </div>
 
-        {/* Lado Direito: Bookmark, Status Badge, Facepile e Chevron */}
+        {/* Lado Direito: Bookmark, Status Badge e Ação */}
         <div className="flex flex-row items-center justify-between sm:flex-col sm:items-end sm:justify-between sm:self-stretch sm:pl-4">
           <div className="flex items-center gap-2">
             <button
@@ -175,12 +194,16 @@ export function JobCard({
             {renderStatusBadge()}
           </div>
 
-          <div className="mt-auto flex items-center gap-3 pt-3">
-            <ApplicantFacepile
-              count={vaga.applicantsCount}
-              timeText={vaga.relativeTimeText ? "há 6 dias" : undefined}
-            />
-            <ChevronRight className="size-4 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-slate-700" />
+          <div className="mt-auto flex items-center gap-2 pt-3">
+            {vaga.distanciaKm != null && (
+              <span className="text-[11px] font-medium text-slate-500">
+                A {vaga.distanciaKm.toFixed(1)} km
+              </span>
+            )}
+            <span className="text-xs font-semibold text-[#7c3aed] group-hover:underline inline-flex items-center gap-0.5">
+              Ver detalhes
+              <ChevronRight className="size-4 text-[#7c3aed] transition-transform group-hover:translate-x-1" />
+            </span>
           </div>
         </div>
       </div>

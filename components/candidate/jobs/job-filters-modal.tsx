@@ -9,7 +9,6 @@ import {
   Laptop,
   Globe,
   DollarSign,
-  Briefcase,
   Crosshair,
   ArrowUpDown,
   Navigation,
@@ -22,11 +21,8 @@ import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/format"
 import {
   MODALIDADE_LABELS,
-  NIVEL_LABELS,
-  type NivelExperiencia,
   type VagaModalidade,
 } from "@/lib/types/vaga.types"
-import { NIVEL_METADATA } from "@/lib/constants/vaga-categories"
 import {
   SALARIO_MAX,
   SORT_OPTIONS,
@@ -89,18 +85,10 @@ export function JobFiltersModal({
     patch({ modalidades: list })
   }
 
-  const toggleNivel = (nivel: NivelExperiencia) => {
-    const list = localFilters.niveis.includes(nivel)
-      ? localFilters.niveis.filter((n) => n !== nivel)
-      : [...localFilters.niveis, nivel]
-    patch({ niveis: list })
-  }
-
   const handleReset = () => {
     const resetState: JobFiltersState = {
       sort: "recent",
       modalidades: [],
-      niveis: [],
       salarioMin: 0,
     }
     setLocalFilters(resetState)
@@ -305,57 +293,6 @@ export function JobFiltersModal({
                         )}
                       >
                         {p === 0 ? "Todos" : `${formatCurrency(p)}+`}
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
-
-              {/* 4. Nível de Experiência */}
-              <section className="space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  <Briefcase className="size-3.5 text-primary" />
-                  <span>Nível de Experiência</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {(
-                    [
-                      "ESTAGIO",
-                      "JUNIOR",
-                      "PLENO",
-                      "SENIOR",
-                      "ESPECIALISTA",
-                      "LIDERANCA",
-                    ] as NivelExperiencia[]
-                  ).map((nivel) => {
-                    const isSelected = localFilters.niveis.includes(nivel)
-                    const meta = NIVEL_METADATA[nivel]
-                    return (
-                      <button
-                        key={nivel}
-                        type="button"
-                        onClick={() => toggleNivel(nivel)}
-                        className={cn(
-                          "flex items-center justify-between rounded-xl border p-2.5 text-left transition-all",
-                          isSelected
-                            ? "border-primary bg-primary-subtle/80 text-primary-subtle-foreground font-bold ring-1 ring-primary/30"
-                            : "border-border bg-surface text-foreground hover:bg-muted hover:border-border-strong font-medium"
-                        )}
-                      >
-                        <div className="truncate">
-                          <p className="text-xs sm:text-sm font-semibold truncate">
-                            {NIVEL_LABELS[nivel]}
-                          </p>
-                          <span
-                            className={cn(
-                              "inline-block rounded px-1.5 py-0.2 text-[10px] font-bold border mt-0.5",
-                              meta?.bgStyle
-                            )}
-                          >
-                            {meta?.tag}
-                          </span>
-                        </div>
-                        {isSelected && <Check className="size-4 shrink-0 text-primary ml-1" />}
                       </button>
                     )
                   })}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
     Camera,
     Loader2,
@@ -8,10 +8,11 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { uploadCandidateAvatar } from "@/lib/api"
+import { useUploadCandidateAvatar } from "@/lib/queries/use-candidate-profile"
 import type { CandidateProfile } from "@/lib/types/candidate.types"
 
 type Props = {
+    onUploadingChange?: (uploading: boolean) => void
     profile: CandidateProfile
     onProfileUpdated: (profile: CandidateProfile) => void
 }
@@ -19,6 +20,7 @@ type Props = {
 export function ProfilePhotoField({
     profile,
     onProfileUpdated,
+    onUploadingChange,
 }: Props) {
     const inputRef = useRef<HTMLInputElement>(null)
 
@@ -26,7 +28,10 @@ export function ProfilePhotoField({
         profile.profileImageUrl ?? null,
     )
 
-    const [uploading, setUploading] = useState(false)
+    const uploadAvatar = useUploadCandidateAvatar()
+    const uploading = uploadAvatar.isPending
+    useEffect(() => { setPreviewUrl(profile.profileImageUrl ?? null) }, [profile.profileImageUrl])
+    useEffect(() => { onUploadingChange?.(uploading) }, [uploading, onUploadingChange])
     const [error, setError] = useState<string | null>(null)
 
     const handleFileChange = async (
@@ -61,15 +66,13 @@ export function ProfilePhotoField({
         const localPreview = URL.createObjectURL(file)
 
         setPreviewUrl(localPreview)
-        setUploading(true)
 
         try {
             const updatedProfile =
-                await uploadCandidateAvatar(file)
+                await uploadAvatar.mutateAsync(file)
 
             setPreviewUrl(
-                profile.profileImageUrl ??
-                localPreview
+                updatedProfile.profileImageUrl ?? null
             )
 
             onProfileUpdated(updatedProfile)
@@ -84,7 +87,6 @@ export function ProfilePhotoField({
                     : "Não foi possível enviar a foto.",
             )
         } finally {
-            setUploading(false)
 
             URL.revokeObjectURL(localPreview)
 
@@ -107,6 +109,7 @@ export function ProfilePhotoField({
             <div className="relative shrink-0">
                 <button
                     type="button"
+                    aria-label="Alterar foto de perfil"
                     disabled={uploading}
                     onClick={() =>
                         inputRef.current?.click()
@@ -145,6 +148,7 @@ export function ProfilePhotoField({
                 {!uploading && (
                     <button
                         type="button"
+                        aria-label="Selecionar foto de perfil"
                         onClick={() =>
                             inputRef.current?.click()
                         }
@@ -167,6 +171,7 @@ export function ProfilePhotoField({
 
                 <button
                     type="button"
+                    aria-label="Alterar foto de perfil"
                     disabled={uploading}
                     onClick={() =>
                         inputRef.current?.click()
