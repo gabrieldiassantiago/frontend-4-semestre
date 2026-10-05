@@ -15,6 +15,8 @@ export function ok<T>(data: T): ActionResult<T> {
   return { ok: true, data }
 }
 
+//teste
+
 export function fail<T = never>(error: string, status = 500): ActionResult<T> {
   return { ok: false, error, status }
 }
