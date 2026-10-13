@@ -34,44 +34,48 @@ const OAUTH_ERRORS: Record<string, string> = {
   oauth_failed: "Não foi possível concluir o login social. Tente novamente.",
 }
 
-const formatCpf = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 11)
-  return digits
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
-}
-
 interface AuthScreenProps {
   initialRole?: Role
   initialMode?: Mode
 }
 
-export function AuthScreen({ initialRole = "candidato", initialMode = "login" }: AuthScreenProps) {
+export function AuthScreen({
+  initialRole = "candidato",
+  initialMode = "login",
+}: AuthScreenProps) {
   const router = useRouter()
 
   const [role] = useState<Role>(initialRole)
   const [mode, setMode] = useState<Mode>(initialMode)
 
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", cpf: "" })
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  })
   const [remember, setRemember] = useState(false)
-
   const [modalTerms, setModalTerms] = useState(false)
 
   const login = useLogin()
   const register = useRegisterUser()
   const loading = login.isPending || register.isPending
+
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const apiRole: Exclude<UserRole, "ADMIN"> = role === "candidato" ? "CANDIDATE" : "COMPANY"
+  const apiRole: Exclude<UserRole, "ADMIN"> =
+    role === "candidato" ? "CANDIDATE" : "COMPANY"
+
   const isWideForm = role === "recrutador" && mode === "register"
 
-  const update = (key: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((current) => ({ ...current, [key]: event.target.value }))
-
-  const updateCpf = (event: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((current) => ({ ...current, cpf: formatCpf(event.target.value) }))
+  const update =
+    (key: keyof typeof form) =>
+      (event: React.ChangeEvent<HTMLInputElement>) =>
+        setForm((current) => ({
+          ...current,
+          [key]: event.target.value,
+        }))
 
   const switchMode = (next: Mode) => {
     setError(null)
@@ -81,8 +85,12 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const code = params.get("oauthError") ?? params.get("linkedinError")
-    if (code) setError(OAUTH_ERRORS[code] ?? OAUTH_ERRORS.oauth_failed)
+    const code =
+      params.get("oauthError") ?? params.get("linkedinError")
+
+    if (code) {
+      setError(OAUTH_ERRORS[code] ?? OAUTH_ERRORS.oauth_failed)
+    }
   }, [])
 
   const handleLogin = async (event: React.FormEvent) => {
@@ -101,7 +109,13 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
         password: form.password,
         role: apiRole,
       })
-      router.replace(await loginDestination(response.role, new URLSearchParams(window.location.search).get("setup") === "1"))
+
+      router.replace(
+        await loginDestination(
+          response.role,
+          new URLSearchParams(window.location.search).get("setup") === "1"
+        )
+      )
     } catch (err) {
       setError(getErrorMessage(err, "E-mail ou senha incorretos."))
     }
@@ -112,7 +126,12 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
     setError(null)
     setSuccess(null)
 
-    if (!form.name || !form.email || !form.password || !form.confirmPassword || !form.cpf) {
+    if (
+      !form.name ||
+      !form.email ||
+      !form.password ||
+      !form.confirmPassword
+    ) {
       setError("Por favor, preencha todos os campos.")
       return
     }
@@ -122,26 +141,29 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
       return
     }
 
-    const cpfDigits = form.cpf.replace(/\D/g, "")
-
-    if (cpfDigits.length !== 11) {
-      setError("Informe um CPF válido com 11 dígitos.")
-      return
-    }
-
     try {
       await register.mutateAsync({
         name: form.name,
         email: form.email,
         password: form.password,
         role: apiRole,
-        cpf: cpfDigits,
       })
 
-      rememberRegistration({ email: form.email, password: form.password, role: apiRole })
-      router.replace(`/auth/verify-email?email=${encodeURIComponent(form.email)}&role=${apiRole}`)
+      rememberRegistration({
+        email: form.email,
+        password: form.password,
+        role: apiRole,
+      })
+
+      router.replace(
+        `/auth/verify-email?email=${encodeURIComponent(
+          form.email
+        )}&role=${apiRole}`
+      )
     } catch (err) {
-      setError(getErrorMessage(err, "Erro ao realizar cadastro. Tente novamente."))
+      setError(
+        getErrorMessage(err, "Erro ao realizar cadastro. Tente novamente.")
+      )
     }
   }
 
@@ -156,8 +178,13 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
           Trocar perfil
         </Link>
 
-        <div className={cn("mx-auto w-full", isWideForm ? "max-w-xl" : "max-w-md")}>
-          <header className="mb-8 flex flex-col items-center text-center">
+        <div
+          className={cn(
+            "mx-auto flex w-full flex-col items-center",
+            isWideForm ? "max-w-xl" : "max-w-md"
+          )}
+        >
+          <header className="mb-8 flex w-full flex-col items-center text-center">
             <Image
               src="/images/logo_selecta.svg"
               alt="Selecta"
@@ -166,17 +193,19 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
               priority
               className="mb-6 h-auto w-[150px] sm:w-[176px]"
             />
+
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
             </h1>
-            <p className="mt-2 max-w-sm text-pretty text-sm leading-relaxed text-muted-foreground">
+
+            <p className="mx-auto mt-2 max-w-sm text-pretty text-sm leading-relaxed text-muted-foreground">
               {mode === "login"
                 ? `Entre com seus dados de ${role} para continuar`
                 : SUBTITLES[role]}
             </p>
           </header>
 
-          <div className="space-y-4">
+          <div className="w-full space-y-4">
             {error && <Alert tone="danger">{error}</Alert>}
             {success && <Alert tone="success">{success}</Alert>}
           </div>
@@ -185,12 +214,12 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
             {mode === "login" ? (
               <motion.form
                 key="login"
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 16 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
                 onSubmit={handleLogin}
-                className="mt-5 space-y-5"
+                className="mt-5 w-full space-y-5"
               >
                 <Field label="Seu e-mail">
                   <input
@@ -221,7 +250,9 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                       onChange={(event) => setRemember(event.target.checked)}
                       className="size-4 rounded border-border accent-primary"
                     />
-                    <span className="text-muted-foreground">Lembrar de mim</span>
+                    <span className="text-muted-foreground">
+                      Lembrar de mim
+                    </span>
                   </label>
 
                   <a
@@ -232,7 +263,11 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                   </a>
                 </div>
 
-                <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary flex w-full items-center justify-center gap-2"
+                >
                   {loading ? (
                     <>
                       <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -250,16 +285,22 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                   </span>
                 </div>
 
-                <div className="space-y-3">
+                <div className="w-full space-y-3">
                   {role === "candidato" && (
-                    <a href={`${API_BASE_URL}/oauth2/authorization/google`} className="btn-secondary w-full">
+                    <a
+                      href={`${API_BASE_URL}/oauth2/authorization/google`}
+                      className="btn-secondary w-full"
+                    >
                       <GoogleIcon />
                       Continuar com o Google
                     </a>
                   )}
 
                   {role === "candidato" && (
-                    <a href={`${API_BASE_URL}/oauth2/authorization/linkedin`} className="btn-secondary w-full">
+                    <a
+                      href={`${API_BASE_URL}/oauth2/authorization/linkedin`}
+                      className="btn-secondary w-full"
+                    >
                       <LinkedInIcon />
                       Continuar com o LinkedIn
                     </a>
@@ -280,51 +321,37 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
             ) : role === "recrutador" ? (
               <motion.div
                 key="company-register"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="mt-5"
+                className="mt-5 w-full"
               >
-                <CompanyRegistrationForm onBackToLogin={() => switchMode("login")} />
+                <CompanyRegistrationForm
+                  onBackToLogin={() => switchMode("login")}
+                />
               </motion.div>
             ) : (
               <motion.form
                 key="register"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
                 onSubmit={handleRegister}
-                className="mt-5 space-y-5"
+                className="mt-5 w-full space-y-5"
               >
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <Field label="Nome completo">
-                    <input
-                      type="text"
-                      placeholder="Como deseja ser chamado?"
-                      className="field-input"
-                      value={form.name}
-                      onChange={update("name")}
-                      autoComplete="name"
-                      required
-                    />
-                  </Field>
-
-                  <Field label="CPF">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="000.000.000-00"
-                      className="field-input"
-                      value={form.cpf}
-                      onChange={updateCpf}
-                      autoComplete="off"
-                      maxLength={14}
-                      required
-                    />
-                  </Field>
-                </div>
+                <Field label="Nome completo">
+                  <input
+                    type="text"
+                    placeholder="Como deseja ser chamado?"
+                    className="field-input"
+                    value={form.name}
+                    onChange={update("name")}
+                    autoComplete="name"
+                    required
+                  />
+                </Field>
 
                 <Field label="Seu e-mail">
                   <input
@@ -338,7 +365,7 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                   />
                 </Field>
 
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div className="grid w-full gap-5 sm:grid-cols-2">
                   <Field label="Senha">
                     <PasswordInput
                       value={form.password}
@@ -370,7 +397,11 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                   .
                 </p>
 
-                <button type="submit" disabled={loading} className="btn-primary w-full">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary w-full"
+                >
                   {loading ? "Cadastrando..." : "Criar conta"}
                 </button>
 
@@ -418,14 +449,17 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                   ✕
                 </button>
 
-                <h2 id="terms-title" className="pr-8 text-2xl font-bold text-foreground">
+                <h2
+                  id="terms-title"
+                  className="pr-8 text-2xl font-bold text-foreground"
+                >
                   Termos de Serviço
                 </h2>
 
                 <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
                   <p>
-                    Ao utilizar a plataforma Selecta, você concorda com os presentes
-                    Termos de Serviço.
+                    Ao utilizar a plataforma Selecta, você concorda com os
+                    presentes Termos de Serviço.
                   </p>
 
                   <h3 className="text-base font-semibold text-foreground">
@@ -433,8 +467,8 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                   </h3>
 
                   <p>
-                    Ao criar uma conta, você declara que leu, compreendeu e concorda
-                    com estes termos e condições.
+                    Ao criar uma conta, você declara que leu, compreendeu e
+                    concorda com estes termos e condições.
                   </p>
 
                   <h3 className="text-base font-semibold text-foreground">
@@ -442,8 +476,8 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                   </h3>
 
                   <p>
-                    A plataforma deve ser utilizada de maneira adequada e de acordo
-                    com a legislação aplicável.
+                    A plataforma deve ser utilizada de maneira adequada e de
+                    acordo com a legislação aplicável.
                   </p>
 
                   <h3 className="text-base font-semibold text-foreground">
@@ -451,8 +485,9 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                   </h3>
 
                   <p>
-                    O usuário é responsável pelas informações fornecidas durante o
-                    cadastro e pela segurança de suas credenciais de acesso.
+                    O usuário é responsável pelas informações fornecidas
+                    durante o cadastro e pela segurança de suas credenciais de
+                    acesso.
                   </p>
 
                   <h3 className="text-base font-semibold text-foreground">
