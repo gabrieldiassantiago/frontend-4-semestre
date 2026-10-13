@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Briefcase, Loader2, UserCheck, X } from "lucide-react"
 
 import { useLogin, useRegisterUser } from "@/lib/queries/use-auth"
 import { API_BASE_URL } from "@/lib/http/config"
@@ -25,7 +25,7 @@ type Mode = "register" | "login"
 
 const SUBTITLES: Record<Role, string> = {
   candidato: "Seu próximo passo começa aqui. Crie sua conta e monte seu perfil.",
-  recrutador: "Encontre os melhores talentos e monte o seu time",
+  recrutador: "Encontre os melhores talentos e monte o seu time com agilidade.",
 }
 
 const OAUTH_ERRORS: Record<string, string> = {
@@ -85,13 +85,21 @@ export function AuthScreen({
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const code =
-      params.get("oauthError") ?? params.get("linkedinError")
+    const code = params.get("oauthError") ?? params.get("linkedinError")
 
     if (code) {
       setError(OAUTH_ERRORS[code] ?? OAUTH_ERRORS.oauth_failed)
     }
   }, [])
+
+  // Fecha o modal ao pressionar ESC
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setModalTerms(false)
+    }
+    if (modalTerms) window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [modalTerms])
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -168,64 +176,161 @@ export function AuthScreen({
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background md:flex-row">
-      <section className="relative flex w-full flex-col justify-center px-5 pb-12 pt-24 sm:px-10 md:min-h-screen md:w-1/2 md:py-16 lg:px-14 xl:px-20">
-        <Link
-          href="/auth"
-          className="absolute left-5 top-6 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-2 text-xs font-semibold text-muted-foreground shadow-xs transition-colors hover:bg-muted hover:text-foreground sm:left-10"
-        >
-          <ArrowLeft className="size-3.5" aria-hidden />
-          Trocar perfil
-        </Link>
+    <div className="flex min-h-screen w-full flex-col bg-background selection:bg-primary/15 selection:text-primary md:flex-row">
+      {/* Lado Esquerdo: Área de Autenticação */}
+      <section className="relative flex w-full flex-col justify-between px-5 py-8 sm:px-10 md:min-h-screen md:w-1/2 lg:px-14 xl:px-20">
+        {/* Glow sutil de fundo */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-64 bg-gradient-to-b from-primary/5 via-transparent to-transparent"
+        />
 
+        {/* Top Bar: Navegação e Badge de Perfil */}
+        <div className="flex w-full items-center justify-between">
+          <Link
+            href="/auth"
+            className="group inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/80 px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-2xs backdrop-blur-xs transition-all hover:border-border hover:bg-muted/60 hover:text-foreground"
+          >
+            <ArrowLeft
+              className="size-3.5 transition-transform duration-200 group-hover:-translate-x-0.5"
+              aria-hidden
+            />
+            Trocar perfil
+          </Link>
+
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            {role === "candidato" ? (
+              <>
+                <UserCheck className="size-3.5" aria-hidden />
+                Área do Candidato
+              </>
+            ) : (
+              <>
+                <Briefcase className="size-3.5" aria-hidden />
+                Área do Recrutador
+              </>
+            )}
+          </span>
+        </div>
+
+        {/* Container Central do Formulário */}
         <div
           className={cn(
-            "mx-auto flex w-full flex-col items-center",
-            isWideForm ? "max-w-xl" : "max-w-md"
+            "mx-auto my-auto flex w-full flex-col items-center py-8 transition-all duration-300",
+            isWideForm ? "max-w-xl" : "max-w-[420px]"
           )}
         >
-          <header className="mb-8 flex w-full flex-col items-center text-center">
-            <Image
-              src="/images/logo_selecta.svg"
-              alt="Selecta"
-              width={200}
-              height={100}
-              priority
-              className="mb-6 h-auto w-[150px] sm:w-[176px]"
-            />
+          <header className="mb-6 flex w-full flex-col items-center text-center">
+            <Link href="/" className="mb-6 transition-opacity hover:opacity-90">
+              <Image
+                src="/images/logo_selecta.svg"
+                alt="Selecta"
+                width={200}
+                height={100}
+                priority
+                className="h-auto w-[140px] sm:w-[164px]"
+              />
+            </Link>
 
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
             </h1>
 
-            <p className="mx-auto mt-2 max-w-sm text-pretty text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-2 max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
               {mode === "login"
-                ? `Entre com seus dados de ${role} para continuar`
+                ? `Acesse sua conta de ${role} para continuar na plataforma.`
                 : SUBTITLES[role]}
             </p>
           </header>
 
-          <div className="w-full space-y-4">
-            {error && <Alert tone="danger">{error}</Alert>}
-            {success && <Alert tone="success">{success}</Alert>}
+          {/* Segmented Control (Entrar / Criar conta) */}
+          <div className="mb-6 grid w-full grid-cols-2 rounded-xl border border-border/60 bg-muted/50 p-1">
+            <button
+              type="button"
+              onClick={() => switchMode("login")}
+              className={cn(
+                "relative rounded-lg py-2 text-xs font-semibold transition-all duration-200 sm:text-sm",
+                mode === "login"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Entrar
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode("register")}
+              className={cn(
+                "relative rounded-lg py-2 text-xs font-semibold transition-all duration-200 sm:text-sm",
+                mode === "register"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Criar conta
+            </button>
           </div>
+
+          {/* Alertas de Erro / Sucesso Animados */}
+          <AnimatePresence mode="wait">
+            {(error || success) && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, y: -6 }}
+                animate={{ opacity: 1, height: "auto", y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -6 }}
+                className="mb-4 w-full overflow-hidden"
+              >
+                {error && <Alert tone="danger">{error}</Alert>}
+                {success && <Alert tone="success">{success}</Alert>}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <AnimatePresence mode="wait">
             {mode === "login" ? (
               <motion.form
                 key="login"
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
                 onSubmit={handleLogin}
-                className="mt-5 w-full space-y-5"
+                className="w-full space-y-4"
               >
+                {role === "candidato" && (
+                  <>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <a
+                        href={`${API_BASE_URL}/oauth2/authorization/google`}
+                        className="btn-secondary flex w-full items-center justify-center gap-2.5 py-2.5 text-xs font-medium transition-all hover:bg-muted/80 sm:text-sm"
+                      >
+                        <GoogleIcon />
+                        <span>Google</span>
+                      </a>
+
+                      <a
+                        href={`${API_BASE_URL}/oauth2/authorization/linkedin`}
+                        className="btn-secondary flex w-full items-center justify-center gap-2.5 py-2.5 text-xs font-medium transition-all hover:bg-muted/80 sm:text-sm"
+                      >
+                        <LinkedInIcon />
+                        <span>LinkedIn</span>
+                      </a>
+                    </div>
+
+                    <div className="relative py-2 text-center">
+                      <span className="absolute inset-x-0 top-1/2 h-px bg-border/80" />
+                      <span className="relative bg-background px-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                        ou com seu e-mail
+                      </span>
+                    </div>
+                  </>
+                )}
+
                 <Field label="Seu e-mail">
                   <input
                     type="email"
                     placeholder="voce@email.com"
-                    className="field-input"
+                    className="field-input transition-shadow focus:ring-2 focus:ring-primary/20"
                     value={form.email}
                     onChange={update("email")}
                     autoComplete="email"
@@ -242,31 +347,31 @@ export function AuthScreen({
                   />
                 </Field>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-                  <label className="flex cursor-pointer select-none items-center gap-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-xs sm:text-sm">
+                  <label className="group flex cursor-pointer select-none items-center gap-2">
                     <input
                       type="checkbox"
                       checked={remember}
                       onChange={(event) => setRemember(event.target.checked)}
-                      className="size-4 rounded border-border accent-primary"
+                      className="size-4 rounded border-border accent-primary transition-transform active:scale-95"
                     />
-                    <span className="text-muted-foreground">
+                    <span className="text-muted-foreground transition-colors group-hover:text-foreground">
                       Lembrar de mim
                     </span>
                   </label>
 
-                  <a
-                    href="#"
-                    className="font-semibold text-strong-foreground underline underline-offset-4"
+                  <Link
+                    href="/auth/forgot-password"
+                    className="font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
                   >
                     Esqueci a senha
-                  </a>
+                  </Link>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary flex w-full items-center justify-center gap-2"
+                  className="btn-primary mt-2 flex w-full items-center justify-center gap-2 py-2.5 font-semibold shadow-sm transition-all active:scale-[0.99] disabled:opacity-60"
                 >
                   {loading ? (
                     <>
@@ -274,58 +379,18 @@ export function AuthScreen({
                       <span>Entrando...</span>
                     </>
                   ) : (
-                    "Entrar"
+                    "Entrar na conta"
                   )}
                 </button>
-
-                <div className="relative py-1 text-center">
-                  <span className="absolute inset-x-0 top-1/2 h-px bg-border" />
-                  <span className="relative bg-background px-3 text-xs font-medium uppercase tracking-wide text-subtle-foreground">
-                    ou
-                  </span>
-                </div>
-
-                <div className="w-full space-y-3">
-                  {role === "candidato" && (
-                    <a
-                      href={`${API_BASE_URL}/oauth2/authorization/google`}
-                      className="btn-secondary w-full"
-                    >
-                      <GoogleIcon />
-                      Continuar com o Google
-                    </a>
-                  )}
-
-                  {role === "candidato" && (
-                    <a
-                      href={`${API_BASE_URL}/oauth2/authorization/linkedin`}
-                      className="btn-secondary w-full"
-                    >
-                      <LinkedInIcon />
-                      Continuar com o LinkedIn
-                    </a>
-                  )}
-                </div>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  Ainda não tem uma conta?{" "}
-                  <button
-                    type="button"
-                    onClick={() => switchMode("register")}
-                    className="font-semibold text-primary hover:underline"
-                  >
-                    Crie uma agora
-                  </button>
-                </p>
               </motion.form>
             ) : role === "recrutador" ? (
               <motion.div
                 key="company-register"
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
-                className="mt-5 w-full"
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="w-full"
               >
                 <CompanyRegistrationForm
                   onBackToLogin={() => switchMode("login")}
@@ -334,18 +399,18 @@ export function AuthScreen({
             ) : (
               <motion.form
                 key="register"
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
                 onSubmit={handleRegister}
-                className="mt-5 w-full space-y-5"
+                className="w-full space-y-4"
               >
                 <Field label="Nome completo">
                   <input
                     type="text"
                     placeholder="Como deseja ser chamado?"
-                    className="field-input"
+                    className="field-input transition-shadow focus:ring-2 focus:ring-primary/20"
                     value={form.name}
                     onChange={update("name")}
                     autoComplete="name"
@@ -357,7 +422,7 @@ export function AuthScreen({
                   <input
                     type="email"
                     placeholder="voce@email.com"
-                    className="field-input"
+                    className="field-input transition-shadow focus:ring-2 focus:ring-primary/20"
                     value={form.email}
                     onChange={update("email")}
                     autoComplete="email"
@@ -365,7 +430,7 @@ export function AuthScreen({
                   />
                 </Field>
 
-                <div className="grid w-full gap-5 sm:grid-cols-2">
+                <div className="grid w-full gap-4 sm:grid-cols-2">
                   <Field label="Senha">
                     <PasswordInput
                       value={form.password}
@@ -385,45 +450,47 @@ export function AuthScreen({
                   </Field>
                 </div>
 
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  Ao criar uma conta, você concorda com nossos{" "}
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
+                  Ao criar uma conta, você declara que leu e concorda com os nossos{" "}
                   <button
                     type="button"
                     onClick={() => setModalTerms(true)}
-                    className="font-medium text-strong-foreground underline underline-offset-2"
+                    className="font-semibold text-foreground underline underline-offset-2 transition-colors hover:text-primary"
                   >
                     Termos de Serviço
                   </button>
                   .
-                </p>
+                </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary w-full"
+                  className="btn-primary flex w-full items-center justify-center gap-2 py-2.5 font-semibold shadow-sm transition-all active:scale-[0.99] disabled:opacity-60"
                 >
-                  {loading ? "Cadastrando..." : "Criar conta"}
+                  {loading ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                      <span>Cadastrando...</span>
+                    </>
+                  ) : (
+                    "Criar minha conta"
+                  )}
                 </button>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  Já tem uma conta?{" "}
-                  <button
-                    type="button"
-                    onClick={() => switchMode("login")}
-                    className="font-semibold text-primary hover:underline"
-                  >
-                    Faça login agora
-                  </button>
-                </p>
               </motion.form>
             )}
           </AnimatePresence>
         </div>
 
+        {/* Rodapé discreto para ancorar a coluna */}
+        <footer className="text-center text-xs text-muted-foreground/70">
+          © {new Date().getFullYear()} Selecta. Todos os direitos reservados.
+        </footer>
+
+        {/* Modal de Termos de Serviço Aprimorado */}
         <AnimatePresence>
           {modalTerms && (
             <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -433,80 +500,89 @@ export function AuthScreen({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="terms-title"
-                className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-background p-6 shadow-xl sm:p-8"
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
+                initial={{ opacity: 0, scale: 0.96, y: 16 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ duration: 0.2 }}
+                exit={{ opacity: 0, scale: 0.96, y: 16 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 onClick={(event) => event.stopPropagation()}
               >
-                <button
-                  type="button"
-                  onClick={() => setModalTerms(false)}
-                  className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  aria-label="Fechar termos de serviço"
-                >
-                  ✕
-                </button>
-
-                <h2
-                  id="terms-title"
-                  className="pr-8 text-2xl font-bold text-foreground"
-                >
-                  Termos de Serviço
-                </h2>
-
-                <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
-                  <p>
-                    Ao utilizar a plataforma Selecta, você concorda com os
-                    presentes Termos de Serviço.
-                  </p>
-
-                  <h3 className="text-base font-semibold text-foreground">
-                    1. Aceitação dos termos
-                  </h3>
-
-                  <p>
-                    Ao criar uma conta, você declara que leu, compreendeu e
-                    concorda com estes termos e condições.
-                  </p>
-
-                  <h3 className="text-base font-semibold text-foreground">
-                    2. Uso da plataforma
-                  </h3>
-
-                  <p>
-                    A plataforma deve ser utilizada de maneira adequada e de
-                    acordo com a legislação aplicável.
-                  </p>
-
-                  <h3 className="text-base font-semibold text-foreground">
-                    3. Responsabilidades
-                  </h3>
-
-                  <p>
-                    O usuário é responsável pelas informações fornecidas
-                    durante o cadastro e pela segurança de suas credenciais de
-                    acesso.
-                  </p>
-
-                  <h3 className="text-base font-semibold text-foreground">
-                    4. Alterações
-                  </h3>
-
-                  <p>
-                    Os termos poderão ser atualizados periodicamente. Alterações
-                    relevantes serão comunicadas aos usuários quando necessário.
-                  </p>
-                </div>
-
-                <div className="mt-8 flex justify-end">
+                {/* Header Fixo do Modal */}
+                <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                  <h2
+                    id="terms-title"
+                    className="text-lg font-bold text-foreground sm:text-xl"
+                  >
+                    Termos de Serviço
+                  </h2>
                   <button
                     type="button"
                     onClick={() => setModalTerms(false)}
-                    className="btn-primary"
+                    className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Fechar termos de serviço"
                   >
-                    Fechar
+                    <X className="size-5" />
+                  </button>
+                </div>
+
+                {/* Corpo Rolável */}
+                <div className="space-y-4 overflow-y-auto px-6 py-5 text-sm leading-relaxed text-muted-foreground">
+                  <p>
+                    Ao utilizar a plataforma <strong>Selecta</strong>, você
+                    concorda com os presentes Termos de Serviço.
+                  </p>
+
+                  <div className="space-y-1.5">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      1. Aceitação dos termos
+                    </h3>
+                    <p>
+                      Ao criar uma conta, você declara que leu, compreendeu e
+                      concorda com estes termos e condições em sua totalidade.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      2. Uso da plataforma
+                    </h3>
+                    <p>
+                      A plataforma deve ser utilizada de maneira ética, adequada
+                      e em total conformidade com a legislação vigente e a LGPD.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      3. Responsabilidades do usuário
+                    </h3>
+                    <p>
+                      O usuário é inteiramente responsável pela veracidade das
+                      informações fornecidas durante o cadastro e pela guarda e
+                      segurança de suas credenciais de acesso.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      4. Atualizações e alterações
+                    </h3>
+                    <p>
+                      Estes termos poderão ser atualizados periodicamente para
+                      refletir melhorias na plataforma. Alterações relevantes
+                      serão comunicadas aos usuários.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Footer Fixo do Modal */}
+                <div className="flex items-center justify-end gap-3 border-t border-border bg-muted/30 px-6 py-3.5">
+                  <button
+                    type="button"
+                    onClick={() => setModalTerms(false)}
+                    className="btn-primary px-5 py-2 text-sm font-semibold"
+                  >
+                    Entendi e concordo
                   </button>
                 </div>
               </motion.div>
@@ -515,8 +591,11 @@ export function AuthScreen({
         </AnimatePresence>
       </section>
 
+      {/* Lado Direito: Carrossel de Depoimentos */}
       <section className="w-full px-3 pb-3 md:sticky md:top-0 md:h-screen md:w-1/2 md:p-3">
-        <TestimonialCarousel className="h-[420px] sm:h-[500px] md:h-full" />
+        <div className="h-[420px] w-full overflow-hidden rounded-2xl shadow-lg ring-1 ring-border/50 sm:h-[500px] md:h-full">
+          <TestimonialCarousel className="h-full w-full" />
+        </div>
       </section>
     </div>
   )
