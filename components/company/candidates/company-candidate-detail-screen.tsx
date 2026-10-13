@@ -9,6 +9,7 @@ import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { Alert, CardSkeleton, ErrorState } from "@/components/ui/states"
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
 import { CandidaturaDetailPanel } from "@/components/company/processes/candidatura-detail-panel"
+import { CandidaturaChatButton } from "@/components/shared/chat/candidatura-chat"
 import { useCandidaturaEmpresa } from "@/lib/queries/use-candidaturas"
 import { useCandidateProfileByUser } from "@/lib/queries/use-candidate-profile"
 import { API_BASE_URL } from "@/lib/http/config"
@@ -41,7 +42,14 @@ export function CompanyCandidateDetailScreen({ candidaturaId }: { candidaturaId:
           className="size-20 shrink-0 rounded-full border border-border object-cover"
           width={80}
           height={80}
-        />        <div className="min-w-0"><p className="text-xs font-medium text-muted-foreground">Candidatura para {candidatura.vagaTitulo}</p><h1 className="mt-1 break-words text-2xl font-semibold tracking-tight sm:text-3xl">{candidatura.candidatoNome ?? "Candidato"}</h1><p className="mt-2 text-sm text-muted-foreground">{profile?.headline ?? candidatura.candidatoHeadline ?? "Perfil profissional"}</p></div>
+        />        <div className="min-w-0 flex-1"><p className="text-xs font-medium text-muted-foreground">Candidatura para {candidatura.vagaTitulo}</p><h1 className="mt-1 break-words text-2xl font-semibold tracking-tight sm:text-3xl">{candidatura.candidatoNome ?? "Candidato"}</h1><p className="mt-2 text-sm text-muted-foreground">{profile?.headline ?? candidatura.candidatoHeadline ?? "Perfil profissional"}</p></div>
+        <CandidaturaChatButton
+          candidaturaId={candidatura.id}
+          contatoNome={candidatura.candidatoNome ?? "Candidato"}
+  contatoImagemUrl={profile?.profileImageUrl ?? candidatura.candidatoImagemUrl}
+          perspectiva="empresa"
+          assunto={`Candidatura para ${candidatura.vagaTitulo}`}
+        />
       </header>
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(360px,1fr)]">
         <div className="min-w-0 space-y-6">

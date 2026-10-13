@@ -35,7 +35,7 @@ export function VagaTags({
     <ul className={cn("flex list-none flex-wrap gap-1.5", className)}>
       <li>
         <Badge variant="neutral" size={size}>
-          {NIVEL_LABELS[vaga.nivelExperiencia]}
+          {vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "—"}
         </Badge>
       </li>
       <li>

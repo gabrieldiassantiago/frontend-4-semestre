@@ -5,6 +5,7 @@ export interface RegisterPayload {
   email: string
   password: string
   role: UserRole
+  cpf: string
 }
 
 export interface CompanyRegistrationPayload {

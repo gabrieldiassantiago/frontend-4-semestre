@@ -25,6 +25,7 @@ export const ROUTES = {
     applications: "/candidaturas",
     application: (id: string) => `/candidaturas/${encodeURIComponent(id)}`,
     messages: "/mensagens",
+    chat: (candidaturaId: string) => `/mensagens?chat=${encodeURIComponent(candidaturaId)}`,
     notifications: "/notificacoes",
     settings: "/configuracoes",
     profile: "/profile/candidato",
@@ -40,7 +41,10 @@ export const ROUTES = {
     candidates: "/empresa/candidatos",
     candidate: (id: string) => `/empresa/candidatos/${encodeURIComponent(id)}`,
     processes: "/empresa/processos",
+    messages: "/empresa/mensagens",
+    chat: (candidaturaId: string) => `/empresa/mensagens?chat=${encodeURIComponent(candidaturaId)}`,
     profile: "/empresa/perfil",
+    team: "/empresa/equipe",
   },
 } as const
 

@@ -152,7 +152,9 @@ export function JobsDashboardScreen() {
 
     return () => clearTimeout(timeout)
   }, [filters.sort, raioKm, serverFilters, proximityCoords])
+
   const { porVaga: candidaturasPorVaga } = useCandidaturasPorVaga()
+  
 
   const searchParams = useSearchParams()
   const vagaParam = searchParams.get("vaga")

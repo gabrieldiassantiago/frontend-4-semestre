@@ -14,6 +14,9 @@ export const queryKeys = {
   companyProfile: {
     me: () => ["company-profile", "me"] as const,
   },
+  team: {
+    all: ["team"] as const,
+  },
   vagas: {
     all: ["vagas"] as const,
     list: (filters?: VagaFilters) => ["vagas", "list", filters ?? {}] as const,
@@ -27,5 +30,15 @@ export const queryKeys = {
     detalhe: (id: string) => ["candidaturas", "detalhe", id] as const,
     empresaLista: (filters?: CandidaturaFilters) => ["candidaturas", "empresa", "lista", filters ?? {}] as const,
     empresaDetalhe: (id: string) => ["candidaturas", "empresa", "detalhe", id] as const,
+  },
+  chat: {
+    all: ["chat"] as const,
+    lista: () => ["chat", "lista"] as const,
+    detalhe: (candidaturaId: string) => ["chat", "detalhe", candidaturaId] as const,
+    mensagens: (candidaturaId: string) => ["chat", "mensagens", candidaturaId] as const,
+  },
+  notificacoes: {
+    all: ["notificacoes"] as const,
+    resumo: () => ["notificacoes", "resumo"] as const,
   },
 } as const

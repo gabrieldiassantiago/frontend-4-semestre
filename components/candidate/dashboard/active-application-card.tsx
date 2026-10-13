@@ -15,7 +15,7 @@ export function ActiveApplicationCard({ candidatura }: { candidatura: Candidatur
     <article className="overflow-hidden rounded-card border border-border bg-card">
       <div className="flex flex-col gap-5 border-b border-border p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
         <div className="flex min-w-0 items-start gap-4">
-          <CompanyLogo name={company} size="lg" />
+          <CompanyLogo name={company} url={candidatura.logoUrlEmpresa} size="lg" />
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">Processo em destaque</p>
             <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground text-pretty sm:text-xl">

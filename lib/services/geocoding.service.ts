@@ -202,6 +202,10 @@ export async function reverseGeocode(
 ): Promise<GeocodingResult | null> {
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
+  if (mapboxToken?.length == 0) {
+    console.log("necessario ativar chave de api")
+  }
+
   if (mapboxToken) {
     try {
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxToken}&language=pt&limit=1`
@@ -210,6 +214,7 @@ export async function reverseGeocode(
         const data = await res.json()
         const feature = data.features?.[0]
         if (feature) {
+          
           let cidade = ""
           let estado = ""
 

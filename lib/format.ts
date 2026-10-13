@@ -1,6 +1,5 @@
 /** Helpers de formatação compartilhados pelas telas. */
 
-/** "Ana Paula Souza" -> "AP" */
 export function getInitials(name?: string | null, fallback = "?") {
   if (!name?.trim()) return fallback
   return name
@@ -12,7 +11,6 @@ export function getInitials(name?: string | null, fallback = "?") {
     .toUpperCase()
 }
 
-/** Data legível em pt-BR. Retorna "" para valores inválidos. */
 export function formatDate(value?: string | Date | null, options?: Intl.DateTimeFormatOptions) {
   if (!value) return ""
   const date = value instanceof Date ? value : new Date(value)
@@ -20,7 +18,6 @@ export function formatDate(value?: string | Date | null, options?: Intl.DateTime
   return date.toLocaleDateString("pt-BR", options ?? { day: "2-digit", month: "short", year: "numeric" })
 }
 
-/** Tempo relativo curto: "hoje", "há 3 dias", "há 2 meses". */
 export function formatRelativeDate(value?: string | Date | null) {
   if (!value) return ""
   const date = value instanceof Date ? value : new Date(value)
@@ -36,7 +33,6 @@ export function formatRelativeDate(value?: string | Date | null) {
   return `há ${years} ${years === 1 ? "ano" : "anos"}`
 }
 
-/** Valor em BRL sem centavos. */
 export function formatCurrency(value?: number | null) {
   if (value == null || Number.isNaN(value)) return ""
   return value.toLocaleString("pt-BR", {

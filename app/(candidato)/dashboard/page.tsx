@@ -12,5 +12,6 @@ export default async function LegacyDashboardPage({
     if (typeof value === "string") params.set(key, value)
   }
   const query = params.toString()
+  
   redirect(query ? `${ROUTES.candidate.jobs}?${query}` : ROUTES.candidate.jobs)
 }

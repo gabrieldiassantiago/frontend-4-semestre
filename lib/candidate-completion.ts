@@ -55,6 +55,18 @@ export const PROFILE_STEPS = [
     title: "Confira antes de finalizar",
     description: "É exatamente isso que a empresa vai ver quando você se candidatar.",
   },
+  {
+    id: "certificados",
+    label: "Certificados",
+    title: "Seus certificados",
+    description: "Certificações que comprovam suas competências e conhecimentos.",
+  },
+  {
+    id: "idiomas",
+    label: "Idiomas",
+    title: "Seus idiomas",
+    description: "Domínio de línguas estrangeiras que podem ser relevantes para o cargo.",
+  },
 ] as const
 
 export type ProfileStepId = (typeof PROFILE_STEPS)[number]["id"]

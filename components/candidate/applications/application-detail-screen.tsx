@@ -14,6 +14,7 @@ import { Modal } from "@/components/ui/modal"
 import { ErrorState, Skeleton } from "@/components/ui/states"
 import { CompanyLogo } from "@/components/shared/company-logo"
 import { FeedbackCard, StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
+import { CandidaturaChatButton } from "@/components/shared/chat/candidatura-chat"
 import { ETAPA_HINTS, ETAPA_LABELS, STATUS_LABELS, STATUS_AGENDAMENTO_LABELS, etapasDaVaga, isFinalizada, type CandidaturaAgendamento } from "@/lib/types/candidatura.types"
 
 function DetailSkeleton() {
@@ -149,7 +150,10 @@ export function ApplicationDetailScreen({ id }: { id: string }) {
       <header className="rounded-xl border border-border bg-card p-6 sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-4"><CompanyLogo url={vaga?.logoUrlEmpresa} name={company} size="lg" /><div className="min-w-0"><p className="text-sm text-muted-foreground">{company}</p><h1 className="mt-1 break-words text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">{candidatura.vagaTitulo}</h1>{candidatura.createdAt && <p className="mt-3 text-xs text-muted-foreground">Candidatura enviada em {formatDate(candidatura.createdAt)}</p>}</div></div>
-          <Link href={"/vaga/" + candidatura.vagaId} className="btn-secondary self-start shrink-0">Ver vaga<ArrowUpRight className="size-4" aria-hidden /></Link>
+          <div className="flex shrink-0 gap-2 self-start">
+            <CandidaturaChatButton candidaturaId={candidatura.id} contatoNome={company} contatoImagemUrl={candidatura.logoUrlEmpresa} perspectiva="candidato" assunto={candidatura.vagaTitulo} />
+            <Link href={"/vaga/" + candidatura.vagaId} className="btn-secondary shrink-0">Ver vaga<ArrowUpRight className="size-4" aria-hidden /></Link>
+          </div>
         </div>
       </header>
       <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">

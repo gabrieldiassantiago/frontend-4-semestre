@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   MessageSquare,
   Settings,
+  UserCog,
   UserRound,
   UsersRound,
   Workflow,
@@ -82,7 +83,9 @@ const companyItems = {
   jobs: { href: ROUTES.company.jobs, label: "Vagas", icon: BriefcaseBusiness },
   candidates: { href: ROUTES.company.candidates, label: "Candidatos", icon: UsersRound },
   processes: { href: ROUTES.company.processes, label: "Processos seletivos", shortLabel: "Processos", icon: Workflow },
+  messages: { href: ROUTES.company.messages, label: "Mensagens", shortLabel: "Mensagens", icon: MessageSquare },
   profile: { href: ROUTES.company.profile, label: "Perfil da empresa", shortLabel: "Empresa", icon: Building2 },
+  team: { href: ROUTES.company.team, label: "Equipe", icon: UserCog },
 } satisfies Record<string, NavItem>
 
 export const COMPANY_NAVIGATION: AreaNavigation = {
@@ -90,11 +93,11 @@ export const COMPANY_NAVIGATION: AreaNavigation = {
   groups: [
     {
       label: "Recrutamento",
-      items: [companyItems.dashboard, companyItems.jobs, companyItems.candidates, companyItems.processes],
+      items: [companyItems.dashboard, companyItems.jobs, companyItems.candidates, companyItems.processes, companyItems.messages],
     },
-    { label: "Configurações", items: [companyItems.profile] },
+    { label: "Configurações", items: [companyItems.profile, companyItems.team] },
   ],
-  tabs: [companyItems.dashboard, companyItems.jobs, companyItems.candidates, companyItems.processes, companyItems.profile],
+  tabs: [companyItems.dashboard, companyItems.jobs, companyItems.candidates, companyItems.processes, companyItems.messages],
 }
 
 export function isNavItemActive(pathname: string, item: NavItem) {

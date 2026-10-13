@@ -6,12 +6,10 @@ import { fail, ok, type ActionResult } from "@/lib/actions/result"
 
 export const AUTH_COOKIE = "token"
 
-/** No servidor, `API_URL` (rede interna/Docker) tem prioridade sobre a URL pública. */
-const SERVER_API_URL = (process.env.API_URL || API_BASE_URL).replace(/\/+$/, "")
+const SERVER_API_URL = API_BASE_URL || process.env.API_URL || "http://localhost:8000"
 
 interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   body?: unknown
-  /** Status HTTP que devem ser devolvidos como `ok(null)` em vez de erro (ex.: 404 = "sem perfil"). */
   nullOn?: number[]
 }
 
@@ -20,10 +18,6 @@ export async function getServerToken() {
   return store.get(AUTH_COOKIE)?.value ?? null
 }
 
-/**
- * Único ponto de contato do servidor Next com a API Java.
- * Lê o JWT do cookie httpOnly, serializa o corpo e normaliza a resposta em `ActionResult`.
- */
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<ActionResult<T>> {
   const { body, nullOn = [], headers: extraHeaders, ...init } = options
   const token = await getServerToken()
@@ -46,7 +40,8 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   } catch {
     return fail("Não foi possível conectar ao servidor.", 503)
   }
-
+    
+  
   if (nullOn.includes(response.status)) return ok(null as T)
 
   const text = await response.text()

@@ -1,9 +1,9 @@
 "use client"
 
-import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Bell, Settings, UserRound } from "lucide-react"
+import { Settings, UserRound } from "lucide-react"
 import { AppShell, DrawerLogoutButton } from "@/components/layout/shell/app-shell"
+import { NotificationBell } from "@/components/candidate/notifications/notification-bell"
 import { UserMenu } from "@/components/layout/shell/user-menu"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { GlobalJobSearch } from "@/components/candidate/jobs/global-job-search"
@@ -46,13 +46,7 @@ export function CandidateAppShell({ children, currentPath }: { children: React.R
       topbarCenter={<GlobalJobSearch />}
       topbarActions={
         <>
-          <Link
-            href={ROUTES.candidate.notifications}
-            aria-label="Notificações"
-            className="grid size-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <Bell aria-hidden className="size-5" strokeWidth={1.75} />
-          </Link>
+          <NotificationBell />
           <UserMenu
             name={name}
             secondary={email}

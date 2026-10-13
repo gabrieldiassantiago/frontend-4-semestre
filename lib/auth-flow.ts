@@ -4,7 +4,6 @@ import { getProfileCompletion } from "@/lib/candidate-completion"
 import { HOME_BY_ROLE, ROUTES } from "@/lib/config/routes"
 import type { LoginPayload, UserRole } from "@/lib/types/auth.types"
 
-// Credentials live only in memory until verification; never persist passwords.
 let registration: LoginPayload | null = null
 
 export function rememberRegistration(payload: LoginPayload) {

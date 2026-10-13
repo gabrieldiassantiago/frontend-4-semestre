@@ -1,10 +1,12 @@
+"use client"
+
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { getInitials } from "@/lib/format"
 
 /**
- * Avatar de iniciais determinístico para empresas e pessoas.
- * A cor é derivada do nome, então a mesma entidade tem sempre a mesma cor.
- * Usa apenas tons da paleta do produto (violeta + neutros + estados).
+ * Avatar de empresas e pessoas. Mostra a foto quando `src` existe e carrega;
+ * caso contrário, cai para as iniciais com cor determinística derivada do nome.
  */
 const TONES = [
   "bg-primary-subtle text-primary-subtle-foreground",
@@ -22,15 +24,33 @@ const SIZES = {
 
 export function EntityAvatar({
   name,
+  src,
   size = "md",
   className,
 }: {
   name?: string | null
+  src?: string | null
   size?: keyof typeof SIZES
   className?: string
 }) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
   const label = name?.trim() || "Empresa"
   const hash = Array.from(label).reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const showImage = Boolean(src) && failedSrc !== src
+
+  if (showImage) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- fotos vêm de domínios arbitrários da API
+      <img
+        src={src!}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        onError={() => setFailedSrc(src!)}
+        className={cn("shrink-0 bg-muted object-cover", SIZES[size], className)}
+      />
+    )
+  }
 
   return (
     <span

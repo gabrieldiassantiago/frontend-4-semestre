@@ -34,6 +34,14 @@ const OAUTH_ERRORS: Record<string, string> = {
   oauth_failed: "Não foi possível concluir o login social. Tente novamente.",
 }
 
+const formatCpf = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11)
+  return digits
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+}
+
 interface AuthScreenProps {
   initialRole?: Role
   initialMode?: Mode
@@ -45,8 +53,10 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
   const [role] = useState<Role>(initialRole)
   const [mode, setMode] = useState<Mode>(initialMode)
 
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" })
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", cpf: "" })
   const [remember, setRemember] = useState(false)
+
+  const [modalTerms, setModalTerms] = useState(false)
 
   const login = useLogin()
   const register = useRegisterUser()
@@ -59,6 +69,9 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
 
   const update = (key: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement>) =>
     setForm((current) => ({ ...current, [key]: event.target.value }))
+
+  const updateCpf = (event: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((current) => ({ ...current, cpf: formatCpf(event.target.value) }))
 
   const switchMode = (next: Mode) => {
     setError(null)
@@ -99,7 +112,7 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
     setError(null)
     setSuccess(null)
 
-    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+    if (!form.name || !form.email || !form.password || !form.confirmPassword || !form.cpf) {
       setError("Por favor, preencha todos os campos.")
       return
     }
@@ -109,12 +122,20 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
       return
     }
 
+    const cpfDigits = form.cpf.replace(/\D/g, "")
+
+    if (cpfDigits.length !== 11) {
+      setError("Informe um CPF válido com 11 dígitos.")
+      return
+    }
+
     try {
       await register.mutateAsync({
         name: form.name,
         email: form.email,
         password: form.password,
         role: apiRole,
+        cpf: cpfDigits,
       })
 
       rememberRegistration({ email: form.email, password: form.password, role: apiRole })
@@ -277,17 +298,33 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
                 onSubmit={handleRegister}
                 className="mt-5 space-y-5"
               >
-                <Field label="Nome completo">
-                  <input
-                    type="text"
-                    placeholder="Como deseja ser chamado?"
-                    className="field-input"
-                    value={form.name}
-                    onChange={update("name")}
-                    autoComplete="name"
-                    required
-                  />
-                </Field>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field label="Nome completo">
+                    <input
+                      type="text"
+                      placeholder="Como deseja ser chamado?"
+                      className="field-input"
+                      value={form.name}
+                      onChange={update("name")}
+                      autoComplete="name"
+                      required
+                    />
+                  </Field>
+
+                  <Field label="CPF">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="000.000.000-00"
+                      className="field-input"
+                      value={form.cpf}
+                      onChange={updateCpf}
+                      autoComplete="off"
+                      maxLength={14}
+                      required
+                    />
+                  </Field>
+                </div>
 
                 <Field label="Seu e-mail">
                   <input
@@ -323,13 +360,13 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
 
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   Ao criar uma conta, você concorda com nossos{" "}
-                  <a href="#" className="font-medium text-strong-foreground underline underline-offset-2">
+                  <button
+                    type="button"
+                    onClick={() => setModalTerms(true)}
+                    className="font-medium text-strong-foreground underline underline-offset-2"
+                  >
                     Termos de Serviço
-                  </a>{" "}
-                  e{" "}
-                  <a href="#" className="font-medium text-strong-foreground underline underline-offset-2">
-                    Política de Privacidade
-                  </a>
+                  </button>
                   .
                 </p>
 
@@ -351,6 +388,96 @@ export function AuthScreen({ initialRole = "candidato", initialMode = "login" }:
             )}
           </AnimatePresence>
         </div>
+
+        <AnimatePresence>
+          {modalTerms && (
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setModalTerms(false)}
+            >
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="terms-title"
+                className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-background p-6 shadow-xl sm:p-8"
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2 }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => setModalTerms(false)}
+                  className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label="Fechar termos de serviço"
+                >
+                  ✕
+                </button>
+
+                <h2 id="terms-title" className="pr-8 text-2xl font-bold text-foreground">
+                  Termos de Serviço
+                </h2>
+
+                <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
+                  <p>
+                    Ao utilizar a plataforma Selecta, você concorda com os presentes
+                    Termos de Serviço.
+                  </p>
+
+                  <h3 className="text-base font-semibold text-foreground">
+                    1. Aceitação dos termos
+                  </h3>
+
+                  <p>
+                    Ao criar uma conta, você declara que leu, compreendeu e concorda
+                    com estes termos e condições.
+                  </p>
+
+                  <h3 className="text-base font-semibold text-foreground">
+                    2. Uso da plataforma
+                  </h3>
+
+                  <p>
+                    A plataforma deve ser utilizada de maneira adequada e de acordo
+                    com a legislação aplicável.
+                  </p>
+
+                  <h3 className="text-base font-semibold text-foreground">
+                    3. Responsabilidades
+                  </h3>
+
+                  <p>
+                    O usuário é responsável pelas informações fornecidas durante o
+                    cadastro e pela segurança de suas credenciais de acesso.
+                  </p>
+
+                  <h3 className="text-base font-semibold text-foreground">
+                    4. Alterações
+                  </h3>
+
+                  <p>
+                    Os termos poderão ser atualizados periodicamente. Alterações
+                    relevantes serão comunicadas aos usuários quando necessário.
+                  </p>
+                </div>
+
+                <div className="mt-8 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setModalTerms(false)}
+                    className="btn-primary"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       <section className="w-full px-3 pb-3 md:sticky md:top-0 md:h-screen md:w-1/2 md:p-3">

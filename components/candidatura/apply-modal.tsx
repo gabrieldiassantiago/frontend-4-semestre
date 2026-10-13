@@ -498,7 +498,7 @@ export function ApplyModal({
                   <div className="flex items-start justify-between gap-4 px-4 py-3">
                     <dt className="text-sm text-muted-foreground">Formato</dt>
                     <dd className="text-right text-sm font-semibold text-foreground">
-                      {MODALIDADE_LABELS[vaga.modalidade]} · {NIVEL_LABELS[vaga.nivelExperiencia]}
+                      {MODALIDADE_LABELS[vaga.modalidade]} · {vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "—"}
                     </dd>
                   </div>
                   {vaga.salario > 0 && (

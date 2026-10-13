@@ -20,3 +20,13 @@ export function OverviewGreeting({ firstName }: { firstName?: string }) {
     </>
   )
 }
+
+function todayLabel() {
+  const label = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+/** Data de hoje por extenso; renderiza vazio no servidor pelo mesmo motivo da saudação. */
+export function OverviewToday() {
+  return <>{useSyncExternalStore(subscribe, todayLabel, () => "")}</>
+}

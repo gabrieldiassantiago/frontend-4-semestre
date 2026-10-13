@@ -1,10 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { Briefcase, CheckCircle2, FileText, Hourglass, Search } from "lucide-react"
-import { PageHeader, PageShell, Section, SectionLink } from "@/components/ui/page"
+import { Briefcase, FileText } from "lucide-react"
+import { PageShell, Section, SectionLink } from "@/components/ui/page"
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
-import { StatCard } from "@/components/ui/stat-card"
 import { EmptyState, ErrorState } from "@/components/ui/states"
 import { getProfileCompletion } from "@/lib/candidate-completion"
 import { ROUTES } from "@/lib/config/routes"
@@ -13,10 +12,14 @@ import { useCandidateProfile } from "@/lib/queries/use-candidate-profile"
 import { useMinhasCandidaturas } from "@/lib/queries/use-candidaturas"
 import { useVagas } from "@/lib/queries/use-vagas"
 import { ActiveApplicationCard } from "./active-application-card"
-import { OverviewGreeting } from "./overview-greeting"
+import { OverviewHero } from "./overview-hero"
+import { ProfileCompletionCard } from "./profile-completion-card"
+import { QuickLinks } from "./quick-links"
+import { RecentApplications } from "./recent-applications"
 import { RecommendedJobCard } from "./recommended-job-card"
 
 const RECOMMENDED_LIMIT = 3
+const RECENT_LIMIT = 3
 
 export function CandidateOverviewScreen() {
   const profileQuery = useCandidateProfile()
@@ -56,58 +59,56 @@ export function CandidateOverviewScreen() {
   const { candidaturas } = applicationsQuery
   const firstName = (user?.name || profileQuery.profile?.userName)?.trim().split(" ")[0]
   const highlighted = candidaturas.find((c) => c.status === "EM_ANDAMENTO") ?? candidaturas[0] ?? null
+  const others = candidaturas.filter((c) => c.id !== highlighted?.id).slice(0, RECENT_LIMIT)
   const inProgress = candidaturas.filter((c) => c.status === "EM_ANDAMENTO").length
   const approved = candidaturas.filter((c) => c.status === "APROVADA").length
-  const completion = profileQuery.profile ? getProfileCompletion(profileQuery.profile).value : 0
+  const closed = candidaturas.filter((c) => c.status === "REPROVADA" || c.status === "CANCELADA").length
+  const completion = getProfileCompletion(profileQuery.profile)
   const recommended = jobsQuery.vagas.slice(0, RECOMMENDED_LIMIT)
 
   return (
     <PageShell className="max-w-6xl">
-      <PageHeader
-        title={<OverviewGreeting firstName={firstName} />}
-        description="Veja o andamento dos seus processos e as oportunidades selecionadas para você."
-        actions={
-          <Link href={ROUTES.candidate.jobs} className="btn-secondary">
-            <Search aria-hidden className="size-4" />
-            Buscar vagas
-          </Link>
-        }
+      <OverviewHero
+        firstName={firstName}
+        total={candidaturas.length}
+        inProgress={inProgress}
+        approved={approved}
+        closed={closed}
       />
 
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Candidaturas" value={candidaturas.length} icon={FileText} tone="primary" />
-        <StatCard label="Em andamento" value={inProgress} icon={Hourglass} tone="info" />
-        <StatCard label="Aprovadas" value={approved} icon={CheckCircle2} tone="success" />
-        <StatCard
-          label="Perfil completo"
-          value={`${completion}%`}
-          icon={Briefcase}
-          tone={completion >= 100 ? "success" : "warning"}
-          note={completion < 100 ? "Complete para ganhar destaque" : undefined}
-        />
+      <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3 lg:gap-8">
+        <div className="flex min-w-0 flex-col gap-10 lg:col-span-2">
+          <Section
+            title="Suas candidaturas"
+            actions={candidaturas.length > 0 && <SectionLink href={ROUTES.candidate.applications}>Ver todas</SectionLink>}
+          >
+            {highlighted ? (
+              <div className="flex flex-col gap-4">
+                <ActiveApplicationCard candidatura={highlighted} />
+                <RecentApplications candidaturas={others} />
+              </div>
+            ) : (
+              <EmptyState
+                icon={FileText}
+                title="Nenhuma candidatura ainda"
+                description="Candidate-se a uma vaga para acompanhar cada etapa do processo seletivo por aqui."
+                action={
+                  <Link href={ROUTES.candidate.jobs} className="btn-primary">
+                    Explorar vagas
+                  </Link>
+                }
+              />
+            )}
+          </Section>
+        </div>
+
+        <aside aria-label="Seu perfil e atalhos" className="flex flex-col gap-4">
+          <ProfileCompletionCard completion={completion} />
+          <QuickLinks />
+        </aside>
       </div>
 
-      <div className="mt-10 flex flex-col gap-10">
-        <Section
-          title="Suas candidaturas"
-          actions={candidaturas.length > 0 && <SectionLink href={ROUTES.candidate.applications}>Ver todas</SectionLink>}
-        >
-          {highlighted ? (
-            <ActiveApplicationCard candidatura={highlighted} />
-          ) : (
-            <EmptyState
-              icon={FileText}
-              title="Nenhuma candidatura ainda"
-              description="Candidate-se a uma vaga para acompanhar cada etapa do processo seletivo por aqui."
-              action={
-                <Link href={ROUTES.candidate.jobs} className="btn-primary">
-                  Explorar vagas
-                </Link>
-              }
-            />
-          )}
-        </Section>
-
+      <div className="mt-10">
         <Section
           title="Vagas para você"
           description="Oportunidades abertas recentemente na plataforma."

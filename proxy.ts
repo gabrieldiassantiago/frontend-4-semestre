@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-// Rotas protegidas (exigem estar logado com o cookie 'token')
 const candidateRoutes = ["/profile", "/dashboard", "/candidaturas", "/vagas"]
 const companyRoutes = ["/empresa"]
 const protectedRoutes = [...candidateRoutes, ...companyRoutes]
 
-// Rotas públicas de autenticação
 const authRoutes = ["/auth", "/auth/candidato", "/auth/recrutador", "/auth/empresa"]
 const candidateAuthRoutes = ["/auth/candidato"]
 const companyAuthRoutes = ["/auth/empresa", "/auth/recrutador"]
@@ -19,7 +17,6 @@ export function proxy(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some((route) => pathname === route)
 
-  // 1. Se for rota protegida e o usuário NÃO estiver autenticado -> Redireciona para /auth
   if (isProtectedRoute && !token) {
     const loginUrl = new URL("/auth", request.url)
     loginUrl.searchParams.set("from", pathname)
@@ -37,7 +34,6 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/acesso-negado", request.url))
   }
 
-  // Um usuário autenticado não pode abrir a entrada destinada ao outro papel.
   if (isAuthRoute && token) {
     if (candidateAuthRoutes.includes(pathname) && role !== "CANDIDATE") {
       return NextResponse.redirect(new URL("/acesso-negado", request.url))
@@ -63,7 +59,6 @@ function readRoleFromToken(token: string): "CANDIDATE" | "COMPANY" | null {
   }
 }
 
-// Executa o Proxy em todas as rotas da aplicação (exceto arquivos estáticos, imagens e favicon)
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|images|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|images|favicon.ico|.*\\.zip$).*)"],
 }

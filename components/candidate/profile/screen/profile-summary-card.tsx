@@ -104,10 +104,19 @@ export function ProfileSummaryCard({
         )}
 
         {!completion.ready && (
-          <Link href={ROUTES.candidate.completeProfile} className="btn-primary mt-4 w-full">
-            <Wand2 className="size-4" aria-hidden />
-            Completar com o passo a passo
-          </Link>
+         <Link
+  href={ROUTES.candidate.completeProfile}
+  className="btn-primary group mt-2 w-full"
+>
+  <Wand2 className="size-4" aria-hidden />
+  Completar com o passo a passo
+  <ArrowRight
+    className="size-4 items-center flex gap- shrink-0 transition-transform group-hover:translate-x-1"
+    strokeWidth={2.5}
+    aria-hidden
+  />
+</Link>
+
         )}
       </div>
     </div>

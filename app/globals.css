@@ -42,6 +42,14 @@
   animation-delay: calc(var(--stagger-index, 0) * 55ms);
 }
 
+/* Textura pontilhada violeta do hero, esmaecendo a partir do canto superior direito. */
+.hero-dots {
+  background-image: radial-gradient(color-mix(in oklab, var(--primary) 22%, transparent) 1px, transparent 1px);
+  background-size: 20px 20px;
+  mask-image: radial-gradient(ellipse 70% 90% at 100% 0%, black 10%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 90% at 100% 0%, black 10%, transparent 75%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton-shimmer::after,
   .motion-enter,
