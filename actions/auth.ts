@@ -114,6 +114,10 @@ export async function verifyEmailAction(payload: VerifyEmailPayload): Promise<Ac
   return apiFetch<void>("/auth/verify-email", { method: "POST", body: payload })
 }
 
+export async function getClientTokenAction(): Promise<string | null> {
+  return await getServerToken()
+}
+
 export async function resendCodeAction(payload: ResendCodePayload): Promise<ActionResult<void>> {
   return apiFetch<void>("/auth/resend-code", { method: "POST", body: payload })
 }

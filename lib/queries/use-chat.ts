@@ -15,6 +15,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { WS_URL } from "@/lib/http/config"
 import { queryKeys } from "./keys"
 import type { Chat, ChatLeitura, ChatMensagem, ChatPerspectiva } from "@/lib/types/chat.types"
+import { getClientTokenAction } from "@/actions/auth"
 
 export type ChatConexao = "conectando" | "online" | "offline"
 
@@ -73,8 +74,6 @@ export function useEnviarMensagem(candidaturaId: string) {
 
   return useMutation({
     mutationFn: async (texto: string) => unwrap(await enviarMensagemAction(candidaturaId, texto)),
-    // O backend só notifica o outro participante via WebSocket, então a
-    // resposta do POST é a única cópia que o remetente recebe.
     onSuccess: (enviada) => {
       queryClient.setQueryData<ChatMensagem[]>(key, (atual = []) => [...atual, enviada])
       void queryClient.invalidateQueries({ queryKey: queryKeys.chat.lista() })
@@ -119,41 +118,66 @@ export function useChatSocket(enabled = true): ChatConexao {
   useEffect(() => {
     if (!enabled) return
 
-    const client = new Client({
-      brokerURL: WS_URL,
-      reconnectDelay: 5000,
-      heartbeatIncoming: 10000,
-      heartbeatOutgoing: 10000,
-    })
+    let active = true
+    let client: Client | null = null
 
-    client.onConnect = () => {
-      setConexao("online")
+    async function connect() {
+      const token = await getClientTokenAction()
+      if (!active || !token) {
+        if (active) setConexao("offline")
+        return
+      }
 
-      client.subscribe("/user/queue/mensagens", () => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.chat.all })
+      const separator = WS_URL.includes("?") ? "&" : "?"
+      const brokerURLWithToken = `${WS_URL}${separator}token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(token)}`
+
+      client = new Client({
+        brokerURL: brokerURLWithToken,
+        connectHeaders: {
+          Authorization: `Bearer ${token}`,
+        },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 10000,
+        heartbeatOutgoing: 10000,
       })
 
-      client.subscribe("/user/queue/leituras", (frame) => {
-        try {
-          const leitura = JSON.parse(frame.body) as ChatLeitura
-          queryClient.setQueryData<ChatMensagem[]>(
-            queryKeys.chat.mensagens(leitura.candidaturaId),
-            (atual) => atual?.map((item) => (item.enviadoPorSiMesmo ? { ...item, lida: true } : item)),
-          )
-        } catch {
+      client.onConnect = () => {
+        if (!active) return
+        setConexao("online")
+
+        client?.subscribe("/user/queue/mensagens", () => {
           void queryClient.invalidateQueries({ queryKey: queryKeys.chat.all })
-        }
-      })
+        })
+
+        client?.subscribe("/user/queue/leituras", (frame) => {
+          try {
+            const leitura = JSON.parse(frame.body) as ChatLeitura
+            queryClient.setQueryData<ChatMensagem[]>(
+              queryKeys.chat.mensagens(leitura.candidaturaId),
+              (atual) => atual?.map((item) => (item.enviadoPorSiMesmo ? { ...item, lida: true } : item)),
+            )
+          } catch {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.chat.all })
+          }
+        })
+      }
+
+      client.onWebSocketClose = () => {
+        if (active) setConexao("offline")
+      }
+      client.onStompError = () => {
+        if (active) setConexao("offline")
+      }
+
+      setConexao("conectando")
+      client.activate()
     }
 
-    client.onWebSocketClose = () => setConexao("offline")
-    client.onStompError = () => setConexao("offline")
-
-    setConexao("conectando")
-    client.activate()
+    void connect()
 
     return () => {
-      void client.deactivate()
+      active = false
+      void client?.deactivate()
     }
   }, [enabled, queryClient])
 
