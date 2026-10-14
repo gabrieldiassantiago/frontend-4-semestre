@@ -28,8 +28,6 @@ export interface LoginResult {
   role: AuthTokenResponse["role"]
   expiresIn?: number
 }
-
-/** Autentica e grava o JWT em cookie httpOnly — o token nunca chega ao JavaScript do navegador. */
 export async function loginAction(payload: LoginPayload): Promise<ActionResult<LoginResult>> {
   const result = await apiFetch<AuthTokenResponse>("/auth", { method: "POST", body: payload })
   if (!result.ok) return result
@@ -37,7 +35,7 @@ export async function loginAction(payload: LoginPayload): Promise<ActionResult<L
 
   const store = await cookies()
   store.set(AUTH_COOKIE, result.data.token, {
-    httpOnly: true,
+    httpOnly: false,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
@@ -63,7 +61,7 @@ export async function getCurrentUserAction(): Promise<ActionResult<CurrentUser>>
     if (parts.length === 3) {
       jwtPayload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"))
     }
-  } catch {}
+  } catch { }
 
   const candidateUserId = (jwtPayload.id as string) || (jwtPayload.userId as string) || (typeof jwtPayload.sub === "string" && !jwtPayload.sub.includes("@") ? jwtPayload.sub : undefined)
 
