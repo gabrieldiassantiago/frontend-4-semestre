@@ -122,17 +122,19 @@ export function useChatSocket(enabled = true): ChatConexao {
     let client: Client | null = null
 
     async function connect() {
+
       const token = await getClientTokenAction()
+
       if (!active || !token) {
         if (active) setConexao("offline")
         return
       }
 
       const separator = WS_URL.includes("?") ? "&" : "?"
-      const brokerURLWithToken = `${WS_URL}${separator}token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(token)}`
+      const brokerURL = `${WS_URL}${separator}token=${encodeURIComponent(token)}`
 
       client = new Client({
-        brokerURL: brokerURLWithToken,
+        brokerURL,
         connectHeaders: {
           Authorization: `Bearer ${token}`,
         },
