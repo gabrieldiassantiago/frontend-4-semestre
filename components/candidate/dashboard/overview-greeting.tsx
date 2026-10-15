@@ -10,23 +10,36 @@ function greetingFor(hour: number) {
 
 const subscribe = () => () => {}
 
-/** Saudação pelo horário local; no servidor usa um texto neutro para evitar mismatch. */
+/** Saudação pelo horário local; destaca o nome na cor primária (roxo). */
 export function OverviewGreeting({ firstName }: { firstName?: string }) {
-  const greeting = useSyncExternalStore(subscribe, () => greetingFor(new Date().getHours()), () => "Olá")
+  const greeting = useSyncExternalStore(
+    subscribe,
+    () => greetingFor(new Date().getHours()),
+    () => "Olá",
+  )
+
   return (
     <>
       {greeting}
-      {firstName ? `, ${firstName}` : ""}
+      {firstName ? (
+        <>
+          , <span className="text-primary">{firstName}</span>
+        </>
+      ) : null}
     </>
   )
 }
 
 function todayLabel() {
-  const label = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
+  const label = new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  })
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
-/** Data de hoje por extenso; renderiza vazio no servidor pelo mesmo motivo da saudação. */
+/** Data de hoje por extenso; renderiza vazio no servidor para evitar mismatch. */
 export function OverviewToday() {
   return <>{useSyncExternalStore(subscribe, todayLabel, () => "")}</>
 }

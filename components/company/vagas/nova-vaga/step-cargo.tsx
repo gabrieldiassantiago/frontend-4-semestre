@@ -1,6 +1,6 @@
 "use client"
 
-import { Building2, Laptop, Home } from "lucide-react"
+import { Building2, Laptop, Home, Sparkles } from "lucide-react"
 import { Field } from "@/components/ui/form-field"
 import {
   CATEGORIA_LABELS,
@@ -59,13 +59,13 @@ export function StepCargo({
       <StepHeader
         step={1}
         title="Qual função você está contratando?"
-        description="Um título claro é o que faz a vaga aparecer nas buscas certas."
+        description="Comece com um título claro e direto — é assim que os candidatos ideais encontrarão sua vaga."
       />
 
       <StepCard>
         <Field
           label="Título da vaga"
-          hint="Evite códigos internos. Escreva como o candidato buscaria."
+          hint="Evite códigos internos ou siglas pouco conhecidas. Escreva como o candidato buscaria."
           error={error}
         >
           <input
@@ -74,29 +74,41 @@ export function StepCargo({
             onChange={(e) => setTitulo(e.target.value)}
             placeholder="Ex: Desenvolvedor(a) Full Stack Node e React"
             aria-invalid={Boolean(error)}
-            className="field-input"
+            className="field-input text-base font-medium"
           />
         </Field>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">Sugestões:</span>
-          {TITULO_SUGESTOES.map((sugestao) => (
-            <button
-              key={sugestao}
-              type="button"
-              onClick={() => setTitulo(sugestao)}
-              className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-strong-foreground transition-colors hover:bg-primary-subtle hover:text-primary-subtle-foreground"
-            >
-              {sugestao}
-            </button>
-          ))}
+        <div className="mt-5 border-t border-border/60 pt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+              <Sparkles className="size-3.5 text-primary" aria-hidden />
+              Sugestões rápidas:
+            </span>
+            {TITULO_SUGESTOES.map((sugestao) => {
+              const isSelected = titulo === sugestao
+              return (
+                <button
+                  key={sugestao}
+                  type="button"
+                  onClick={() => setTitulo(sugestao)}
+                  className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
+                    isSelected
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-surface text-foreground hover:border-foreground/50 hover:bg-muted"
+                  }`}
+                >
+                  {sugestao}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </StepCard>
 
       <StepCard>
         <RadioCards
           legend="Área de atuação"
-          hint="Categorizar bem aumenta o match com os candidatos certos."
+          hint="Categorizar bem aumenta a precisão das recomendações para os talentos certos."
           options={CATEGORIA_OPTIONS}
           value={categoria}
           onChange={setCategoria}
@@ -107,7 +119,8 @@ export function StepCargo({
       <div className="grid gap-6 lg:grid-cols-2">
         <StepCard>
           <RadioCards
-            legend="Senioridade"
+            legend="Senioridade esperada"
+            hint="Define o nível de autonomia e experiência da pessoa."
             options={NIVEL_OPTIONS}
             value={nivelExperiencia}
             onChange={setNivelExperiencia}
@@ -118,6 +131,7 @@ export function StepCargo({
         <StepCard>
           <RadioCards
             legend="Modelo de trabalho"
+            hint="Informe a rotina presencial ou remota exigida pela posição."
             options={MODALIDADE_OPTIONS}
             value={modalidade}
             onChange={setModalidade}
