@@ -10,7 +10,7 @@ import { useSidebarCollapsed } from "@/lib/hooks/use-sidebar-collapsed"
 import { cn } from "@/lib/utils"
 import { MobileDrawer } from "./mobile-drawer"
 import { MobileTabBar } from "./mobile-tab-bar"
-import { SidebarNav, SidebarNavLink } from "./sidebar-nav"
+import { SidebarNav, SidebarNavLink, type NavBadges } from "./sidebar-nav"
 
 export type AppShellSlots = {
   /** Bloco acima da navegação (ex.: identidade da empresa). Recebe o estado recolhido. */
@@ -23,6 +23,10 @@ export type AppShellSlots = {
   topbarActions?: React.ReactNode
   /** Rodapé da gaveta mobile (ex.: sair da conta). */
   drawerFooter?: React.ReactNode
+  /** Subtítulo exibido abaixo do título da página na topbar. */
+  topbarSubtitle?: React.ReactNode
+  /** Contadores por item de navegação (chave = href). */
+  badges?: NavBadges
 }
 
 /**
@@ -80,7 +84,7 @@ export function AppShell({
         {slots.sidebarTop?.(desktopState)}
 
         <div className={cn("flex-1 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
-          <SidebarNav groups={navigation.groups} pathname={pathname} collapsed={collapsed} />
+          <SidebarNav groups={navigation.groups} pathname={pathname} collapsed={collapsed} badges={slots.badges} />
         </div>
 
         <div className={cn("flex shrink-0 flex-col gap-1 border-t border-border py-3", collapsed ? "px-2" : "px-3")}>
@@ -127,9 +131,12 @@ export function AppShell({
               <SelectaLogo className="hidden h-7 sm:block" />
             </Link>
 
-            <p className="hidden min-w-0 shrink-0 truncate text-sm font-semibold text-foreground lg:block">
-              {activeItem?.label}
-            </p>
+            <div className="hidden min-w-0 shrink-0 lg:block">
+              <p className="truncate text-sm font-semibold leading-tight text-foreground">{activeItem?.label}</p>
+              {slots.topbarSubtitle && (
+                <p className="mt-0.5 truncate text-xs leading-tight text-muted-foreground">{slots.topbarSubtitle}</p>
+              )}
+            </div>
 
             <div className="flex min-w-0 flex-1 justify-center">{slots.topbarCenter}</div>
 
@@ -150,7 +157,7 @@ export function AppShell({
         footer={slots.drawerFooter}
       >
         {slots.sidebarTop && <div className="-mx-3 -mt-2 mb-5">{slots.sidebarTop(drawerState)}</div>}
-        <SidebarNav groups={navigation.groups} pathname={pathname} onNavigate={closeDrawer} />
+        <SidebarNav groups={navigation.groups} pathname={pathname} badges={slots.badges} onNavigate={closeDrawer} />
         {navigation.footer && (
           <div className="mt-5 flex flex-col gap-1 border-t border-border pt-4">
             {navigation.footer.map((item) => (
@@ -161,7 +168,7 @@ export function AppShell({
         {slots.sidebarBottom && <div className="mt-5">{slots.sidebarBottom(drawerState)}</div>}
       </MobileDrawer>
 
-      <MobileTabBar items={navigation.tabs} pathname={pathname} />
+      <MobileTabBar items={navigation.tabs} pathname={pathname} badges={slots.badges} />
     </div>
   )
 }

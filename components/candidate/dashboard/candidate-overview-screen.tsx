@@ -106,7 +106,7 @@ export function CandidateOverviewScreen() {
           <ProfileCompletionCard completion={completion} />
           <QuickLinks />
         </aside>
-      </div>
+    </div>
 
       <div className="mt-10">
         <Section

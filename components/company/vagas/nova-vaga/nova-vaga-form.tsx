@@ -1,161 +1,201 @@
 "use client"
-import { ROUTES } from "@/lib/config/routes"
 
-import { RouteSkeleton } from "@/components/ui/route-skeleton"
-
-import { useState, useEffect, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { AlertCircle, ArrowLeft, CheckCircle2, X } from "lucide-react"
-import { useCreateVaga } from "@/lib/queries/use-vagas"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { AlertCircle, CheckCircle2, ExternalLink, X } from "lucide-react"
+import { ROUTES } from "@/lib/config/routes"
+import { RouteSkeleton } from "@/components/ui/route-skeleton"
+import { useCreateVaga, useUpdateVaga } from "@/lib/queries/use-vagas"
 import { useCompanyProfile } from "@/lib/queries/use-company-profile"
 import { ShareVagaButton } from "@/components/shared/vaga/share-vaga-button"
-import {
-  CATEGORIA_LABELS,
-  MODALIDADE_LABELS,
-  NIVEL_LABELS,
-  type VagaCategoria,
-  type VagaModalidade,
-  type NivelExperiencia,
-  type CreateVagaDto,
-} from "@/lib/types/vaga.types"
-import type { EtapaProcesso } from "@/lib/types/candidatura.types"
+import type { CreateVagaDto, UpdateVagaDto, Vaga } from "@/lib/types/vaga.types"
+import { cn } from "@/lib/utils"
 
-import { Stepper, TOTAL_STEPS } from "./wizard"
-import { StepCargo } from "./step-cargo"
-import { StepLocalSalario } from "./step-local-salario"
-import { StepBeneficios } from "./step-beneficios"
-import { StepDescricao } from "./step-descricao"
-import { StepEtapas } from "./step-etapas"
-import { NovaVagaFooter } from "./nova-vaga-footer"
+import { EDIT_STEPS, FLOW_STEPS, buildDescriptionTemplate, stripHtml, validateStep } from "./flow/steps"
+import type { DraftErrors, StepId, VagaDraft } from "./flow/types"
+import { FlowProvider, type FlowMode } from "./flow/flow-context"
+import { STEP_HEADING_ID } from "./flow/primitives"
+import { StepRail } from "./flow/step-rail"
+import { LivePreview } from "./flow/live-preview"
+import { FLOW_GRID, FlowFooter } from "./flow/flow-footer"
+import { StepTitulo } from "./flow/steps/step-titulo"
+import { StepPerfil } from "./flow/steps/step-perfil"
+import { StepLocal } from "./flow/steps/step-local"
+import { StepSalario } from "./flow/steps/step-salario"
+import { ESSENTIAL_BENEFITS, StepBeneficios } from "./flow/steps/step-beneficios"
+import { StepDescricao } from "./flow/steps/step-descricao"
+import { StepProcesso } from "./flow/steps/step-processo"
+import { StepRevisao } from "./flow/steps/step-revisao"
 
-const DEFAULT_BENEFITS = [
-  "Plano de Saúde (Bradesco/Amil/Unimed)",
-  "Vale Refeição (VR / Swile / Caju / Flash)",
-  "Auxílio Home Office (R$ Luz/Internet)",
-  "Horário 100% Flexível",
-]
+const INITIAL_DRAFT: VagaDraft = {
+  titulo: "",
+  categoria: "DESENVOLVIMENTO_SOFTWARE",
+  nivelExperiencia: "PLENO",
+  modalidade: "HIBRIDO",
+  salario: 8500,
+  cidade: "São Paulo",
+  estado: "SP",
+  latitude: -23.5505,
+  longitude: -46.6333,
+  beneficios: ESSENTIAL_BENEFITS,
+  descricao: "",
+  etapas: ["TRIAGEM", "ENTREVISTA_RH", "PROPOSTA"],
+  metaTags: [],
+}
 
-/** Campos com erro, indexados pelo nome do campo. */
-type FieldErrors = Partial<Record<"titulo" | "cidade" | "salario" | "descricao", string>>
+const EASE = [0.22, 1, 0.36, 1] as const
 
-function buildTemplate(
-  titulo: string,
-  categoria: VagaCategoria,
-  nivel: NivelExperiencia,
-  modalidade: VagaModalidade,
-): string {
-  const cargo = titulo.trim() || CATEGORIA_LABELS[categoria]
+function escapeHtml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+}
 
-  return `### Sobre a vaga
-Estamos em busca de **${cargo} (${NIVEL_LABELS[nivel]})** para atuar em formato **${MODALIDADE_LABELS[modalidade]}**.
+/** Descrições antigas podem estar em texto puro; o editor espera HTML. */
+function toEditorHtml(value: string) {
+  if (/<[a-z][\s\S]*>/i.test(value)) return value
+  return value
+    .split(/\n{2,}|\r\n\r\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
+    .join("")
+}
 
-### Responsabilidades
-- Atuar no desenvolvimento e na entrega de soluções da área de ${CATEGORIA_LABELS[categoria]}.
-- Participar de reuniões de alinhamento, planejamento e acompanhamento de entregas.
-- Propor melhorias de processo e compartilhar conhecimento com o time.
-
-### Requisitos
-- Experiência compatível com o nível ${NIVEL_LABELS[nivel]}.
-- Autonomia e boa capacidade de resolução de problemas.
-- Comunicação clara e trabalho colaborativo.
-
-### Diferenciais
-- Vivência com metodologias ágeis.
-- Cases ou projetos anteriores relevantes na área.`
+function draftFromVaga(vaga: Vaga): VagaDraft {
+  return {
+    titulo: vaga.titulo,
+    categoria: vaga.categoria,
+    nivelExperiencia: vaga.nivelExperiencia ?? "JUNIOR",
+    modalidade: vaga.modalidade,
+    salario: vaga.salario,
+    cidade: vaga.cidade,
+    estado: vaga.estado,
+    latitude: vaga.latitude ?? INITIAL_DRAFT.latitude,
+    longitude: vaga.longitude ?? INITIAL_DRAFT.longitude,
+    beneficios: vaga.beneficios ? vaga.beneficios.split(",").map((item) => item.trim()).filter(Boolean) : [],
+    descricao: toEditorHtml(vaga.descricao ?? ""),
+    etapas: [...(vaga.etapas ?? [])]
+      .sort((a, b) => a.ordem - b.ordem)
+      .map((item) => item.etapa)
+      .filter((etapa) => etapa !== "INSCRICAO" && etapa !== "CONTRATACAO"),
+    metaTags: vaga.metaTags ?? [],
+  }
 }
 
 export function NovaVagaForm() {
-  const [currentStep, setCurrentStep] = useState(1)
-  const [maxReached, setMaxReached] = useState(1)
+  return <VagaFlow />
+}
 
+/**
+ * Fluxo em etapas para criar uma vaga ou editar uma existente.
+ * Na edição todas as seções ficam acessíveis e é possível salvar de qualquer uma delas.
+ */
+export function VagaFlow({ vaga }: { vaga?: Vaga }) {
+  const mode: FlowMode = vaga ? "edit" : "create"
+  const editing = mode === "edit"
+  const steps = editing ? EDIT_STEPS : FLOW_STEPS
+  const reduceMotion = useReducedMotion()
   const { profile, error: profileError, isLoading: loadingCompany } = useCompanyProfile()
   const createVaga = useCreateVaga()
+  const updateVaga = useUpdateVaga()
   const companyProfileId = profile?.id ?? null
-  const companyName = profile?.companyName || "Sua empresa"
+  const companyName = profile?.companyName || vaga?.nomeEmpresa || "Sua empresa"
 
-  const [titulo, setTitulo] = useState("")
-  const [categoria, setCategoria] = useState<VagaCategoria>("DESENVOLVIMENTO_SOFTWARE")
-  const [nivelExperiencia, setNivelExperiencia] = useState<NivelExperiencia>("PLENO")
-  const [modalidade, setModalidade] = useState<VagaModalidade>("HIBRIDO")
-  const [salario, setSalario] = useState(8500)
-  const [cidade, setCidade] = useState("São Paulo")
-  const [estado, setEstado] = useState("SP")
-  const [latitude, setLatitude] = useState<number>(-23.5505)
-  const [longitude, setLongitude] = useState<number>(-46.6333)
-  const [selectedBenefits, setSelectedBenefits] = useState<string[]>(DEFAULT_BENEFITS)
-  const [descricao, setDescricao] = useState(() =>
-    buildTemplate("", "DESENVOLVIMENTO_SOFTWARE", "PLENO", "HIBRIDO"),
-  )
-  const [etapas, setEtapas] = useState<EtapaProcesso[]>([
-    "TRIAGEM",
-    "ENTREVISTA_RH",
-    "PROPOSTA",
-  ])
-  const [metaTags, setMetaTags] = useState("")
-
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+  const initialDraft = useMemo(() => (vaga ? draftFromVaga(vaga) : INITIAL_DRAFT), [vaga])
+  const [draft, setDraft] = useState<VagaDraft>(initialDraft)
+  const [current, setCurrent] = useState(0)
+  const [maxReached, setMaxReached] = useState(editing ? steps.length - 1 : 0)
+  const [direction, setDirection] = useState(1)
+  const [errors, setErrors] = useState<DraftErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [publishedId, setPublishedId] = useState<string | null>(null)
+  const [doneId, setDoneId] = useState<string | null>(null)
+  const [editorKey, setEditorKey] = useState(0)
+  const hasNavigated = useRef(false)
 
-  /**
-   * Sugere a sede da empresa como local da vaga. Só roda uma vez, para não
-   * desfazer um endereço que a pessoa já tenha ajustado à mão.
-   */
-  const prefilledLocation = useRef(false)
+  const step = steps[current]
+  const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(initialDraft), [draft, initialDraft])
+
+  const update = useCallback((patch: Partial<VagaDraft>) => {
+    setDraft((prev) => ({ ...prev, ...patch }))
+    // Corrigir um campo limpa o aviso dele, sem esperar o próximo "Continuar".
+    setErrors((prev) => {
+      const touched = Object.keys(patch).filter((key) => key in prev)
+      if (!touched.length) return prev
+      const next = { ...prev }
+      for (const key of touched) delete next[key as keyof DraftErrors]
+      return next
+    })
+  }, [])
+
+  // Sugere a sede da empresa como local; roda uma vez para não desfazer ajustes manuais.
+  const prefilledLocation = useRef(editing)
   useEffect(() => {
     if (prefilledLocation.current || !profile) return
     prefilledLocation.current = true
-    if (profile.city) setCidade(profile.city)
-    if (profile.state) setEstado(profile.state.toUpperCase())
+    const patch: Partial<VagaDraft> = {}
+    if (profile.city) patch.cidade = profile.city
+    if (profile.state) patch.estado = profile.state.toUpperCase()
+    if (Object.keys(patch).length) setDraft((prev) => ({ ...prev, ...patch }))
   }, [profile])
 
-  /** Valida apenas os campos que pertencem à etapa informada. */
-  function validateStep(step: number): FieldErrors {
-    if (step === 1 && !titulo.trim()) return { titulo: "Informe o título da vaga." }
-    if (step === 2) {
-      const errors: FieldErrors = {}
-      if (!cidade.trim()) errors.cidade = "Informe a cidade da vaga."
-      if (!salario || salario <= 0) errors.salario = "Informe um salário maior que zero."
-      return errors
-    }
-    if (step === 4 && !descricao.trim()) {
-      return { descricao: "Escreva a descrição da vaga." }
-    }
-    return {}
-  }
+  // Evita perder alterações ao fechar a aba no meio da edição.
+  useEffect(() => {
+    if (!editing || !dirty || doneId) return
+    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener("beforeunload", onBeforeUnload)
+    return () => window.removeEventListener("beforeunload", onBeforeUnload)
+  }, [editing, dirty, doneId])
 
-  function goToStep(step: number) {
+  function goTo(index: number) {
+    const target = Math.max(0, Math.min(steps.length - 1, index))
+    if (target === current) return
+
+    // Primeira visita à descrição: entrega um rascunho pronto com base nas respostas.
+    if (steps[target].id === "descricao" && !stripHtml(draft.descricao)) {
+      setDraft((prev) => ({ ...prev, descricao: buildDescriptionTemplate(prev) }))
+      setEditorKey((key) => key + 1)
+    }
+
+    hasNavigated.current = true
+    setDirection(target > current ? 1 : -1)
+    setErrors({})
     setFormError(null)
-    setFieldErrors({})
-    setCurrentStep(step)
-    setMaxReached((prev) => Math.max(prev, step))
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    setCurrent(target)
+    setMaxReached((prev) => Math.max(prev, target))
+    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" })
   }
 
-  function handleAdvance() {
-    const errors = validateStep(currentStep)
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors)
-      setFormError("Revise os campos destacados para continuar.")
+  function goToStepId(id: StepId) {
+    goTo(steps.findIndex((item) => item.id === id))
+  }
+
+  function handleNext() {
+    const stepErrors = validateStep(step.id, draft)
+    if (Object.keys(stepErrors).length) {
+      setErrors(stepErrors)
       return
     }
-    goToStep(Math.min(TOTAL_STEPS, currentStep + 1))
+    goTo(current + 1)
   }
 
-  async function handlePublish() {
-    if (!companyProfileId) {
+  function regenerateDescription() {
+    setDraft((prev) => ({ ...prev, descricao: buildDescriptionTemplate(prev) }))
+    setEditorKey((key) => key + 1)
+  }
+
+  async function handleSubmit() {
+    if (!editing && !companyProfileId) {
       setFormError("Identificador da empresa não encontrado. Faça login novamente.")
       return
     }
 
-    // Revalida tudo: a empresa pode ter voltado e apagado um campo anterior.
-    for (const step of [1, 2, 4, 5]) {
-      const errors = validateStep(step)
-      if (Object.keys(errors).length > 0) {
-        goToStep(step)
-        setFieldErrors(errors)
-        setFormError("Revise os campos destacados antes de publicar.")
+    // Revalida tudo: a pessoa pode ter voltado e apagado um campo anterior.
+    for (const [index, item] of steps.entries()) {
+      const stepErrors = validateStep(item.id, draft)
+      if (Object.keys(stepErrors).length) {
+        goTo(index)
+        setErrors(stepErrors)
         return
       }
     }
@@ -163,204 +203,293 @@ export function NovaVagaForm() {
     setSubmitting(true)
     setFormError(null)
 
-    try {
-      const dto: CreateVagaDto = {
-        titulo: titulo.trim(),
-        salario: Number(salario),
-        descricao: descricao.trim(),
-        beneficios: selectedBenefits.join(", "),
-        companyProfileId,
-        latitude: Number(latitude),
-        longitude: Number(longitude),
-        cidade: cidade.trim(),
-        estado: estado.trim().toUpperCase(),
-        categoria,
-        modalidade,
-        nivelExperiencia,
-        metaTags: metaTags.split(",").map((tag) => tag.trim()).filter(Boolean),
-        etapas,
-      }
+    const common = {
+      titulo: draft.titulo.trim(),
+      salario: Number(draft.salario),
+      descricao: draft.descricao.trim(),
+      latitude: Number(draft.latitude),
+      longitude: Number(draft.longitude),
+      cidade: draft.cidade.trim(),
+      estado: draft.estado.trim().toUpperCase(),
+      categoria: draft.categoria,
+      modalidade: draft.modalidade,
+      nivelExperiencia: draft.nivelExperiencia,
+      metaTags: draft.metaTags,
+    }
 
-      const vaga = await createVaga.mutateAsync(dto)
-      setPublishedId(vaga.id)
+    try {
+      if (vaga) {
+        const dto: UpdateVagaDto = { ...common, beneficios: draft.beneficios.join(", ") || undefined }
+        await updateVaga.mutateAsync({ id: vaga.id, dto })
+        setDoneId(vaga.id)
+      } else {
+        const dto: CreateVagaDto = {
+          ...common,
+          beneficios: draft.beneficios.join(", "),
+          companyProfileId: companyProfileId!,
+          etapas: draft.etapas,
+        }
+        const created = await createVaga.mutateAsync(dto)
+        setDoneId(created.id)
+      }
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Erro ao publicar a vaga.")
+      setFormError(error instanceof Error ? error.message : editing ? "Erro ao salvar a vaga." : "Erro ao publicar a vaga.")
     } finally {
       setSubmitting(false)
     }
   }
 
   const visibleError =
-    formError ??
-    (profileError ? "Não foi possível identificar sua empresa. Faça login novamente." : null)
+    formError ?? (!editing && profileError ? "Não foi possível identificar sua empresa. Faça login novamente." : null)
 
-  if (loadingCompany) return <RouteSkeleton variant="form" />
+  if (loadingCompany && !editing) return <RouteSkeleton variant="form" />
 
-  // Confirmação: publicar termina em uma ação útil (divulgar a vaga), não num redirect seco.
-  if (publishedId) {
-    return (
-      <div className="mx-auto flex min-h-[calc(100svh-9rem)] max-w-lg flex-col items-center justify-center px-4 py-12 text-center">
-        <span className="grid size-14 place-items-center rounded-full bg-success-subtle text-success">
-          <CheckCircle2 className="size-7" aria-hidden />
-        </span>
-        <h1 className="mt-5 text-2xl font-bold tracking-tight text-foreground text-balance">
-          Vaga publicada com sucesso!
+  if (doneId) {
+    return <DoneScreen id={doneId} titulo={draft.titulo} mode={mode} reduceMotion={Boolean(reduceMotion)} />
+  }
+
+  const stepProps = { draft, update, errors }
+  const progress = ((current + 1) / steps.length) * 100
+  const offset = reduceMotion ? 0 : 40
+
+  return (
+    <FlowProvider value={{ steps, mode }}>
+      <div className="flex min-h-[calc(100dvh-4rem)] flex-col bg-background">
+        <div className="sticky top-16 z-20 border-b border-border bg-background/90 backdrop-blur-md">
+          <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+            <Link
+              href={ROUTES.company.jobs}
+              aria-label={editing ? "Sair da edição e voltar para minhas vagas" : "Sair e voltar para minhas vagas"}
+              className="grid size-9 shrink-0 place-items-center rounded-full text-strong-foreground transition-colors hover:bg-muted"
+            >
+              <X className="size-4" aria-hidden />
+            </Link>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-sm font-semibold text-foreground">
+                {editing ? (
+                  <>
+                    Editar vaga <span className="font-normal text-muted-foreground">· {vaga?.titulo}</span>
+                  </>
+                ) : (
+                  "Nova vaga"
+                )}
+              </h1>
+              <p className="truncate text-xs text-muted-foreground">{companyName}</p>
+            </div>
+            {editing ? (
+              <div className="flex shrink-0 items-center gap-2">
+                <span
+                  aria-live="polite"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+                    dirty ? "bg-warning-subtle text-warning-foreground" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  <span aria-hidden className={cn("size-1.5 rounded-full", dirty ? "bg-warning" : "bg-subtle-foreground")} />
+                  {dirty ? "Alterações não salvas" : "Sem alterações"}
+                </span>
+                <Link
+                  href={`/vaga/${vaga?.id}`}
+                  target="_blank"
+                  className="hidden min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
+                >
+                  Página pública
+                  <ExternalLink aria-hidden className="size-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <p className="shrink-0 text-xs font-medium text-muted-foreground" aria-live="polite">
+                <span className="font-semibold tabular-nums text-foreground">{current + 1}</span>/{steps.length}
+                <span className="ml-1.5 lg:hidden">· {step.label}</span>
+              </p>
+            )}
+          </div>
+          {editing ? (
+            <nav aria-label="Seções da vaga" className="mx-auto flex w-full max-w-7xl gap-1 overflow-x-auto px-4 pb-2 sm:px-6 lg:hidden">
+              {steps.map((item, index) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-current={index === current ? "step" : undefined}
+                  onClick={() => goTo(index)}
+                  className={cn(
+                    "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                    index === current ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          ) : (
+            <div
+              className="h-0.5 w-full bg-border-subtle"
+              role="progressbar"
+              aria-label="Progresso da publicação"
+              aria-valuemin={1}
+              aria-valuemax={steps.length}
+              aria-valuenow={current + 1}
+            >
+              <motion.div
+                className="h-full bg-primary"
+                initial={false}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: reduceMotion ? 0 : 0.5, ease: EASE }}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className={`${FLOW_GRID} flex-1`}>
+          <aside className="hidden lg:block">
+            <div className="sticky top-36 py-10">
+              <StepRail current={current} maxReached={maxReached} draft={draft} onSelect={goTo} />
+            </div>
+          </aside>
+
+          <main className="min-w-0 py-8 sm:py-12">
+            <div className="mx-auto max-w-2xl">
+              {visibleError && (
+                <div
+                  role="alert"
+                  className="mb-6 flex items-start justify-between gap-3 rounded-2xl border border-danger-border bg-danger-subtle p-4 text-danger-foreground"
+                >
+                  <p className="flex items-start gap-2.5 text-sm font-medium">
+                    <AlertCircle className="mt-px size-4 shrink-0" aria-hidden />
+                    {visibleError}
+                  </p>
+                  {formError && (
+                    <button
+                      type="button"
+                      onClick={() => setFormError(null)}
+                      aria-label="Fechar aviso"
+                      className="shrink-0 rounded-md p-0.5 transition-colors hover:bg-danger-border/50"
+                    >
+                      <X className="size-4" aria-hidden />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <AnimatePresence mode="wait" custom={direction} initial={false}>
+                <motion.div
+                  key={step.id}
+                  custom={direction}
+                  variants={{
+                    enter: (dir: number) => ({ opacity: 0, x: dir * offset }),
+                    center: { opacity: 1, x: 0 },
+                    exit: (dir: number) => ({ opacity: 0, x: dir * -offset }),
+                  }}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: reduceMotion ? 0.1 : 0.28, ease: EASE }}
+                  onAnimationComplete={(definition) => {
+                    // Leva o foco ao novo título para leitores de tela anunciarem a etapa.
+                    if (definition !== "center" || !hasNavigated.current || step.id === "titulo") return
+                    document.getElementById(STEP_HEADING_ID)?.focus({ preventScroll: true })
+                  }}
+                >
+                  {step.id === "titulo" && <StepTitulo {...stepProps} onEnter={editing ? handleSubmit : handleNext} />}
+                  {step.id === "perfil" && <StepPerfil {...stepProps} />}
+                  {step.id === "local" && <StepLocal {...stepProps} />}
+                  {step.id === "salario" && <StepSalario {...stepProps} onEnter={editing ? handleSubmit : handleNext} />}
+                  {step.id === "beneficios" && <StepBeneficios {...stepProps} />}
+                  {step.id === "descricao" && (
+                    <StepDescricao {...stepProps} editorKey={editorKey} onRegenerate={regenerateDescription} />
+                  )}
+                  {step.id === "processo" && <StepProcesso {...stepProps} />}
+                  {step.id === "revisao" && (
+                    <StepRevisao
+                      draft={draft}
+                      onEdit={goToStepId}
+                      preview={
+                        <LivePreview
+                          draft={draft}
+                          companyName={companyName}
+                          logoUrl={profile?.logoUrl}
+                          className="mb-6 xl:hidden"
+                        />
+                      }
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </main>
+
+          <aside className="hidden xl:block">
+            <div className="sticky top-36 py-10">
+              <LivePreview draft={draft} companyName={companyName} logoUrl={profile?.logoUrl} />
+            </div>
+          </aside>
+        </div>
+
+        <FlowFooter
+          isFirst={current === 0}
+          isLast={current === steps.length - 1}
+          submitting={submitting}
+          dirty={dirty}
+          onBack={() => goTo(current - 1)}
+          onNext={handleNext}
+          onPublish={handleSubmit}
+        />
+      </div>
+    </FlowProvider>
+  )
+}
+
+function DoneScreen({
+  id,
+  titulo,
+  mode,
+  reduceMotion,
+}: {
+  id: string
+  titulo: string
+  mode: FlowMode
+  reduceMotion: boolean
+}) {
+  const editing = mode === "edit"
+  return (
+    <div className="mx-auto flex min-h-[calc(100svh-9rem)] max-w-lg flex-col items-center justify-center px-4 py-12 text-center">
+      <motion.span
+        initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 18 }}
+        className="grid size-16 place-items-center rounded-full bg-success-subtle text-success shadow-[0_0_0_8px_var(--success-subtle)]"
+      >
+        <CheckCircle2 className="size-8" aria-hidden />
+      </motion.span>
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.3 }}
+      >
+        <h1 className="mt-6 text-2xl font-bold tracking-tight text-foreground text-balance">
+          {editing ? "Alterações salvas!" : "Vaga publicada!"}
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">
-          <strong className="font-semibold text-strong-foreground">{titulo}</strong> já está no ar e
-          pronta para receber candidaturas.
+          <strong className="font-semibold text-strong-foreground">{titulo}</strong>{" "}
+          {editing ? "foi atualizada e as mudanças já estão no ar." : "já está no ar e pronta para receber candidaturas."}
         </p>
 
-        <div className="mt-6 flex w-full flex-col gap-2.5 sm:flex-row sm:justify-center">
-          <ShareVagaButton path={`/vaga/${publishedId}`} title={titulo} />
+        <div className="mt-7 flex w-full flex-col gap-2.5 sm:flex-row sm:justify-center">
+          {!editing && <ShareVagaButton path={`/vaga/${id}`} title={titulo} />}
           <Link
-            href={`/vaga/${publishedId}`}
-            className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-bold text-strong-foreground transition-colors hover:bg-muted"
+            href={`/vaga/${id}`}
+            className="inline-flex items-center justify-center rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-strong-foreground transition-colors hover:bg-muted"
           >
             Ver página pública
           </Link>
           <Link
             href={ROUTES.company.jobs}
-            className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover"
+            className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             Minhas vagas
           </Link>
         </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-surface pb-28">
-      <header className="sticky top-0 z-30 border-b border-border bg-card">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link
-              href={ROUTES.company.jobs}
-              aria-label="Voltar para minhas vagas"
-              className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-strong-foreground transition-colors hover:bg-muted"
-            >
-              <ArrowLeft className="size-4" aria-hidden />
-            </Link>
-            <div className="min-w-0">
-              <p className="truncate text-xs font-bold uppercase tracking-wide text-primary">
-                {companyName}
-              </p>
-              <h1 className="truncate font-bold tracking-tight text-foreground">Publicar vaga</h1>
-            </div>
-          </div>
-
-          <Stepper current={currentStep} maxReached={maxReached} onSelect={goToStep} />
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1100px] px-4 pt-8 sm:px-6">
-        {visibleError && (
-          <div
-            role="alert"
-            className="mb-6 flex items-start justify-between gap-3 rounded-xl border border-danger-border bg-danger-subtle p-4 text-danger-foreground"
-          >
-            <p className="flex items-start gap-2.5 text-sm font-medium">
-              <AlertCircle className="mt-px size-4 shrink-0" aria-hidden />
-              {visibleError}
-            </p>
-            {/* Só erros do formulário são dispensáveis: sem empresa não há o que publicar. */}
-            {formError && (
-              <button
-                type="button"
-                onClick={() => setFormError(null)}
-                aria-label="Fechar aviso"
-                className="shrink-0 rounded-md p-0.5 transition-colors hover:bg-danger-border/50"
-              >
-                <X className="size-4" aria-hidden />
-              </button>
-            )}
-          </div>
-        )}
-
-        {currentStep === 1 && (
-          <StepCargo
-            titulo={titulo}
-            setTitulo={setTitulo}
-            categoria={categoria}
-            setCategoria={setCategoria}
-            nivelExperiencia={nivelExperiencia}
-            setNivelExperiencia={setNivelExperiencia}
-            modalidade={modalidade}
-            setModalidade={setModalidade}
-            error={fieldErrors.titulo}
-          />
-        )}
-
-        {currentStep === 2 && (
-          <StepLocalSalario
-            cidade={cidade}
-            setCidade={setCidade}
-            estado={estado}
-            setEstado={setEstado}
-            latitude={latitude}
-            setLatitude={setLatitude}
-            longitude={longitude}
-            setLongitude={setLongitude}
-            modalidade={modalidade}
-            salario={salario}
-            setSalario={setSalario}
-            categoria={categoria}
-            nivelExperiencia={nivelExperiencia}
-            errors={{ cidade: fieldErrors.cidade, salario: fieldErrors.salario }}
-          />
-        )}
-
-        {currentStep === 3 && (
-          <StepBeneficios
-            selectedBenefits={selectedBenefits}
-            setSelectedBenefits={setSelectedBenefits}
-          />
-        )}
-
-        {currentStep === 4 && (
-          <StepDescricao
-            titulo={titulo}
-            categoria={categoria}
-            nivelExperiencia={nivelExperiencia}
-            modalidade={modalidade}
-            salario={salario}
-            cidade={cidade}
-            estado={estado}
-            selectedBenefits={selectedBenefits}
-            descricao={descricao}
-            setDescricao={setDescricao}
-            onApplyTemplate={() =>
-              setDescricao(buildTemplate(titulo, categoria, nivelExperiencia, modalidade))
-            }
-            error={fieldErrors.descricao}
-          />
-        )}
-
-        {currentStep === 5 && (
-          <div className="space-y-6">
-            <section className="rounded-xl border border-border bg-card p-5">
-              <label htmlFor="vaga-meta-tags" className="block text-sm font-semibold text-foreground">
-                Competências e palavras-chave
-              </label>
-              <p className="mt-1 text-xs text-muted-foreground">Separe por vírgulas para ajudar a recomendar esta vaga aos candidatos.</p>
-              <input id="vaga-meta-tags" value={metaTags} onChange={(event) => setMetaTags(event.target.value)} placeholder="Java, SQL, React, atendimento" className="field-input mt-3" />
-            </section>
-            <StepEtapas etapas={etapas} setEtapas={setEtapas} />
-          </div>
-        )}
-      </main>
-
-      <NovaVagaFooter
-        currentStep={currentStep}
-        onBack={() => goToStep(Math.max(1, currentStep - 1))}
-        onAdvance={handleAdvance}
-        onPublish={handlePublish}
-        submitting={submitting}
-        titulo={titulo}
-        salario={salario}
-        modalidade={modalidade}
-      />
+      </motion.div>
     </div>
   )
 }

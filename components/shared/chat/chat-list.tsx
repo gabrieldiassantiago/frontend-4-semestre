@@ -33,35 +33,37 @@ export function ChatList({ chats, naoLidas, loading, error, onRetry, activeId, p
   const [filtro, setFiltro] = useState<Filtro>("todas")
   const termo = busca.trim().toLocaleLowerCase("pt-BR")
 
-  const visiveis = chats.filter((chat) => {
-    if (filtro === "nao-lidas" && !chat.naoLidas) return false
-    if (!termo) return true
-    return [chatContato(chat, perspectiva).nome, chat.vagaTitulo].some((texto) => texto?.toLocaleLowerCase("pt-BR").includes(termo))
-  })
+  const visiveis = chats
+    .filter((chat) => {
+      if (filtro === "nao-lidas" && !chat.naoLidas) return false
+      if (!termo) return true
+      return [chatContato(chat, perspectiva).nome, chat.vagaTitulo].some((texto) => texto?.toLocaleLowerCase("pt-BR").includes(termo))
+    })
+    .sort((a, b) => (b.ultimaMensagemEm ?? "").localeCompare(a.ultimaMensagemEm ?? ""))
 
   return (
     <aside aria-label="Conversas" className={cn("flex min-h-0 flex-col border-border bg-card", className)}>
-      <div className="flex flex-col gap-3 border-b border-border-subtle p-4">
+      <div className="flex flex-col gap-3 px-4 pb-3 pt-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-base font-semibold tracking-tight text-foreground">Conversas</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Mensagens</h2>
           {naoLidas > 0 && (
-            <span className="text-xs font-medium text-muted-foreground">
-              {naoLidas} {naoLidas === 1 ? "não lida" : "não lidas"}
+            <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
+              {naoLidas} {naoLidas === 1 ? "nova" : "novas"}
             </span>
           )}
         </div>
         <label className="relative block">
           <span className="sr-only">Buscar conversas</span>
-          <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-subtle-foreground" />
+          <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle-foreground" />
           <input
             type="search"
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
             placeholder={perspectiva === "empresa" ? "Buscar candidato ou vaga" : "Buscar empresa ou vaga"}
-            className="field-input min-h-11 pl-10"
+            className="h-10 w-full rounded-lg border border-transparent bg-muted pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-subtle-foreground focus:border-primary focus:bg-card"
           />
         </label>
-        <div role="group" aria-label="Filtrar conversas" className="flex gap-1.5">
+        <div role="group" aria-label="Filtrar conversas" className="flex gap-1 border-b border-border-subtle">
           {FILTROS.map((item) => (
             <button
               key={item.id}
@@ -69,29 +71,39 @@ export function ChatList({ chats, naoLidas, loading, error, onRetry, activeId, p
               aria-pressed={filtro === item.id}
               onClick={() => setFiltro(item.id)}
               className={cn(
-                "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-                filtro === item.id ? "bg-primary-subtle text-primary-subtle-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                "-mb-px border-b-2 px-2 pb-2 text-xs font-semibold transition-colors",
+                filtro === item.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
               {item.label}
+              {item.id === "nao-lidas" && naoLidas > 0 && <span className="ml-1 tabular-nums text-primary">{naoLidas}</span>}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         {loading ? (
-          <div className="p-2"><CardSkeleton rows={4} /></div>
+          <div className="p-2">
+            <CardSkeleton rows={4} />
+          </div>
         ) : error ? (
           <div className="p-2">
-            <ErrorState description={error} action={<button type="button" className="btn-secondary" onClick={onRetry}>Tentar novamente</button>} />
+            <ErrorState
+              description={error}
+              action={
+                <button type="button" className="btn-secondary" onClick={onRetry}>
+                  Tentar novamente
+                </button>
+              }
+            />
           </div>
         ) : visiveis.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">
             {chats.length === 0 ? "Nenhuma conversa ainda." : "Nenhuma conversa encontrada."}
           </p>
         ) : (
-          <ul>
+          <ul className="flex flex-col gap-0.5">
             {visiveis.map((chat) => (
               <li key={chat.candidaturaId}>
                 <ChatListItem chat={chat} perspectiva={perspectiva} active={chat.candidaturaId === activeId} href={hrefFor(chat.candidaturaId)} />
@@ -112,19 +124,25 @@ function ChatListItem({ chat, perspectiva, active, href }: { chat: Chat; perspec
       href={href}
       scroll={false}
       aria-current={active ? "page" : undefined}
-      className={cn("flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors", active ? "bg-primary-subtle" : "hover:bg-muted")}
+      className={cn(
+        "relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+        active ? "bg-primary-subtle" : "hover:bg-muted",
+      )}
     >
-      <EntityAvatar name={contato.nome} src={contato.imagemUrl} size="md" />
+      <span className="relative shrink-0">
+        <EntityAvatar name={contato.nome} src={contato.imagemUrl} size="md" className="rounded-full" />
+        {naoLidas > 0 && <span aria-hidden className="absolute right-0 top-0 size-3 rounded-full bg-primary ring-2 ring-card" />}
+      </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline justify-between gap-2">
-          <span className="truncate text-sm font-semibold text-foreground">{contato.nome}</span>
+          <span className={cn("truncate text-sm text-foreground", naoLidas ? "font-bold" : "font-semibold")}>{contato.nome}</span>
           <span className={cn("shrink-0 text-[11px]", naoLidas ? "font-semibold text-primary" : "text-subtle-foreground")}>
             {formatQuando(chat.ultimaMensagemEm)}
           </span>
         </span>
-        <span className="mt-0.5 block truncate text-xs font-medium text-muted-foreground">{chat.vagaTitulo}</span>
-        <span className="mt-1.5 flex items-center justify-between gap-2">
-          <span className={cn("truncate text-sm", naoLidas ? "font-medium text-strong-foreground" : "text-muted-foreground")}>
+        <span className="mt-0.5 block truncate text-[11px] font-medium uppercase tracking-wide text-subtle-foreground">{chat.vagaTitulo}</span>
+        <span className="mt-0.5 flex items-center justify-between gap-2">
+          <span className={cn("truncate text-sm", naoLidas ? "font-medium text-foreground" : "text-muted-foreground")}>
             {chat.ultimaMensagem || "Conversa iniciada"}
           </span>
           {naoLidas > 0 && (

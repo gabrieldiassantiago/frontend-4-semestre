@@ -34,6 +34,7 @@ export async function getNotificacoesResumoAction(): Promise<ActionResult<Notifi
 
   if (!notificacoes.ok) return notificacoes
   if (!naoLidas.ok) return naoLidas
+  
 
   const lista = [...(notificacoes.data ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   return ok({ notificacoes: lista, naoLidas: naoLidas.data ?? 0 })

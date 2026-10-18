@@ -33,6 +33,7 @@ export function Sheet({
   side = "bottom",
   title,
   className,
+  panelClassName,
   children,
 }: {
   open: boolean
@@ -40,6 +41,7 @@ export function Sheet({
   side?: keyof typeof SIDES
   title: string
   className?: string
+  panelClassName?: string
   children: React.ReactNode
 }) {
   useEffect(() => {
@@ -84,7 +86,7 @@ export function Sheet({
             animate={{ x: 0, y: 0 }}
             exit={config.initial}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className={cn("relative flex flex-col bg-card shadow-overlay", config.panel)}
+            className={cn("relative flex flex-col bg-card shadow-overlay", config.panel, panelClassName)}
           >
             <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
               <h2 className="text-sm font-bold text-foreground">{title}</h2>

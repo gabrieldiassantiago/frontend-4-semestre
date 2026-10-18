@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react"
 import {
   ArrowRight,
   CalendarClock,
+  Check,
   CheckCircle2,
   ExternalLink,
+  FileText,
   Loader2,
   Mail,
   MessageSquarePlus,
@@ -19,7 +21,6 @@ import { Field } from "@/components/ui/form-field"
 import { Alert, CardSkeleton, ErrorState } from "@/components/ui/states"
 import { Modal } from "@/components/ui/modal"
 import {
-  EtapaTrilha,
   FeedbackCard,
   HistoricoTimeline,
   StatusBadge,
@@ -38,12 +39,14 @@ import {
 import { getErrorMessage } from "@/lib/errors"
 import { formatDate } from "@/lib/format"
 import {
-  ETAPA_LABELS,
+  ETAPA_SHORT_LABELS,
+  etapasDaVaga,
   etapasAteAtual,
   etapasPosteriores,
   isFinalizada,
   STATUS_AGENDAMENTO_LABELS,
   type CandidaturaAgendamento,
+  type CandidaturaDetalhe,
   type CreateAgendamentoDto,
   type CandidaturaFeedback,
   type EtapaProcesso,
@@ -65,7 +68,15 @@ const ABAS: { id: Aba; label: string }[] = [
  * feedback — cada uma como um passo curto e explícito, para que ninguém
  * movimente um processo sem entender o efeito.
  */
-export function CandidaturaDetailPanel({ candidaturaId, showDocuments = true }: { candidaturaId: string; showDocuments?: boolean }) {
+export function CandidaturaDetailPanel({
+  candidaturaId,
+  showDocuments = true,
+  showHeader = true,
+}: {
+  candidaturaId: string
+  showDocuments?: boolean
+  showHeader?: boolean
+}) {
   const { detalhe, loading, error, refetch } = useCandidaturaEmpresa(candidaturaId)
   const [aba, setAba] = useState<Aba>("processo")
   const [perguntarAgendamento, setPerguntarAgendamento] = useState(false)
@@ -101,86 +112,76 @@ export function CandidaturaDetailPanel({ candidaturaId, showDocuments = true }: 
   const { candidatura, historico, feedbacks, agendamentos = [] } = detalhe
   const finalizada = isFinalizada(candidatura.status)
 
+  const tabCounts: Partial<Record<Aba, number>> = {
+    agendamentos: agendamentos.filter((item) => item.status === "PENDENTE" || item.status === "CONFIRMADO").length,
+    feedbacks: feedbacks.length,
+  }
+
   return (
     <div className="motion-enter flex flex-col">
-      <div className="flex items-start gap-3 border-b border-border-subtle bg-card px-5 py-4">
-        <EntityAvatar name={candidatura.candidatoNome} />
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-bold text-foreground">
-            {candidatura.candidatoNome ?? "Candidato"}
-          </h3>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{candidatura.vagaTitulo}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <StatusBadge status={candidatura.status} size="sm" />
-            <Badge variant="outline" size="sm">
-              {ETAPA_LABELS[candidatura.etapaAtual]}
-            </Badge>
+      {showHeader && (
+        <div className="flex items-start gap-3 bg-card px-5 pb-4 pt-5">
+          <EntityAvatar name={candidatura.candidatoNome} src={candidatura.candidatoImagemUrl} size="lg" className="rounded-full" />
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-base font-semibold text-foreground">{candidatura.candidatoNome ?? "Candidato"}</h3>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {candidatura.candidatoHeadline || candidatura.vagaTitulo}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <StatusBadge status={candidatura.status} size="sm" />
+              <Badge variant="outline" size="sm">
+                {ETAPA_SHORT_LABELS[candidatura.etapaAtual]}
+              </Badge>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {candidatura.candidatoEmail && (
+      {showHeader && candidatura.candidatoEmail && (
         <a
           href={`mailto:${candidatura.candidatoEmail}`}
-          className="flex items-center gap-2 border-b border-border-subtle px-5 py-3 text-xs font-semibold text-primary transition-colors hover:bg-muted"
+          className="mx-5 mb-4 flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-xs font-medium text-strong-foreground transition-colors hover:bg-muted"
         >
-          <Mail className="size-3.5" aria-hidden />
+          <Mail className="size-3.5 text-muted-foreground" aria-hidden />
           <span className="truncate">{candidatura.candidatoEmail}</span>
         </a>
       )}
 
-      <div
-        role="tablist"
-        aria-label="Seções da candidatura"
-        className="flex gap-1 border-b border-border-subtle px-3 py-2"
-      >
-        {ABAS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={aba === item.id}
-            onClick={() => setAba(item.id)}
-            className={cn(
-              "flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-all duration-200",
-              aba === item.id
-                ? "bg-primary-subtle text-primary-subtle-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted",
-            )}
-          >
-            {item.label}
-            {item.id === "feedbacks" && feedbacks.length > 0 && (
-              <span className="ml-1.5 tabular-nums">{feedbacks.length}</span>
-            )}
-          </button>
-        ))}
+      <div role="tablist" aria-label="Seções da candidatura" className="flex gap-3.5 overflow-x-auto border-b border-border px-4">
+        {ABAS.map((item) => {
+          const selected = aba === item.id
+          const count = tabCounts[item.id]
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => setAba(item.id)}
+              className={cn(
+                "relative -mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 py-3 text-sm font-semibold transition-colors",
+                selected ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {item.label}
+              {count ? (
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 text-[11px] tabular-nums",
+                    selected ? "bg-primary-subtle text-primary-subtle-foreground" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {count}
+                </span>
+              ) : null}
+            </button>
+          )
+        })}
       </div>
 
       <div key={aba} className="motion-pop flex flex-col gap-6 p-5">
         {aba === "processo" && (
           <>
-            {showDocuments && candidatura.cartaApresentacao && (
-              <section>
-                <h4 className="text-xs font-bold uppercase tracking-[0.12em] text-subtle-foreground">
-                  Carta de apresentação
-                </h4>
-                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-strong-foreground text-pretty">
-                  {candidatura.cartaApresentacao}
-                </p>
-              </section>
-            )}
-
-            {showDocuments && candidatura.curriculoUrl && (
-              <a
-                href={candidatura.curriculoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary w-full"
-              >
-                Abrir currículo
-              </a>
-            )}
-
             {finalizada ? (
               <Alert tone={candidatura.status === "APROVADA" ? "success" : "info"}>
                 Processo encerrado como {candidatura.status === "APROVADA" ? "aprovado" : "encerrado"}
@@ -199,15 +200,30 @@ export function CandidaturaDetailPanel({ candidaturaId, showDocuments = true }: 
               />
             )}
 
+            {showDocuments && (candidatura.cartaApresentacao || candidatura.curriculoUrl) && (
+              <section className="flex flex-col gap-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Documentos</h4>
+                {candidatura.cartaApresentacao && (
+                  <p className="line-clamp-6 whitespace-pre-line border-l-2 border-primary/40 pl-3 text-sm leading-relaxed text-strong-foreground text-pretty">
+                    {candidatura.cartaApresentacao}
+                  </p>
+                )}
+                {candidatura.curriculoUrl && (
+                  <a href={candidatura.curriculoUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary w-full">
+                    <FileText className="size-4" aria-hidden />
+                    Abrir currículo
+                  </a>
+                )}
+              </section>
+            )}
+
             <section>
-              <h4 className="text-xs font-bold uppercase tracking-[0.12em] text-subtle-foreground">
-                Etapas
-              </h4>
-              <EtapaTrilha
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Etapas da vaga</h4>
+              <EtapasEmpresa
                 etapa={candidatura.etapaAtual}
                 status={candidatura.status}
                 etapasVaga={candidatura.etapasVaga}
-                className="mt-4"
+                historico={historico}
               />
             </section>
           </>
@@ -241,7 +257,7 @@ export function CandidaturaDetailPanel({ candidaturaId, showDocuments = true }: 
         open={perguntarAgendamento}
         onClose={() => setPerguntarAgendamento(false)}
         title="Agendar conversa com o candidato?"
-        description={`${candidatura.candidatoNome ?? "O candidato"} avançou para ${ETAPA_LABELS[candidatura.etapaAtual]}.`}
+        description={`${candidatura.candidatoNome ?? "O candidato"} avançou para ${ETAPA_SHORT_LABELS[candidatura.etapaAtual]}.`}
         size="sm"
         footer={
           <>
@@ -270,6 +286,60 @@ export function CandidaturaDetailPanel({ candidaturaId, showDocuments = true }: 
         </p>
       </Modal>
     </div>
+  )
+}
+
+/** Trilha vertical das etapas com a data em que o candidato chegou a cada uma. */
+function EtapasEmpresa({
+  etapa,
+  status,
+  etapasVaga,
+  historico,
+}: {
+  etapa: EtapaProcesso
+  status: CandidaturaDetalhe["candidatura"]["status"]
+  etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number }>
+  historico: CandidaturaDetalhe["historico"]
+}) {
+  const flow = etapasDaVaga(etapasVaga)
+  const current = flow.indexOf(etapa)
+  const failed = status === "REPROVADA" || status === "CANCELADA"
+
+  return (
+    <ol className="mt-3 flex flex-col">
+      {flow.map((item, index) => {
+        const done = index < current || (status === "APROVADA" && index === current)
+        const active = index === current && status !== "APROVADA"
+        const reachedAt = historico.find((entry) => entry.etapaNova === item)?.createdAt
+        return (
+          <li key={item} className="relative flex items-start gap-3 pb-4 last:pb-0">
+            {index < flow.length - 1 && (
+              <span aria-hidden className={cn("absolute left-[11px] top-6 h-[calc(100%-16px)] w-px", done ? "bg-primary" : "bg-border")} />
+            )}
+            <span
+              className={cn(
+                "relative grid size-6 shrink-0 place-items-center rounded-full border text-[11px] font-semibold",
+                done && "border-primary bg-primary text-primary-foreground",
+                active && !failed && "border-primary bg-primary-subtle text-primary shadow-[0_0_0_3px_var(--primary-ring)]",
+                active && failed && "border-danger bg-danger-subtle text-danger-foreground",
+                index > current && "border-border bg-card text-subtle-foreground",
+              )}
+            >
+              {done ? <Check className="size-3.5" aria-hidden /> : active && failed ? <XCircle className="size-3.5" aria-hidden /> : index + 1}
+            </span>
+            <div className="flex min-w-0 flex-1 items-baseline justify-between gap-2 pt-0.5">
+              <p className={cn("truncate text-sm", index > current ? "text-subtle-foreground" : "font-semibold text-foreground")}>
+                {ETAPA_SHORT_LABELS[item]}
+                {active && <span className="sr-only"> (etapa atual)</span>}
+              </p>
+              {reachedAt && index <= current && (
+                <span className="shrink-0 text-[11px] text-subtle-foreground">{formatDate(reachedAt, { day: "2-digit", month: "short" })}</span>
+              )}
+            </div>
+          </li>
+        )
+      })}
+    </ol>
   )
 }
 
@@ -357,7 +427,7 @@ function AgendamentosManager({
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Etapa">
               <select className="field-input" value={form.etapa} onChange={(event) => setForm({ ...form, etapa: event.target.value as EtapaProcesso })}>
-                {etapasDisponiveis.map((item) => <option key={item} value={item}>{ETAPA_LABELS[item]}</option>)}
+                {etapasDisponiveis.map((item) => <option key={item} value={item}>{ETAPA_SHORT_LABELS[item]}</option>)}
               </select>
             </Field>
             <Field label="Duração">
@@ -404,7 +474,7 @@ function AgendamentosManager({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h4 className="font-bold text-foreground">{agendamento.titulo}</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">{ETAPA_LABELS[agendamento.etapa]} · {formatDate(agendamento.inicio, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })} · {agendamento.duracaoMinutos} min</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{ETAPA_SHORT_LABELS[agendamento.etapa]} · {formatDate(agendamento.inicio, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })} · {agendamento.duracaoMinutos} min</p>
                 </div>
                 <Badge variant={agendamento.status === "CONFIRMADO" ? "success" : agendamento.status === "CANCELADO" || agendamento.status === "RECUSADO" ? "danger" : "outline"} size="sm">
                   {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
@@ -493,12 +563,32 @@ function AcoesProcesso({
   }
 
   if (acao === "nenhuma") {
+    const proxima = posteriores[0]
     return (
-      <div className="flex flex-col gap-2">
-        {posteriores.length > 0 && (
-          <button type="button" onClick={() => setAcao("avancar")} className="btn-primary w-full">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-muted-foreground">Etapa atual</p>
+            <p className="truncate text-sm font-semibold text-foreground">{ETAPA_SHORT_LABELS[etapaAtual]}</p>
+          </div>
+          {proxima && (
+            <div className="min-w-0 text-right">
+              <p className="text-xs font-medium text-muted-foreground">Próxima</p>
+              <p className="truncate text-sm font-semibold text-primary-subtle-foreground">{ETAPA_SHORT_LABELS[proxima]}</p>
+            </div>
+          )}
+        </div>
+        {proxima && (
+          <button
+            type="button"
+            onClick={() => {
+              setEtapa(proxima)
+              setAcao("avancar")
+            }}
+            className="btn-primary w-full"
+          >
             <ArrowRight className="size-4" aria-hidden />
-            Avançar etapa
+            Avançar para {ETAPA_SHORT_LABELS[proxima]}
           </button>
         )}
         <div className="flex gap-2">
@@ -552,7 +642,7 @@ function AcoesProcesso({
               <option value="">Selecione</option>
               {posteriores.map((item) => (
                 <option key={item} value={item}>
-                  {ETAPA_LABELS[item]}
+                  {ETAPA_SHORT_LABELS[item]}
                 </option>
               ))}
             </select>
@@ -684,7 +774,7 @@ function FeedbacksManager({
               >
                 {etapasDisponiveis.map((item) => (
                   <option key={item} value={item}>
-                    {ETAPA_LABELS[item]}
+                    {ETAPA_SHORT_LABELS[item]}
                   </option>
                 ))}
               </select>

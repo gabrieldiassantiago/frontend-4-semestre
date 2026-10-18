@@ -3,7 +3,15 @@ import { isNavItemActive, type NavItem } from "@/lib/config/navigation"
 import { cn } from "@/lib/utils"
 
 /** Barra de navegação inferior, visível apenas abaixo de `lg`. */
-export function MobileTabBar({ items, pathname }: { items: NavItem[]; pathname: string }) {
+export function MobileTabBar({
+  items,
+  pathname,
+  badges,
+}: {
+  items: NavItem[]
+  pathname: string
+  badges?: Partial<Record<string, number>>
+}) {
   return (
     <nav
       aria-label="Navegação rápida"
@@ -25,11 +33,16 @@ export function MobileTabBar({ items, pathname }: { items: NavItem[]; pathname: 
               >
                 <span
                   className={cn(
-                    "grid h-7 w-12 place-items-center rounded-full transition-colors",
+                    "relative grid h-7 w-12 place-items-center rounded-full transition-colors",
                     active && "bg-primary-subtle",
                   )}
                 >
                   <Icon aria-hidden className="size-[18px]" strokeWidth={active ? 2.1 : 1.75} />
+                  {(badges?.[item.href] ?? 0) > 0 && (
+                    <span className="absolute right-1.5 top-0 size-2 rounded-full bg-primary ring-2 ring-card">
+                      <span className="sr-only">Itens novos</span>
+                    </span>
+                  )}
                 </span>
                 <span className="max-w-full truncate">{item.shortLabel ?? item.label}</span>
               </Link>

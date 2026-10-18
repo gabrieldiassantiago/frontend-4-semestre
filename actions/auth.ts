@@ -1,7 +1,7 @@
 "use server"
 
 import { cookies } from "next/headers"
-import { apiFetch, AUTH_COOKIE, getServerToken } from "@/lib/server/api"
+import { apiFetch, AUTH_COOKIE, getServerToken, setAuthCookies } from "@/lib/server/api"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
 import type {
   UserRole,
@@ -31,18 +31,15 @@ export interface LoginResult {
 export async function loginAction(payload: LoginPayload): Promise<ActionResult<LoginResult>> {
   const result = await apiFetch<AuthTokenResponse>("/auth", { method: "POST", body: payload })
   if (!result.ok) return result
-  if (!result.data?.token) return fail("Resposta de autenticação inválida.", 502)
 
-  const store = await cookies()
-  store.set(AUTH_COOKIE, result.data.token, {
-    httpOnly: false,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: result.data.expiresIn || DEFAULT_SESSION_SECONDS,
-  })
+  const jwt = result.data?.tokenJwt ?? result.data?.tokenJwt ?? result.data?.token
+  const refreshToken = result.data?.refreshToken
+  const expiresIn = result.data?.expiresInJwt ?? result.data?.expiresInJwt
 
-  return ok({ role: result.data.role, expiresIn: result.data.expiresIn })
+
+  await setAuthCookies(jwt, refreshToken, expiresIn)
+
+  return ok({ role: result.data.role, expiresIn })
 }
 
 export async function logoutAction(): Promise<ActionResult<void>> {
@@ -73,7 +70,6 @@ export async function getCurrentUserAction(): Promise<ActionResult<CurrentUser>>
     }
   }
 
-  // Tenta obter pelo perfil do candidato (que já traz userName e userEmail)
   const candRes = await apiFetch<{ userName?: string; userEmail?: string; userId?: string }>("/candidate-profile/me", { nullOn: [404] })
   if (candRes.ok && candRes.data && (candRes.data.userName || candRes.data.userEmail)) {
     return ok({

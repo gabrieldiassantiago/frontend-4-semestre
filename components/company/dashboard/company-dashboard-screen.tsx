@@ -2,34 +2,44 @@
 
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { Activity, BriefcaseBusiness, CheckCircle2, Plus, Users } from "lucide-react"
-import { PageHeader, PageShell, Section, SectionLink } from "@/components/ui/page"
+import { Activity, BriefcaseBusiness, CheckCircle2, Plus, Users, Workflow } from "lucide-react"
+import { PageShell } from "@/components/ui/page"
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
-import { StatCard } from "@/components/ui/stat-card"
-import { BarChartSkeleton, EmptyState, ErrorState } from "@/components/ui/states"
+import { BarChartSkeleton, ErrorState } from "@/components/ui/states"
 import { ROUTES } from "@/lib/config/routes"
 import { useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
+import { useCompanyProfile } from "@/lib/queries/use-company-profile"
 import { useCompanyVagas } from "@/lib/queries/use-vagas"
-import { VagaRow } from "../vagas/vaga-row"
+import { AttentionPanel } from "./attention-panel"
+import { JobsPerformance } from "./jobs-performance"
+import { KpiCard } from "./kpi-card"
+import { periodComparison, weeklyBuckets } from "./metrics"
 import { RecentApplicationsList } from "./recent-applications-list"
 
 const DashboardCharts = dynamic(() => import("./dashboard-charts"), {
   loading: () => (
-    <div className="mt-8 flex flex-col gap-5">
-      <div className="grid gap-5 lg:grid-cols-2">
-        <BarChartSkeleton />
-        <BarChartSkeleton />
+    <div className="grid gap-4 lg:grid-cols-3">
+      <div className="lg:col-span-2">
+        <BarChartSkeleton bars={12} />
       </div>
-      <BarChartSkeleton bars={12} />
+      <BarChartSkeleton />
     </div>
   ),
 })
 
-const RECENT_LIMIT = 5
+const RECENT_LIMIT = 6
+
+function greeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return "Bom dia"
+  if (hour < 18) return "Boa tarde"
+  return "Boa noite"
+}
 
 export function CompanyDashboardScreen() {
   const jobsQuery = useCompanyVagas()
   const applicationsQuery = useCandidaturasEmpresa()
+  const { profile } = useCompanyProfile()
 
   if (jobsQuery.loading || applicationsQuery.loading) return <RouteSkeleton variant="dashboard" />
 
@@ -59,75 +69,91 @@ export function CompanyDashboardScreen() {
   const { vagas } = jobsQuery
   const { candidaturas } = applicationsQuery
   const activeCount = vagas.filter((v) => v.ativa).length
-  const pausedCount = vagas.length - activeCount
   const approved = candidaturas.filter((c) => c.status === "APROVADA").length
   const finished = candidaturas.filter((c) => c.status === "APROVADA" || c.status === "REPROVADA").length
   const inProgress = candidaturas.filter((c) => c.status === "EM_ANDAMENTO").length
   const approvalRate = finished > 0 ? Math.round((approved / finished) * 100) : null
+  const weekly = periodComparison(candidaturas)
+  const spark = weeklyBuckets(vagas, candidaturas, 8).map((week) => week.candidaturas)
+  const recent = [...candidaturas]
+    .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
+    .slice(0, RECENT_LIMIT)
 
   return (
     <PageShell className="max-w-[1380px]">
-      <PageHeader
-        eyebrow="Painel de gestão"
-        title="Visão geral"
-        description="Acompanhe as vagas publicadas e o andamento das candidaturas."
-      />
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <p suppressHydrationWarning className="text-sm font-medium text-muted-foreground">
+            {greeting()}, {profile?.companyName ?? "equipe"}
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground text-balance sm:text-3xl">
+            Visão geral do recrutamento
+          </h1>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Link href={ROUTES.company.processes} className="btn-secondary">
+            <Workflow aria-hidden className="size-4" />
+            Processos
+          </Link>
+          <Link href={ROUTES.company.newJob} className="btn-primary">
+            <Plus aria-hidden className="size-4" />
+            Nova vaga
+          </Link>
+        </div>
+      </header>
 
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <KpiCard
           label="Vagas ativas"
           value={activeCount}
           icon={BriefcaseBusiness}
           tone="primary"
-          note={`${pausedCount > 0 ? `${pausedCount} pausada${pausedCount > 1 ? "s" : ""}` : "Todas publicadas"} · ${vagas.length} no total`}
+          href={ROUTES.company.jobs}
+          note={`de ${vagas.length} ${vagas.length === 1 ? "vaga publicada" : "vagas publicadas"}`}
+          progress={vagas.length ? (activeCount / vagas.length) * 100 : 0}
         />
-        <StatCard label="Candidaturas" value={candidaturas.length} icon={Users} tone="info" note={`${approved} aprovadas`} />
-        <StatCard label="Em andamento" value={inProgress} icon={Activity} tone="warning" note="Em avaliação" />
-        <StatCard
+        <KpiCard
+          label="Candidaturas"
+          value={candidaturas.length}
+          icon={Users}
+          tone="info"
+          href={ROUTES.company.candidates}
+          delta={weekly.delta}
+          note={`${weekly.current} nos últimos 7 dias`}
+          spark={spark}
+        />
+        <KpiCard
+          label="Em andamento"
+          value={inProgress}
+          icon={Activity}
+          tone="warning"
+          href={ROUTES.company.processes}
+          note={candidaturas.length ? `${Math.round((inProgress / candidaturas.length) * 100)}% do total em avaliação` : "Nenhuma em avaliação"}
+          progress={candidaturas.length ? (inProgress / candidaturas.length) * 100 : 0}
+        />
+        <KpiCard
           label="Taxa de aprovação"
           value={approvalRate === null ? "—" : `${approvalRate}%`}
           icon={CheckCircle2}
           tone="success"
+          href={ROUTES.company.candidates}
           note={approvalRate === null ? "Sem processos encerrados" : `${approved} de ${finished} finalizadas`}
+          progress={approvalRate}
         />
       </div>
 
-      <DashboardCharts vagas={vagas} candidaturas={candidaturas} />
+      <div className="mt-4">
+        <DashboardCharts vagas={vagas} candidaturas={candidaturas} />
+      </div>
 
-      <div className="mt-10 grid items-start gap-8 lg:grid-cols-[1.5fr_1fr]">
-        <Section
-          title="Vagas publicadas"
-          actions={vagas.length > 0 && <SectionLink href={ROUTES.company.jobs}>Ver todas</SectionLink>}
-        >
-          {vagas.length === 0 ? (
-            <EmptyState
-              icon={BriefcaseBusiness}
-              title="Nenhuma vaga publicada"
-              description="Crie sua primeira oportunidade para começar a receber candidaturas."
-              action={
-                <Link href={ROUTES.company.newJob} className="btn-primary">
-                  <Plus aria-hidden className="size-4" />
-                  Criar primeira vaga
-                </Link>
-              }
-            />
-          ) : (
-            <ul className="divide-y divide-border-subtle overflow-hidden rounded-card border border-border bg-card">
-              {vagas.slice(0, RECENT_LIMIT).map((vaga) => (
-                <li key={vaga.id}>
-                  <VagaRow vaga={vaga} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-
-        <Section
-          title="Candidaturas recentes"
-          actions={candidaturas.length > 0 && <SectionLink href={ROUTES.company.candidates}>Ver todas</SectionLink>}
-        >
-          <RecentApplicationsList candidaturas={candidaturas.slice(0, RECENT_LIMIT)} />
-        </Section>
+      <div className="mt-4 grid items-start gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <JobsPerformance vagas={vagas} candidaturas={candidaturas} />
+        </div>
+        <div className="flex flex-col gap-4">
+          <AttentionPanel vagas={vagas} candidaturas={candidaturas} />
+          <RecentApplicationsList candidaturas={recent} />
+        </div>
       </div>
     </PageShell>
   )

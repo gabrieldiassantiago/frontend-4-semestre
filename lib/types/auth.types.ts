@@ -39,9 +39,10 @@ export interface ResendCodePayload {
 }
 
 export interface AuthTokenResponse {
-  token: string
-  expiresIn?: number
+  tokenJwt: string
+  expiresInJwt?: number
   role: UserRole
+  refreshToken?: string
 }
 
 export interface CurrentUser {

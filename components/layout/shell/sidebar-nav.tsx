@@ -2,19 +2,29 @@ import Link from "next/link"
 import { isNavItemActive, type NavGroup, type NavItem } from "@/lib/config/navigation"
 import { cn } from "@/lib/utils"
 
+/** Contadores opcionais exibidos ao lado dos itens, indexados pelo `href`. */
+export type NavBadges = Partial<Record<string, number>>
+
+function formatBadge(value: number) {
+  return value > 99 ? "99+" : String(value)
+}
+
 export function SidebarNavLink({
   item,
   pathname,
   collapsed = false,
+  badge,
   onNavigate,
 }: {
   item: NavItem
   pathname: string
   collapsed?: boolean
+  badge?: number
   onNavigate?: () => void
 }) {
   const active = isNavItemActive(pathname, item)
   const Icon = item.icon
+  const hasBadge = typeof badge === "number" && badge > 0
 
   return (
     <Link
@@ -23,19 +33,46 @@ export function SidebarNavLink({
       title={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex min-h-10 items-center gap-3 rounded-lg text-sm transition-colors",
+        "group relative flex min-h-10 items-center gap-3 rounded-lg text-sm transition-colors",
         collapsed ? "mx-auto size-10 justify-center" : "px-3",
         active
           ? "bg-primary-subtle font-semibold text-primary-subtle-foreground"
           : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
-      <Icon
-        aria-hidden
-        strokeWidth={active ? 2 : 1.75}
-        className={cn("size-[18px] shrink-0", active ? "text-primary" : "text-subtle-foreground group-hover:text-foreground")}
-      />
-      {collapsed ? <span className="sr-only">{item.label}</span> : <span className="truncate">{item.label}</span>}
+      {active && !collapsed && (
+        <span aria-hidden className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+      )}
+      <span className="relative shrink-0">
+        <Icon
+          aria-hidden
+          strokeWidth={active ? 2 : 1.75}
+          className={cn("size-[18px]", active ? "text-primary" : "text-subtle-foreground group-hover:text-foreground")}
+        />
+        {collapsed && hasBadge && (
+          <span aria-hidden className="absolute -right-1 -top-1 size-2 rounded-full bg-primary ring-2 ring-card" />
+        )}
+      </span>
+      {collapsed ? (
+        <span className="sr-only">
+          {item.label}
+          {hasBadge && ` (${badge})`}
+        </span>
+      ) : (
+        <>
+          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+          {hasBadge && (
+            <span
+              className={cn(
+                "grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
+                active ? "bg-primary text-primary-foreground" : "bg-muted text-strong-foreground group-hover:bg-card",
+              )}
+            >
+              {formatBadge(badge)}
+            </span>
+          )}
+        </>
+      )}
     </Link>
   )
 }
@@ -44,12 +81,14 @@ export function SidebarNav({
   groups,
   pathname,
   collapsed = false,
+  badges,
   onNavigate,
   label = "Navegação principal",
 }: {
   groups: NavGroup[]
   pathname: string
   collapsed?: boolean
+  badges?: NavBadges
   onNavigate?: () => void
   label?: string
 }) {
@@ -66,7 +105,14 @@ export function SidebarNav({
               </p>
             ))}
           {group.items.map((item) => (
-            <SidebarNavLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} onNavigate={onNavigate} />
+            <SidebarNavLink
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              collapsed={collapsed}
+              badge={badges?.[item.href]}
+              onNavigate={onNavigate}
+            />
           ))}
         </div>
       ))}

@@ -11,7 +11,7 @@ import {
 
 import { Sheet } from "@/components/ui/sheet"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
-import { ChatConversa } from "./chat-conversa"
+import { ChatConversa, StatusConexao } from "./chat-conversa"
 import {
   useChatSocket,
   useMensagens,
@@ -125,25 +125,12 @@ export function CandidaturaChatButton({
               )}
             </div>
 
-            <span
-              className={cn(
-                "text-xs",
-                conexao === "online"
-                  ? "text-green-600"
-                  : "text-muted-foreground",
-              )}
-            >
-              {conexao === "online"
-                ? "Online"
-                : conexao === "offline"
-                  ? "Offline"
-                  : "Conectando"}
-            </span>
+            <StatusConexao conexao={conexao} />
           </div>
 
           {error ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-5 text-center">
-              <p className="text-sm text-destructive">
+              <p className="text-sm text-danger-foreground">
                 {error}
               </p>
 
@@ -160,6 +147,7 @@ export function CandidaturaChatButton({
               candidaturaId={candidaturaId}
               perspectiva={perspectiva}
               contatoNome={contatoNome}
+              contatoImagemUrl={contatoImagemUrl}
             />
           )}
 

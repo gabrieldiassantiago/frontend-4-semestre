@@ -32,7 +32,7 @@ export function RichTextEditor({ value, onChange, error, placeholder }: RichText
         editorProps: {
             attributes: {
                 class:
-                    "min-h-64 p-4 text-sm leading-relaxed text-foreground focus:outline-none focus:ring-0 prose prose-sm max-w-none select-text",
+                    "min-h-64 p-4 text-sm leading-relaxed text-foreground focus:outline-none focus:ring-0 prose prose-sm max-w-none select-text [&_h2]:mb-1.5 [&_h2]:mt-5 [&_h2]:text-lg [&_h2]:font-bold [&_h3]:mb-1 [&_h3]:mt-5 [&_h3]:text-base [&_h3]:font-semibold [&_h3:first-child]:mt-0 [&_h2:first-child]:mt-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_li::marker]:text-primary [&_p]:my-1.5",
                 // Garante que a seleção de texto seja padrão
                 style: "user-select: text; -webkit-user-select: text;",
             },

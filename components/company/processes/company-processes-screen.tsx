@@ -1,67 +1,65 @@
 "use client"
-import { ROUTES } from "@/lib/config/routes"
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import {
-  ArrowLeft,
-  BriefcaseBusiness,
-  ChevronRight,
-  Inbox,
-  MapPin,
-  RefreshCw,
-  Search,
-  Users,
-} from "lucide-react"
+import { ArrowRight, BriefcaseBusiness, MapPin, Search } from "lucide-react"
 import { PageHeader, PageShell } from "@/components/ui/page"
-import { Badge } from "@/components/ui/badge"
-import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { InputWithIcon } from "@/components/ui/form-field"
-import { VagaSelectionSkeleton, KanbanSkeleton, EmptyState, ErrorState } from "@/components/ui/states"
-import { StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
+import { VagaSelectionSkeleton, EmptyState } from "@/components/ui/states"
+import { ROUTES } from "@/lib/config/routes"
 import { useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
 import { useCompanyVagas } from "@/lib/queries/use-vagas"
-import {
-  ETAPA_DOT,
-  ETAPA_LABELS,
-  etapasDaVaga,
-  type Candidatura,
-  type StatusCandidatura,
-} from "@/lib/types/candidatura.types"
+import { ETAPA_DOT, ETAPA_SHORT_LABELS, etapasDaVaga, type Candidatura } from "@/lib/types/candidatura.types"
 import { MODALIDADE_LABELS, NIVEL_LABELS, type Vaga } from "@/lib/types/vaga.types"
 import { cn } from "@/lib/utils"
+import { SegmentedControl } from "../segmented-control"
+import { VagaPipelineScreen } from "./vaga-pipeline-screen"
 
-// ─── Tela 1: Seleção de Vaga ───────────────────────────────────────────────
+type JobFilter = "ativas" | "pausadas" | "todas"
 
-function VagaSelectionScreen({
-  vagas,
-  loading,
-  onSelect,
-}: {
-  vagas: Vaga[]
-  loading: boolean
-  onSelect: (vaga: Vaga) => void
-}) {
+function VagaSelectionScreen({ vagas, loading }: { vagas: Vaga[]; loading: boolean }) {
+  const { candidaturas } = useCandidaturasEmpresa()
   const [query, setQuery] = useState("")
+  const [filter, setFilter] = useState<JobFilter>("ativas")
+
+  const byJob = useMemo(() => {
+    const map = new Map<string, Candidatura[]>()
+    for (const item of candidaturas) map.set(item.vagaId, [...(map.get(item.vagaId) ?? []), item])
+    return map
+  }, [candidaturas])
+
+  const counts = {
+    ativas: vagas.filter((v) => v.ativa).length,
+    pausadas: vagas.filter((v) => !v.ativa).length,
+    todas: vagas.length,
+  }
 
   const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase()
-    if (!term) return vagas
-    return vagas.filter((v) =>
-      `${v.titulo} ${v.cidade} ${v.estado}`.toLowerCase().includes(term),
-    )
-  }, [vagas, query])
+    const term = query.trim().toLocaleLowerCase("pt-BR")
+    return vagas
+      .filter((v) => (filter === "ativas" ? v.ativa : filter === "pausadas" ? !v.ativa : true))
+      .filter((v) => !term || `${v.titulo} ${v.cidade} ${v.estado}`.toLocaleLowerCase("pt-BR").includes(term))
+      .sort((a, b) => (byJob.get(b.id)?.length ?? 0) - (byJob.get(a.id)?.length ?? 0))
+  }, [vagas, query, filter, byJob])
 
   return (
-    <PageShell className="max-w-[1380px] py-8">
+    <PageShell className="max-w-[1380px]">
       <PageHeader
-        eyebrow="Pipeline"
         title="Processos seletivos"
-        description="Selecione uma vaga para visualizar o funil de candidaturas."
+        description="Escolha uma vaga para acompanhar o funil e movimentar os candidatos entre as etapas."
       />
 
-      <div className="mt-8 flex flex-col gap-4 rounded-xl border border-border bg-card p-4  sm:flex-row sm:items-center sm:px-6">
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <SegmentedControl
+          label="Filtrar vagas"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: "ativas", label: "Ativas", count: counts.ativas },
+            { value: "pausadas", label: "Pausadas", count: counts.pausadas },
+            { value: "todas", label: "Todas", count: counts.todas },
+          ]}
+        />
         <InputWithIcon
           icon={Search}
           type="search"
@@ -69,82 +67,31 @@ function VagaSelectionScreen({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar vaga por título ou cidade"
           aria-label="Buscar vaga"
-          wrapperClassName="w-full sm:flex-1"
+          wrapperClassName="w-full sm:w-80"
         />
-        <p className="text-xs font-medium text-muted-foreground shrink-0">
-          <span className="font-semibold tabular-nums text-foreground">{filtered.length}</span>{" "}
-          {filtered.length === 1 ? "vaga" : "vagas"}
-        </p>
       </div>
 
       <div className="mt-6">
         {loading ? (
-          <div className="rounded-xl border border-border bg-card p-6">
+          <div className="rounded-2xl border border-border bg-card p-6">
             <VagaSelectionSkeleton rows={3} />
           </div>
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={BriefcaseBusiness}
-            title={query ? "Nenhuma vaga encontrada" : "Nenhuma vaga publicada"}
-            description={
-              query
-                ? "Tente outro termo de busca."
-                : "Publique vagas para começar a receber candidaturas."
+            title={query ? "Nenhuma vaga encontrada" : "Nenhuma vaga nesta lista"}
+            description={query ? "Tente outro termo de busca." : "Publique ou reative vagas para acompanhar seus processos."}
+            action={
+              <Link href={ROUTES.company.newJob} className="btn-primary">
+                Criar vaga
+              </Link>
             }
           />
         ) : (
-          <ul className="motion-stagger space-y-3">
-            {filtered.map((vaga, index) => (
-              <li key={vaga.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(vaga)}
-                  style={{ "--stagger-index": index } as React.CSSProperties}
-                  className="group w-full rounded-xl border border-border bg-card p-5 text-left  transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card hover:shadow-raised active:scale-[0.99]"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-4">
-                      <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
-                        <BriefcaseBusiness className="size-5" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
-                          {vaga.titulo}
-                        </p>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="size-3 shrink-0" />
-                            {vaga.cidade} — {vaga.estado}
-                          </span>
-                          <span>•</span>
-                          <span>{MODALIDADE_LABELS[vaga.modalidade]}</span>
-                          <span>•</span>
-                          <span>{(vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "")}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-3">
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
-                          vaga.ativa
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                            : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "size-1.5 rounded-full",
-                            vaga.ativa ? "bg-emerald-500" : "bg-muted-foreground",
-                          )}
-                        />
-                        {vaga.ativa ? "Ativa" : "Pausada"}
-                      </span>
-                      <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-                    </div>
-                  </div>
-                </button>
+          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((vaga) => (
+              <li key={vaga.id} className="flex">
+                <JobPipelineCard vaga={vaga} candidaturas={byJob.get(vaga.id) ?? []} />
               </li>
             ))}
           </ul>
@@ -154,257 +101,92 @@ function VagaSelectionScreen({
   )
 }
 
-// ─── Tela 2: Kanban de uma vaga específica ─────────────────────────────────
-
-function VagaKanbanScreen({
-  vaga,
-  onBack,
-}: {
-  vaga: Vaga
-  onBack: () => void
-}) {
-  const [busca, setBusca] = useState("")
-  const [status, setStatus] = useState<StatusCandidatura | "">("")
-
-  const filters = useMemo(
-    () => ({ vagaId: vaga.id, status: status || undefined }),
-    [vaga.id, status],
-  )
-
-  const { candidaturas, loading, refreshing, error, refetch } = useCandidaturasEmpresa(filters)
-  const fluxo = useMemo(() => etapasDaVaga(vaga.etapas), [vaga.etapas])
-
-  const visiveis = useMemo(() => {
-    const termo = busca.trim().toLowerCase()
-    if (!termo) return candidaturas
-    return candidaturas.filter((item: Candidatura) =>
-      [item.candidatoNome, item.candidatoEmail]
-        .filter(Boolean)
-        .some((campo) => (campo as string).toLowerCase().includes(termo)),
-    )
-  }, [candidaturas, busca])
-
-  const colunas = useMemo(() => {
-    const map = new Map<string, Candidatura[]>(fluxo.map((etapa) => [etapa, []]))
-    visiveis.forEach((item: Candidatura) => map.get(item.etapaAtual)?.push(item))
-    return map
-  }, [fluxo, visiveis])
-
-  const temFiltro = Boolean(busca.trim()) || status !== ""
+function JobPipelineCard({ vaga, candidaturas }: { vaga: Vaga; candidaturas: Candidatura[] }) {
+  const flow = etapasDaVaga(vaga.etapas)
+  const active = candidaturas.filter((item) => item.status === "EM_ANDAMENTO")
+  const approved = candidaturas.filter((item) => item.status === "APROVADA").length
+  const awaiting = active.filter((item) => item.etapaAtual === "INSCRICAO" || item.etapaAtual === "TRIAGEM").length
+  const perStage = flow.map((etapa) => ({ etapa, count: active.filter((item) => item.etapaAtual === etapa).length }))
 
   return (
-    <PageShell className="motion-enter">
-      {/* Header com breadcrumb de volta */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            aria-label="Voltar para lista de vagas"
-            className="mt-1 grid size-8 shrink-0 place-items-center rounded-full border border-border-subtle/80 text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" />
-          </button>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Pipeline · Processos seletivos
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground truncate">
-              {vaga.titulo}
-            </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="size-3" /> {vaga.cidade} — {vaga.estado}
-              </span>
-              <span>•</span>
-              <span>{MODALIDADE_LABELS[vaga.modalidade]}</span>
-            </div>
-          </div>
+    <Link
+      href={`${ROUTES.company.processes}?vaga=${encodeURIComponent(vaga.id)}`}
+      className="group flex w-full flex-col rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-semibold tracking-tight text-foreground group-hover:text-primary">{vaga.titulo}</h2>
+          <p className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground">
+            <MapPin aria-hidden className="size-3 shrink-0" />
+            {vaga.cidade}, {vaga.estado} · {MODALIDADE_LABELS[vaga.modalidade]}
+            {vaga.nivelExperiencia ? ` · ${NIVEL_LABELS[vaga.nivelExperiencia]}` : ""}
+          </p>
         </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <Badge variant="neutral">
-            {visiveis.length} {visiveis.length === 1 ? "candidatura" : "candidaturas"}
-          </Badge>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="btn-secondary"
-            aria-label="Atualizar funil"
-          >
-            <RefreshCw className={cn("size-4", refreshing && "animate-spin")} aria-hidden />
-            Atualizar
-          </button>
-        </div>
-      </div>
-
-      {/* Filtros */}
-      <div className="flex flex-col gap-3 rounded-card border border-border bg-card p-4 shadow-card sm:flex-row sm:items-center">
-        <InputWithIcon
-          icon={Search}
-          type="search"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar candidato pelo nome"
-          aria-label="Buscar candidato"
-          wrapperClassName="sm:flex-1"
-        />
-        <select
-          className="field-input sm:w-44"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as StatusCandidatura | "")}
-          aria-label="Filtrar por situação"
+        <span
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+            vaga.ativa ? "bg-success-subtle text-success-foreground" : "bg-muted text-muted-foreground",
+          )}
         >
-          <option value="">Todas as situações</option>
-          <option value="EM_ANDAMENTO">Em andamento</option>
-          <option value="APROVADA">Aprovados</option>
-          <option value="REPROVADA">Reprovados</option>
-        </select>
+          <span aria-hidden className={cn("size-1.5 rounded-full", vaga.ativa ? "bg-success" : "bg-subtle-foreground")} />
+          {vaga.ativa ? "Ativa" : "Pausada"}
+        </span>
       </div>
 
-      {/* Estado de carregamento / erro / vazio / kanban */}
-      {loading ? (
-        <div className="mt-6">
-          <KanbanSkeleton />
-        </div>
-      ) : error ? (
-        <div className="mt-6">
-          <ErrorState
-            description={error}
-            action={
-              <button type="button" onClick={() => refetch()} className="btn-secondary">
-                Tentar novamente
-              </button>
-            }
-          />
-        </div>
-      ) : visiveis.length === 0 ? (
-        <EmptyState
-          className="mt-6"
-          icon={temFiltro ? Inbox : Users}
-          title={temFiltro ? "Nenhuma candidatura com esses filtros" : "Nenhuma candidatura ainda"}
-          description={
-            temFiltro
-              ? "Ajuste os filtros para ver outros candidatos."
-              : "Quando alguém se candidatar a esta vaga, o processo aparece aqui."
-          }
-          action={
-            temFiltro ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setStatus("")
-                  setBusca("")
-                }}
-                className="btn-secondary"
-              >
-                Limpar filtros
-              </button>
-            ) : undefined
-          }
-        />
-      ) : (
-        <div className="mt-6 -mx-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
-          <div className="flex min-w-max gap-3 lg:min-w-0">
-            {fluxo.map((etapa, index) => {
-              const items = colunas.get(etapa) ?? []
-              const isEmpty = items.length === 0
-
-              return (
-                <section
-                  key={etapa}
-                  style={{ "--stagger-index": index } as React.CSSProperties}
-                  className={cn(
-                    "motion-enter flex w-64 shrink-0 flex-col rounded-xl border bg-card shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-raised lg:w-auto lg:flex-1",
-                    isEmpty ? "border-border" : "border-border",
-                  )}
-                >
-                  {/* Cabeçalho da coluna */}
-                  <div className="flex items-center justify-between gap-2 border-b border-border-subtle px-3 py-3">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span
-                        className={cn("size-2 shrink-0 rounded-full", ETAPA_DOT[etapa])}
-                        aria-hidden
-                      />
-                      <h2 className="truncate text-xs font-bold tracking-tight text-foreground">
-                        {ETAPA_LABELS[etapa]}
-                      </h2>
-                    </div>
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
-                        isEmpty
-                          ? "bg-muted/60 text-muted-foreground"
-                          : "bg-primary/10 text-primary",
-                      )}
-                    >
-                      {items.length}
-                    </span>
-                  </div>
-
-                  {/* Cards */}
-                  {isEmpty ? (
-                    <p className="px-3 py-5 text-center text-xs text-muted-foreground/60">
-                      Vazio
-                    </p>
-                  ) : (
-                    <ul className="flex flex-col gap-2 p-2.5">
-                      {items.map((item) => (
-                        <li key={item.id}>
-                          <Link
-                            href={ROUTES.company.candidate(item.id)}
-                            className={cn(
-                              "flex w-full items-center gap-2.5 rounded-xl border p-2.5 text-left transition-all hover:shadow-sm active:scale-[0.98]",
-                              "border-border bg-muted/40 hover:border-border hover:bg-muted/60",
-                            )}
-                          >
-                            <EntityAvatar name={item.candidatoNome} size="sm" />
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-semibold text-foreground">
-                                {item.candidatoNome ?? "Candidato"}
-                              </p>
-                              <div className="mt-1">
-                                <StatusBadge status={item.status} size="sm" />
-                              </div>
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-              )
-            })}
+      <dl className="mt-5 grid grid-cols-3 gap-2 rounded-xl bg-surface p-3">
+        {[
+          ["Candidatos", candidaturas.length],
+          ["Em andamento", active.length],
+          ["Aprovados", approved],
+        ].map(([label, value]) => (
+          <div key={label} className="min-w-0">
+            <dt className="truncate text-[11px] text-muted-foreground">{label}</dt>
+            <dd className="mt-0.5 text-lg font-semibold tabular-nums text-foreground">{value}</dd>
           </div>
+        ))}
+      </dl>
+
+      <div className="mt-4">
+        <div className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+          {active.length > 0 &&
+            perStage
+              .filter((stage) => stage.count > 0)
+              .map((stage) => (
+                <span key={stage.etapa} className={ETAPA_DOT[stage.etapa]} style={{ width: `${(stage.count / active.length) * 100}%` }} />
+              ))}
         </div>
-      )}
+        <p className="mt-2 text-xs text-muted-foreground">
+          {active.length === 0
+            ? `${flow.length} etapas · nenhum candidato em andamento`
+            : perStage
+                .filter((stage) => stage.count > 0)
+                .map((stage) => `${stage.count} em ${ETAPA_SHORT_LABELS[stage.etapa].toLowerCase()}`)
+                .join(" · ")}
+        </p>
+      </div>
 
-
-    </PageShell>
+      <div className="mt-auto flex items-center justify-between gap-3 border-t border-border-subtle pt-4 text-sm">
+        {awaiting > 0 ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-subtle-foreground">
+            <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+            {awaiting} {awaiting === 1 ? "aguarda" : "aguardam"} triagem
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">Sem pendências</span>
+        )}
+        <span className="inline-flex items-center gap-1 font-semibold text-primary">
+          Abrir funil
+          <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
+    </Link>
   )
 }
 
-// ─── Componente principal (orquestra as duas telas) ────────────────────────
-
 export function CompanyProcessesScreen({ vagaId }: { vagaId?: string }) {
   const { vagas, loading } = useCompanyVagas()
-  const router = useRouter()
   const vagaSelecionada = vagas.find((vaga: Vaga) => vaga.id === vagaId)
 
-  if (vagaSelecionada) {
-    return (
-      <VagaKanbanScreen
-        vaga={vagaSelecionada}
-        onBack={() => router.push(ROUTES.company.processes)}
-      />
-    )
-  }
-
-  return (
-    <VagaSelectionScreen
-      vagas={vagas}
-      loading={loading}
-      onSelect={(vaga: Vaga) => router.push(`${ROUTES.company.processes}?vaga=${encodeURIComponent(vaga.id)}`)}
-    />
-  )
+  if (vagaSelecionada) return <VagaPipelineScreen vaga={vagaSelecionada} />
+  return <VagaSelectionScreen vagas={vagas} loading={loading} />
 }

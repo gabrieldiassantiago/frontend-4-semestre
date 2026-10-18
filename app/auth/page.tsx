@@ -10,7 +10,14 @@ export const metadata: Metadata = {
   description: "Acesse a Selecta como candidato ou empresa.",
 }
 
-export default function AuthPage() {
+export default async function AuthPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ expired?: string }>
+}) {
+  const { expired } = await searchParams
+  const sessionExpired = expired === "1"
+
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden bg-surface text-foreground selection:bg-primary/15 selection:text-primary">
       {/* Efeitos sutis de iluminação de fundo */}
@@ -51,6 +58,16 @@ export default function AuthPage() {
       <main className="mx-auto flex w-full max-w-[920px] flex-1 flex-col items-center justify-center px-6 py-12 sm:px-10 sm:py-20">
         {/* Cabeçalho Centralizado */}
         <div className="flex flex-col items-center text-center">
+
+          {sessionExpired && (
+            <p
+              role="status"
+              className="mb-2 inline-flex items-center gap-2 rounded-full border border-warning/30 bg-warning-subtle px-4 py-2 text-xs font-semibold text-warning-foreground sm:text-sm"
+            >
+              <Info className="size-4 shrink-0" aria-hidden />
+              Sua sessão expirou. Entre novamente para continuar.
+            </p>
+          )}
 
           <h1 className="mt-4 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-[42px] md:leading-[1.15]">
             Como você deseja usar a Selecta?

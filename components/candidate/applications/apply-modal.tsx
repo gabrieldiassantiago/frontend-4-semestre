@@ -32,6 +32,7 @@ import type { Vaga } from "@/lib/types/vaga.types"
 import type { Candidatura } from "@/lib/types/candidatura.types"
 import { cn } from "@/lib/utils"
 import sucessoVagaAnimation from "@/public/images/sucesso_vaga.json"
+import Image from "next/image"
 
 const STEPS = [
   { id: 1, label: "Perfil", icon: UserRound },
@@ -379,7 +380,7 @@ export function ApplyModal({
                     {profile && (
                       <div className="rounded-card border border-border p-4">
                         <div className="flex items-center gap-3">
-                          <EntityAvatar name={profile.userName} size="md" className="rounded-full" />
+                          <Image src={profile.profileImageUrl ?? "/images/avatar-placeholder.png"} alt="" width={48} height={48} className="rounded-full" />
                           <div className="min-w-0">
                             <p className="truncate text-sm font-bold text-foreground">
                               {profile.userName || "Minha conta"}

@@ -95,7 +95,7 @@ export const COMPANY_NAVIGATION: AreaNavigation = {
       label: "Recrutamento",
       items: [companyItems.dashboard, companyItems.jobs, companyItems.candidates, companyItems.processes, companyItems.messages],
     },
-    { label: "Configurações", items: [companyItems.profile, companyItems.team] },
+    { label: "Empresa", items: [companyItems.profile, companyItems.team] },
   ],
   tabs: [companyItems.dashboard, companyItems.jobs, companyItems.candidates, companyItems.processes, companyItems.messages],
 }

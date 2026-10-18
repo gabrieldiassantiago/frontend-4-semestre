@@ -41,6 +41,17 @@ export const ETAPA_LABELS: Record<EtapaProcesso, string> = {
   CONTRATACAO: "Contratação",
 }
 
+/** Rótulos curtos para a visão da empresa (colunas, filtros e gráficos). */
+export const ETAPA_SHORT_LABELS: Record<EtapaProcesso, string> = {
+  INSCRICAO: "Inscrição",
+  TRIAGEM: "Triagem",
+  ENTREVISTA_RH: "Entrevista RH",
+  TESTE_TECNICO: "Teste técnico",
+  ENTREVISTA_TECNICA: "Entrevista técnica",
+  PROPOSTA: "Proposta",
+  CONTRATACAO: "Contratação",
+}
+
 export const ETAPA_HINTS: Record<EtapaProcesso, string> = {
   INSCRICAO: "Sua candidatura foi registrada e entrou na fila de análise.",
   TRIAGEM: "A empresa está analisando seu perfil e seu currículo.",

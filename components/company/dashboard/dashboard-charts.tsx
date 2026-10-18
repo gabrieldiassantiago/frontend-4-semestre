@@ -1,140 +1,292 @@
 "use client"
-import { ROUTES } from "@/lib/config/routes"
 
 import { useId, useMemo, useState } from "react"
 import Link from "next/link"
-import { motion, useReducedMotion } from "framer-motion"
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { ArrowRight } from "lucide-react"
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { useReducedMotion } from "framer-motion"
+import { ROUTES } from "@/lib/config/routes"
+import {
+  ETAPAS,
+  ETAPA_SHORT_LABELS,
+  STATUS_LABELS,
+  etapasDaVaga,
+  type Candidatura,
+  type StatusCandidatura,
+} from "@/lib/types/candidatura.types"
 import type { Vaga } from "@/lib/types/vaga.types"
-import { MODALIDADE_LABELS } from "@/lib/types/vaga.types"
-import type { Candidatura } from "@/lib/types/candidatura.types"
-import { ETAPAS, ETAPA_LABELS } from "@/lib/types/candidatura.types"
 import { cn } from "@/lib/utils"
+import { SegmentedControl } from "../segmented-control"
+import { weeklyBuckets } from "./metrics"
 
-const colors = ["var(--primary)", "var(--info)", "var(--warning)"]
-const tooltipStyle = { borderRadius: 16, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", boxShadow: "var(--shadow-raised)", fontSize: 12 }
 const axis = { fill: "var(--muted-foreground)", fontSize: 11 }
 
+const METRICS = {
+  candidaturas: { label: "Candidaturas", color: "var(--primary)" },
+  vagas: { label: "Vagas publicadas", color: "var(--info)" },
+} as const
+
+type Metric = keyof typeof METRICS
+
 export default function DashboardCharts({ vagas, candidaturas }: { vagas: Vaga[]; candidaturas: Candidatura[] }) {
-  const reducedMotion = useReducedMotion()
-  const gradient = useId().replace(/:/g, "")
-  const [weeks, setWeeks] = useState(8)
-  const [metric, setMetric] = useState<"candidaturas" | "vagas">("candidaturas")
-  const [selectedModality, setSelectedModality] = useState<string | null>(null)
-  const funnel = ETAPAS.map(etapa => ({ label: ETAPA_LABELS[etapa], count: candidaturas.filter(c => c.etapaAtual === etapa).length }))
-  const modalities = (["PRESENCIAL", "REMOTO", "HIBRIDO"] as const).map((key, i) => ({ label: MODALIDADE_LABELS[key], count: vagas.filter(v => v.modalidade === key).length, fill: colors[i] }))
-  const selected = modalities.find(item => item.label === selectedModality)
-  const timeline = useMemo(() => {
-    const end = new Date()
-    end.setHours(24, 0, 0, 0)
-    return Array.from({ length: weeks }, (_, index) => {
-      const start = new Date(end)
-      start.setDate(start.getDate() - (weeks - index) * 7)
-      const until = new Date(start)
-      until.setDate(until.getDate() + 7)
-      const last = new Date(until)
-      last.setDate(last.getDate() - 1)
-      const count = (items: { createdAt?: string }[]) => items.filter(item => {
-        const date = item.createdAt ? new Date(item.createdAt).getTime() : NaN
-        return date >= start.getTime() && date < until.getTime()
-      }).length
-      const format = (date: Date) => date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
-      return { label: format(start), period: format(start) + " a " + format(last), vagas: count(vagas), candidaturas: count(candidaturas) }
-    })
-  }, [vagas, candidaturas, weeks])
-  const total = timeline.reduce((sum, point) => sum + point[metric], 0)
-  const undated = (metric === "vagas" ? vagas : candidaturas).filter(item => !item.createdAt || Number.isNaN(new Date(item.createdAt).getTime())).length
-  const entrance = { initial: { opacity: 0, y: reducedMotion ? 0 : 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: reducedMotion ? 0 : .35 } }
   return (
-    <div className="mt-8 space-y-5">
-      <div className="grid gap-5 lg:grid-cols-2">
-        <motion.section {...entrance} aria-labelledby="funnel-title" className="min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6">
-          <p className="text-xs font-medium text-muted-foreground">Funil de seleção</p>
-          <h2 id="funnel-title" className="mt-1 text-base font-semibold tracking-tight">Candidaturas por etapa</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Distribuição atual de todas as candidaturas.</p>
-          {candidaturas.length ? <div className="mt-5 h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-              <BarChart data={funnel} layout="vertical" margin={{ left: 0, right: 20 }} accessibilityLayer>
-                <CartesianGrid horizontal={false} stroke="var(--border-subtle)" />
-                <XAxis type="number" allowDecimals={false} tick={axis} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="label" width={112} tick={axis} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--primary-subtle)" }} />
-                <Bar dataKey="count" name="Candidaturas" fill="var(--primary)" radius={[0, 6, 6, 0]} barSize={18} isAnimationActive={!reducedMotion} animationDuration={650} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div> : <EmptyChart text="As etapas aparecerão quando suas vagas receberem candidaturas." />}
-          <details className="mt-4 border-t border-border pt-3 text-xs">
-            <summary className="cursor-pointer font-medium text-muted-foreground">Consultar valores por etapa</summary>
-            <dl className="mt-3 space-y-2">{funnel.map(item => <div key={item.label} className="flex justify-between"><dt>{item.label}</dt><dd className="font-semibold tabular-nums">{item.count}</dd></div>)}</dl>
-          </details>
-          <Link href={ROUTES.company.processes} className="mt-4 inline-block text-xs font-semibold text-primary hover:underline">Abrir processos →</Link>
-        </motion.section>
-        <motion.section {...entrance} aria-labelledby="modalities-title" className="min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6">
-          <p className="text-xs font-medium text-muted-foreground">Seu portfólio</p>
-          <h2 id="modalities-title" className="mt-1 text-base font-semibold tracking-tight">Vagas por modalidade</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Selecione uma modalidade para destacar sua participação.</p>
-          {vagas.length ? <>
-            <div className="relative mt-5 h-52">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                <PieChart accessibilityLayer>
-                  <Pie data={modalities} dataKey="count" nameKey="label" innerRadius="65%" outerRadius="90%" paddingAngle={3} stroke="var(--card)" strokeWidth={3} isAnimationActive={!reducedMotion} animationDuration={700}>
-                    {modalities.map(item => <Cell key={item.label} fill={item.fill} opacity={!selectedModality || selectedModality === item.label ? 1 : .2} />)}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center" aria-live="polite">
-                <span className="text-3xl font-semibold tabular-nums">{selected ? Math.round(selected.count / vagas.length * 100) + "%" : vagas.length}</span>
-                <span className="text-xs text-muted-foreground">{selected?.label ?? "vagas no total"}</span>
-              </div>
-            </div>
-            <div className="mt-3 space-y-1">
-              {modalities.map(item => <button key={item.label} type="button" aria-pressed={selectedModality === item.label} onClick={() => setSelectedModality(selectedModality === item.label ? null : item.label)} className={cn("flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary", selectedModality === item.label && "bg-primary-subtle")}>
-                <span className="size-2.5 rounded-full" style={{ background: item.fill }} /><span>{item.label}</span><span className="ml-auto tabular-nums text-muted-foreground">{Math.round(item.count / vagas.length * 100)}%</span><span className="w-6 text-right font-semibold tabular-nums">{item.count}</span>
-              </button>)}
-            </div>
-          </> : <EmptyChart text="Publique sua primeira vaga para acompanhar as modalidades." />}
-          <Link href={ROUTES.company.jobs} className="mt-4 inline-block text-xs font-semibold text-primary hover:underline">Gerenciar vagas →</Link>
-        </motion.section>
-      </div>
-      <motion.section {...entrance} aria-labelledby="activity-title" className="min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div><p className="text-xs font-medium text-muted-foreground">Atividade ao longo do tempo</p><h2 id="activity-title" className="mt-1 text-base font-semibold tracking-tight">O ritmo do seu recrutamento</h2></div>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">Período
-            <select aria-label="Período do gráfico" value={weeks} onChange={event => setWeeks(Number(event.target.value))} className="min-h-11 rounded-full border border-border bg-card px-3 font-medium text-foreground focus-visible:outline-primary">
-              {[4, 8, 12].map(value => <option key={value} value={value}>Últimas {value} semanas</option>)}
-            </select>
-          </label>
-        </div>
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
-          <div className="inline-flex rounded-full bg-muted p-1" role="group" aria-label="Métrica do gráfico">
-            {(["candidaturas", "vagas"] as const).map(value => <button type="button" key={value} aria-pressed={metric === value} onClick={() => setMetric(value)} className={cn("relative min-h-10 rounded-full px-4 text-xs font-semibold focus-visible:outline-primary", metric === value ? "text-primary" : "text-muted-foreground")}>
-              {metric === value && <motion.span layoutId={gradient + "-metric"} transition={{ duration: reducedMotion ? 0 : .2 }} className="absolute inset-0 rounded-full bg-primary-subtle" />}<span className="relative">{value === "vagas" ? "Vagas publicadas" : "Candidaturas recebidas"}</span>
-            </button>)}
-          </div>
-          <p aria-live="polite" className="text-sm text-muted-foreground"><strong className="text-xl font-semibold tabular-nums text-foreground">{total}</strong> {metric} no período</p>
-        </div>
-        {total ? <div className="mt-6 h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-            <AreaChart data={timeline} margin={{ top: 10, right: 12, left: -24, bottom: 0 }} accessibilityLayer>
-              <defs><linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--primary)" stopOpacity={.22} /><stop offset="100%" stopColor="var(--primary)" stopOpacity={.01} /></linearGradient></defs>
-              <CartesianGrid vertical={false} stroke="var(--border-subtle)" />
-              <XAxis dataKey="label" tick={axis} axisLine={false} tickLine={false} minTickGap={24} />
-              <YAxis tick={axis} allowDecimals={false} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} labelFormatter={(_, payload) => payload?.[0]?.payload?.period ?? "Semana"} />
-              <Area type="monotone" dataKey={metric} name={metric === "vagas" ? "Vagas publicadas" : "Candidaturas recebidas"} stroke="var(--primary)" strokeWidth={2.5} fill={"url(#" + gradient + ")"} activeDot={{ r: 5, stroke: "var(--card)", strokeWidth: 3 }} isAnimationActive={!reducedMotion} animationDuration={650} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div> : <EmptyChart text={"Nenhuma " + (metric === "vagas" ? "vaga publicada" : "candidatura recebida") + " neste período. Experimente ampliar o intervalo."} />}
-        <p className="mt-3 text-xs text-muted-foreground">Contagem semanal pela data de criação, incluindo a semana atual.{undated > 0 ? " " + undated + " registros sem data válida não entram nesta série." : ""}</p>
-        <details className="mt-4 border-t border-border pt-3 text-xs"><summary className="cursor-pointer font-medium text-muted-foreground">Consultar dados por semana</summary>
-          <div className="mt-3 overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Atividade nas últimas {weeks} semanas</caption><thead><tr><th scope="col" className="py-2">Semana</th><th scope="col">Vagas</th><th scope="col">Candidaturas</th></tr></thead><tbody>{timeline.map(item => <tr key={item.period} className="border-t border-border"><th scope="row" className="py-2 font-normal">{item.period}</th><td>{item.vagas}</td><td>{item.candidaturas}</td></tr>)}</tbody></table></div>
-        </details>
-      </motion.section>
+    <div className="grid gap-4 lg:grid-cols-3">
+      <ActivityChart vagas={vagas} candidaturas={candidaturas} className="lg:col-span-2" />
+      <FunnelCard candidaturas={candidaturas} />
     </div>
   )
 }
 
+function Panel({ className, children, ...props }: React.ComponentProps<"section">) {
+  return (
+    <section className={cn("flex min-w-0 flex-col rounded-2xl border border-border bg-card p-5 sm:p-6", className)} {...props}>
+      {children}
+    </section>
+  )
+}
+
+function ActivityChart({ vagas, candidaturas, className }: { vagas: Vaga[]; candidaturas: Candidatura[]; className?: string }) {
+  const reducedMotion = useReducedMotion()
+  const gradient = useId().replace(/:/g, "")
+  const [weeks, setWeeks] = useState(8)
+  const [metric, setMetric] = useState<Metric>("candidaturas")
+  const timeline = useMemo(() => weeklyBuckets(vagas, candidaturas, weeks), [vagas, candidaturas, weeks])
+  const total = timeline.reduce((sum, point) => sum + point[metric], 0)
+  const average = total / weeks
+  const config = METRICS[metric]
+
+  return (
+    <Panel aria-labelledby="activity-title" className={className}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 id="activity-title" className="text-base font-semibold tracking-tight text-foreground">
+            Ritmo do recrutamento
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">Contagem semanal pela data de criação.</p>
+        </div>
+        <SegmentedControl
+          label="Período do gráfico"
+          value={String(weeks)}
+          onChange={(value) => setWeeks(Number(value))}
+          options={[4, 8, 12].map((value) => ({ value: String(value), label: `${value} sem` }))}
+        />
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:max-w-md" role="group" aria-label="Métrica do gráfico">
+        {(Object.keys(METRICS) as Metric[]).map((key) => {
+          const sum = timeline.reduce((acc, point) => acc + point[key], 0)
+          const selected = metric === key
+          return (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => setMetric(key)}
+              className={cn(
+                "rounded-xl border px-3.5 py-2.5 text-left transition-colors",
+                selected ? "border-primary/40 bg-primary-subtle" : "border-border hover:bg-muted",
+              )}
+            >
+              <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <span aria-hidden className="size-2 rounded-full" style={{ background: METRICS[key].color }} />
+                {METRICS[key].label}
+              </span>
+              <span className="mt-1 block text-xl font-semibold tabular-nums text-foreground">{sum}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {total ? (
+        <div className="mt-5 min-h-64 w-full flex-1">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+            <AreaChart data={timeline} margin={{ top: 8, right: 8, left: -24, bottom: 0 }} accessibilityLayer>
+              <defs>
+                <linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={config.color} stopOpacity={0.24} />
+                  <stop offset="100%" stopColor={config.color} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="var(--border-subtle)" />
+              <XAxis dataKey="label" tick={axis} axisLine={false} tickLine={false} minTickGap={24} />
+              <YAxis tick={axis} allowDecimals={false} axisLine={false} tickLine={false} />
+              <Tooltip
+                content={<ChartTooltip label={config.label} />}
+                cursor={{ stroke: "var(--border-strong)", strokeDasharray: "4 4" }}
+              />
+              <Area
+                type="monotone"
+                dataKey={metric}
+                name={config.label}
+                stroke={config.color}
+                strokeWidth={2.5}
+                fill={`url(#${gradient})`}
+                activeDot={{ r: 5, stroke: "var(--card)", strokeWidth: 3 }}
+                isAnimationActive={!reducedMotion}
+                animationDuration={600}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <EmptyChart text="Nenhum registro neste período. Experimente ampliar o intervalo." />
+      )}
+
+      <p className="mt-3 text-xs text-muted-foreground">
+        Média de <strong className="font-semibold tabular-nums text-strong-foreground">{average.toFixed(1).replace(".", ",")}</strong>{" "}
+        {metric === "vagas" ? "vagas" : "candidaturas"} por semana nas últimas {weeks} semanas.
+      </p>
+
+      <details className="mt-3 border-t border-border-subtle pt-3 text-xs">
+        <summary className="cursor-pointer font-medium text-muted-foreground">Ver dados por semana</summary>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-left">
+            <caption className="sr-only">Atividade nas últimas {weeks} semanas</caption>
+            <thead>
+              <tr className="text-muted-foreground">
+                <th scope="col" className="py-2 font-medium">Semana</th>
+                <th scope="col" className="font-medium">Vagas</th>
+                <th scope="col" className="font-medium">Candidaturas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {timeline.map((item) => (
+                <tr key={item.period} className="border-t border-border-subtle">
+                  <th scope="row" className="py-2 font-normal">{item.period}</th>
+                  <td className="tabular-nums">{item.vagas}</td>
+                  <td className="tabular-nums">{item.candidaturas}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </Panel>
+  )
+}
+
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: Array<{ value: number; payload: { period: string } }>
+  label: string
+}) {
+  if (!active || !payload?.length) return null
+  const point = payload[0]
+  return (
+    <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-overlay">
+      <p className="text-muted-foreground">{point.payload.period}</p>
+      <p className="mt-0.5 font-semibold text-foreground">
+        <span className="tabular-nums">{point.value}</span> {label.toLowerCase()}
+      </p>
+    </div>
+  )
+}
+
+const STATUS_COLORS: Record<StatusCandidatura, string> = {
+  EM_ANDAMENTO: "bg-primary",
+  APROVADA: "bg-success",
+  REPROVADA: "bg-danger",
+  CANCELADA: "bg-border-strong",
+}
+
+function FunnelCard({ candidaturas }: { candidaturas: Candidatura[] }) {
+  const total = candidaturas.length
+  // Cada vaga tem seu próprio fluxo: só conta quem passou pela etapa dentro do fluxo da sua vaga.
+  const flows = candidaturas.map((item) => {
+    const flow = etapasDaVaga(item.etapasVaga)
+    return { flow, current: flow.indexOf(item.etapaAtual) }
+  })
+  const stages = ETAPAS.filter((etapa) => flows.some(({ flow }) => flow.includes(etapa))).map((etapa) => {
+    const reached = flows.filter(({ flow, current }) => {
+      const position = flow.indexOf(etapa)
+      return position !== -1 && position <= current
+    }).length
+    const now = candidaturas.filter((item) => item.etapaAtual === etapa && item.status === "EM_ANDAMENTO").length
+    return { etapa, reached, now, percent: total ? Math.round((reached / total) * 100) : 0 }
+  })
+  const statuses = (Object.keys(STATUS_COLORS) as StatusCandidatura[])
+    .map((status) => ({ status, count: candidaturas.filter((item) => item.status === status).length }))
+    .filter((item) => item.count > 0)
+
+  return (
+    <Panel aria-labelledby="funnel-title">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 id="funnel-title" className="text-base font-semibold tracking-tight text-foreground">
+            Funil de seleção
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">Quantos candidatos chegaram a cada etapa.</p>
+        </div>
+      </div>
+
+      {total ? (
+        <>
+          <ol className="mt-5 flex flex-col gap-3">
+            {stages.map((stage) => (
+              <li key={stage.etapa}>
+                <div className="flex items-baseline justify-between gap-2 text-sm">
+                  <span className="truncate font-medium text-strong-foreground">{ETAPA_SHORT_LABELS[stage.etapa]}</span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">
+                    <strong className="font-semibold text-foreground">{stage.reached}</strong>
+                    <span className="ml-1.5 text-xs">{stage.percent}%</span>
+                  </span>
+                </div>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-700"
+                    style={{ width: `${Math.max(stage.percent, stage.reached ? 3 : 0)}%`, opacity: 0.35 + stage.percent / 155 }}
+                  />
+                </div>
+                {stage.now > 0 && (
+                  <p className="mt-1 text-[11px] text-subtle-foreground">
+                    {stage.now} {stage.now === 1 ? "pessoa está" : "pessoas estão"} nesta etapa agora
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
+
+          <div className="mt-6 border-t border-border-subtle pt-4">
+            <p className="text-xs font-medium text-muted-foreground">Situação das candidaturas</p>
+            <div className="mt-2.5 flex h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
+              {statuses.map((item) => (
+                <span key={item.status} className={STATUS_COLORS[item.status]} style={{ width: `${(item.count / total) * 100}%` }} />
+              ))}
+            </div>
+            <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+              {statuses.map((item) => (
+                <li key={item.status} className="flex items-center gap-2">
+                  <span aria-hidden className={cn("size-2 rounded-full", STATUS_COLORS[item.status])} />
+                  <span className="truncate text-muted-foreground">{STATUS_LABELS[item.status]}</span>
+                  <span className="ml-auto font-semibold tabular-nums text-foreground">{item.count}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ) : (
+        <EmptyChart text="As etapas aparecem quando suas vagas receberem candidaturas." />
+      )}
+
+      <Link
+        href={ROUTES.company.processes}
+        className="group mt-auto inline-flex items-center gap-1 pt-5 text-sm font-semibold text-primary"
+      >
+        Abrir processos seletivos
+        <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" />
+      </Link>
+    </Panel>
+  )
+}
+
 function EmptyChart({ text }: { text: string }) {
-  return <div className="mt-5 flex h-64 items-center justify-center rounded-xl bg-muted px-6 text-center text-sm leading-relaxed text-muted-foreground">{text}</div>
+  return (
+    <div className="mt-5 flex h-56 items-center justify-center rounded-xl border border-dashed border-border bg-surface px-6 text-center text-sm leading-relaxed text-muted-foreground">
+      {text}
+    </div>
+  )
 }
