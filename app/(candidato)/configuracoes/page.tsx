@@ -7,5 +7,9 @@ export const metadata: Metadata = {
 }
 
 export default function ConfiguracoesPage() {
-  return <SettingsScreen />
+  return <div>
+    <h1>
+      
+    </h1>
+  </div>
 }
