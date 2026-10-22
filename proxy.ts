@@ -74,7 +74,8 @@ export async function proxy(request: NextRequest) {
   const isProtectedRoute = isCandidateRoute || isCompanyRoute
   const isAuthRoute = authRoutes.includes(pathname)
 
--  const applyCookies = (res: NextResponse) => {
+  // Função auxiliar para anexar os novos cookies (ou limpar os vencidos) em qualquer resposta
+  const applyCookies = (res: NextResponse) => {
     const newJwt = refreshedTokens?.tokenJwt ?? refreshedTokens?.token
     if (newJwt) {
       const isProd = process.env.NODE_ENV === "production"
