@@ -8,7 +8,7 @@ import { RouteSkeleton } from "@/components/ui/route-skeleton"
 import { BarChartSkeleton, ErrorState } from "@/components/ui/states"
 import { ROUTES } from "@/lib/config/routes"
 import { useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
-import { useCompanyProfile } from "@/lib/queries/use-company-profile"
+import { useCompanyIdentity } from "@/lib/queries/use-company-profile"
 import { useCompanyVagas } from "@/lib/queries/use-vagas"
 import { AttentionPanel } from "./attention-panel"
 import { JobsPerformance } from "./jobs-performance"
@@ -39,7 +39,7 @@ function greeting() {
 export function CompanyDashboardScreen() {
   const jobsQuery = useCompanyVagas()
   const applicationsQuery = useCandidaturasEmpresa()
-  const { profile } = useCompanyProfile()
+  const { companyName } = useCompanyIdentity()
 
   if (jobsQuery.loading || applicationsQuery.loading) return <RouteSkeleton variant="dashboard" />
 
@@ -84,7 +84,7 @@ export function CompanyDashboardScreen() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p suppressHydrationWarning className="text-sm font-medium text-muted-foreground">
-            {greeting()}, {profile?.companyName ?? "equipe"}
+            {greeting()}, {companyName ?? "equipe"}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground text-balance sm:text-3xl">
             Visão geral do recrutamento

@@ -10,7 +10,7 @@ import { ROUTES } from "@/lib/config/routes"
 import { useLogout } from "@/lib/queries/use-auth"
 import { useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
 import { useChats } from "@/lib/queries/use-chat"
-import { useCompanyProfile } from "@/lib/queries/use-company-profile"
+import { useCompanyIdentity } from "@/lib/queries/use-company-profile"
 import { cn } from "@/lib/utils"
 
 const ACCOUNT_LINKS = [
@@ -21,11 +21,12 @@ const ACCOUNT_LINKS = [
 const TODAY_FORMAT = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" })
 
 export function CompanyAppShell({ children, currentPath }: { children: React.ReactNode; currentPath?: string }) {
-  const { profile } = useCompanyProfile()
+  const company = useCompanyIdentity()
   const { candidaturas } = useCandidaturasEmpresa()
   const { naoLidas } = useChats("empresa")
   const logout = useLogout(ROUTES.auth.recruiter)
-  const name = profile?.companyName || "Minha empresa"
+  const name = company.companyName || "Minha empresa"
+  const profile = { logoUrl: company.logoUrl, industry: company.industry }
 
   const awaitingReview = candidaturas.filter(
     (item) => item.status === "EM_ANDAMENTO" && (item.etapaAtual === "INSCRICAO" || item.etapaAtual === "TRIAGEM"),

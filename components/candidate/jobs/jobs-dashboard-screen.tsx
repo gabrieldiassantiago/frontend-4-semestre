@@ -13,6 +13,7 @@ import {
   Clock4,
   Globe2,
   LayoutGrid,
+  Loader2,
   RefreshCw,
   SearchX,
   SlidersHorizontal,
@@ -20,6 +21,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PageShell } from "@/components/ui/page"
+import { Modal } from "@/components/ui/modal"
 import { EmptyState, ErrorState, Skeleton } from "@/components/ui/states"
 import { ApplyModal } from "@/components/candidate/applications/apply-modal"
 import { useCandidaturasPorVaga } from "@/lib/queries/use-candidaturas"
@@ -35,7 +37,7 @@ import { JobsSidebarWidgets } from "./jobs-sidebar-widgets"
 import { JobAlertsModal } from "./job-alerts-modal"
 import { calculateDistanceKm } from "@/lib/utils/distance"
 import { EMPTY_FILTERS, countActiveFilters, type JobFiltersState } from "./job-filters-panel"
-import { AnimatePresence, motion } from "framer-motion"
+import { motion } from "framer-motion"
 
 function JobCardSkeleton() {
   return (
@@ -354,6 +356,15 @@ export function JobsDashboardScreen() {
   }
 
   const isPageLoading = loading && vagas.length === 0 && !proximityVagas
+  const isRefreshing = loading && !isPageLoading
+  const activeChip =
+    filters.modalidades.length === 1
+      ? filters.modalidades[0]
+      : filters.modalidades.length === 0
+        ? quickChip === "FULL_TIME" || quickChip === "PART_TIME"
+          ? quickChip
+          : "ALL"
+        : null
   const pageError = proximityFetchError || (!proximityCoords && error && vagas.length === 0 ? error : null)
 
   const QUICK_CHIPS = [
@@ -377,18 +388,20 @@ export function JobsDashboardScreen() {
           onProximitySearch={handleRequestProximity}
           isProximityActive={Boolean(proximityCoords)}
           isLocating={isLocating}
+          isSearching={isRefreshing}
         />
       </header>
 
       {/* 2. Pílulas de Filtros Rápidos (Chips) */}
       <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
         {QUICK_CHIPS.map((chip) => {
-          const active = quickChip === chip.id
+          const active = activeChip === chip.id
           const ChipIcon = chip.icon
           return (
             <button
               key={chip.id}
               type="button"
+              aria-pressed={active}
               onClick={() => handleChipClick(chip.id)}
               className={cn(
                 "inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200 active:scale-95",
@@ -426,10 +439,19 @@ export function JobsDashboardScreen() {
 
       {/* 3. Linha de Contagem e Ordenação */}
       <div className="mt-5 flex items-center justify-between gap-4">
-        <p aria-live="polite" className="text-sm font-bold text-foreground">
-          {results.length} {results.length === 1 ? "vaga encontrada" : "vagas encontradas"}
-          {proximityCoords && (
-            <span className="font-normal text-muted-foreground"> em um raio de {raioKm} km</span>
+        <p aria-live="polite" className="flex items-center gap-2 text-sm font-bold text-foreground">
+          {isRefreshing ? (
+            <>
+              <Loader2 className="size-4 animate-spin text-primary" aria-hidden />
+              <span className="font-medium text-muted-foreground">Atualizando vagas...</span>
+            </>
+          ) : (
+            <span>
+              {results.length} {results.length === 1 ? "vaga encontrada" : "vagas encontradas"}
+              {proximityCoords && (
+                <span className="font-normal text-muted-foreground"> em um raio de {raioKm} km</span>
+              )}
+            </span>
           )}
         </p>
 
@@ -500,7 +522,13 @@ export function JobsDashboardScreen() {
           )}
 
           {!isPageLoading && !pageError && displayedResults.length > 0 && (
-            <ul className="grid list-none gap-4">
+            <ul
+              aria-busy={isRefreshing}
+              className={cn(
+                "grid list-none gap-4 transition-opacity duration-200",
+                isRefreshing && "pointer-events-none opacity-60",
+              )}
+            >
               {displayedResults.map((vaga, index) => (
                 <motion.li
                   key={vaga.id}
@@ -619,44 +647,29 @@ export function JobsDashboardScreen() {
 
       {/* Modais */}
       {/* 1. Modal Detalhes da Vaga */}
-      <AnimatePresence>
-        {detailOpen && selected && (
-          <motion.div
-            key="job-detail-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-strong/40 p-3 backdrop-blur-xs sm:p-4"
-            role="dialog"
-            aria-modal="true"
-            onClick={() => setDetailOpen(false)}
-          >
-            <motion.div
-              key="job-detail-card"
-              initial={{ opacity: 0, scale: 0.96, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 15 }}
-              transition={{ type: "spring", duration: 0.3, bounce: 0.15 }}
-              className="relative max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-border bg-card shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <JobDetailPanel
-                vaga={selected}
-                saved={savedIds.includes(selected.id)}
-                candidatura={candidaturasPorVaga.get(selected.id) ?? null}
-                onToggleSave={() => toggleSave(selected.id)}
-                onApply={() => {
-                  setDetailOpen(false)
-                  setApplyVagaId(selected.id)
-                }}
-                onClose={() => setDetailOpen(false)}
-                className="max-h-[90vh]"
-              />
-            </motion.div>
-          </motion.div>
+      <Modal
+        open={detailOpen && Boolean(selected)}
+        onClose={() => setDetailOpen(false)}
+        title={selected ? `Detalhes da vaga ${selected.titulo}` : "Detalhes da vaga"}
+        size="lg"
+        hideHeader
+        bodyClassName="flex flex-col overflow-hidden p-0 sm:p-0"
+      >
+        {selected && (
+          <JobDetailPanel
+            vaga={selected}
+            saved={savedIds.includes(selected.id)}
+            candidatura={candidaturasPorVaga.get(selected.id) ?? null}
+            onToggleSave={() => toggleSave(selected.id)}
+            onApply={() => {
+              setDetailOpen(false)
+              setApplyVagaId(selected.id)
+            }}
+            onClose={() => setDetailOpen(false)}
+            className="min-h-0 flex-1"
+          />
         )}
-      </AnimatePresence>
+      </Modal>
 
       {/* 2. Modal de Candidatura */}
       <ApplyModal
@@ -672,6 +685,7 @@ export function JobsDashboardScreen() {
         filters={filters}
         onChange={setFilters}
         totalCount={results.length}
+        isLoading={loading}
         isProximityActive={Boolean(proximityCoords)}
         raioKm={raioKm}
         onChangeRaio={setRaioKm}

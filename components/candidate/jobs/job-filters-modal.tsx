@@ -1,29 +1,24 @@
 "use client"
 
-import { useState } from "react"
 import {
-  SlidersHorizontal,
-  RotateCcw,
-  Check,
-  Building2,
-  Laptop,
-  Globe,
-  DollarSign,
-  Crosshair,
   ArrowUpDown,
-  Navigation,
+  Building2,
+  Check,
+  Crosshair,
+  Globe,
+  Laptop,
   Loader2,
-  X,
-  Sparkles,
+  Navigation,
+  RotateCcw,
+  SlidersHorizontal,
+  Wallet,
 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/format"
+import { Modal } from "@/components/ui/modal"
+import { MODALIDADE_LABELS, type VagaModalidade } from "@/lib/types/vaga.types"
 import {
-  MODALIDADE_LABELS,
-  type VagaModalidade,
-} from "@/lib/types/vaga.types"
-import {
+  EMPTY_FILTERS,
   SALARIO_MAX,
   SORT_OPTIONS,
   countActiveFilters,
@@ -38,6 +33,7 @@ interface JobFiltersModalProps {
   filters: JobFiltersState
   onChange: (next: JobFiltersState) => void
   totalCount: number
+  isLoading?: boolean
   isProximityActive?: boolean
   raioKm?: number
   onChangeRaio?: (r: number) => void
@@ -45,351 +41,278 @@ interface JobFiltersModalProps {
   isLocating?: boolean
 }
 
-const MODALIDADE_ICONS: Record<VagaModalidade, React.ComponentType<{ className?: string }>> = {
-  PRESENCIAL: Building2,
-  HIBRIDO: Laptop,
-  REMOTO: Globe,
+const MODALIDADES: { value: VagaModalidade; icon: typeof Building2; hint: string }[] = [
+  { value: "PRESENCIAL", icon: Building2, hint: "No escritório" },
+  { value: "HIBRIDO", icon: Laptop, hint: "Escritório + casa" },
+  { value: "REMOTO", icon: Globe, hint: "De qualquer lugar" },
+]
+
+const SALARY_PRESETS = [0, 3000, 5000, 8000, 12000]
+
+function FilterSection({
+  icon: Icon,
+  title,
+  aside,
+  children,
+}: {
+  icon: typeof Building2
+  title: string
+  aside?: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <section className="flex flex-col gap-3 border-b border-border-subtle py-5 first:pt-0 last:border-0 last:pb-0">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Icon className="size-4 text-muted-foreground" aria-hidden />
+          {title}
+        </h3>
+        {aside}
+      </div>
+      {children}
+    </section>
+  )
 }
 
-const SALARY_PRESETS = [0, 3000, 5000, 8000, 12000, 15000]
-
+/**
+ * Filtros avançados. As mudanças são aplicadas na hora (a lista atualiza
+ * por trás do modal), então o rodapé só mostra o resultado e fecha.
+ */
 export function JobFiltersModal({
   open,
   onClose,
   filters,
   onChange,
   totalCount,
+  isLoading = false,
   isProximityActive = false,
   raioKm = 25,
   onChangeRaio,
   onToggleProximity,
   isLocating = false,
 }: JobFiltersModalProps) {
-  const [localFilters, setLocalFilters] = useState<JobFiltersState>(filters)
-
-  // Sincroniza sempre que abrir
-  const handleOpen = () => {
-    setLocalFilters(filters)
-  }
-
-  const patch = (partial: Partial<JobFiltersState>) => {
-    const next = { ...localFilters, ...partial }
-    setLocalFilters(next)
-    onChange(next)
-  }
+  const patch = (partial: Partial<JobFiltersState>) => onChange({ ...filters, ...partial })
 
   const toggleModalidade = (modalidade: VagaModalidade) => {
-    const list = localFilters.modalidades.includes(modalidade)
-      ? localFilters.modalidades.filter((m) => m !== modalidade)
-      : [...localFilters.modalidades, modalidade]
+    const list = filters.modalidades.includes(modalidade)
+      ? filters.modalidades.filter((m) => m !== modalidade)
+      : [...filters.modalidades, modalidade]
     patch({ modalidades: list })
   }
 
-  const handleReset = () => {
-    const resetState: JobFiltersState = {
-      sort: "recent",
-      modalidades: [],
-      salarioMin: 0,
-    }
-    setLocalFilters(resetState)
-    onChange(resetState)
-  }
-
-  const activeCount = countActiveFilters(localFilters) + (isProximityActive ? 1 : 0)
+  const activeCount = countActiveFilters(filters) + (isProximityActive ? 1 : 0)
+  const resultLabel = `${totalCount} ${totalCount === 1 ? "vaga" : "vagas"}`
 
   return (
-    <AnimatePresence onExitComplete={handleOpen}>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
-          {/* Backdrop escuro com blur */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-          />
-
-          {/* Modal Container */}
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Filtros avançados de vagas"
-            initial={{ opacity: 0, y: 40, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 24, scale: 0.96 }}
-            transition={{ type: "spring", damping: 28, stiffness: 300 }}
-            className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[2rem] border border-border bg-card shadow-2xl sm:rounded-[2rem]"
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Filtros"
+      description="Os resultados são atualizados automaticamente."
+      icon={SlidersHorizontal}
+      size="lg"
+      headerActions={
+        activeCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => {
+              onChange(EMPTY_FILTERS)
+              if (isProximityActive) onToggleProximity?.()
+            }}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            {/* Header com gradiente sutil */}
-            <header className="flex items-center justify-between border-b border-border bg-gradient-to-r from-card via-surface to-card px-6 py-4">
-              <div className="flex items-center gap-3">
-                <div className="grid size-10 place-items-center rounded-xl bg-primary-subtle text-primary shadow-xs">
-                  <SlidersHorizontal className="size-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold tracking-tight text-foreground">
-                      Filtros de Vagas
-                    </h2>
-                    {activeCount > 0 && (
-                      <span className="grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                        {activeCount}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Ajuste os critérios para encontrar a oportunidade perfeita
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {activeCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    <RotateCcw className="size-3" />
-                    Limpar
-                  </button>
+            <RotateCcw className="size-3.5" aria-hidden />
+            <span className="hidden sm:inline">Limpar</span>
+            <span className="sr-only sm:hidden">Limpar filtros</span>
+          </button>
+        ) : null
+      }
+      footerStart={
+        <span aria-live="polite" className="flex items-center gap-2">
+          {isLoading && <Loader2 className="size-3.5 animate-spin text-primary" aria-hidden />}
+          <span>
+            <strong className="font-semibold text-foreground">{resultLabel}</strong> com os filtros atuais
+          </span>
+        </span>
+      }
+      footer={
+        <button type="button" onClick={onClose} className="btn-primary">
+          {isLoading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Check className="size-4" aria-hidden />}
+          Ver {resultLabel}
+        </button>
+      }
+    >
+      <FilterSection icon={ArrowUpDown} title="Ordenar por">
+        <div role="radiogroup" aria-label="Ordenação" className="grid grid-cols-1 gap-1 rounded-xl bg-surface p-1 sm:grid-cols-3">
+          {SORT_OPTIONS.map((opt) => {
+            const selected = filters.sort === opt.value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => patch({ sort: opt.value as JobSort })}
+                className={cn(
+                  "h-9 rounded-lg px-3 text-sm font-medium transition-all",
+                  selected
+                    ? "bg-card text-foreground shadow-card ring-1 ring-border"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Fechar filtros"
-                  className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-            </header>
-
-            {/* Conteúdo com scroll */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* 1. Ordenação dos Resultados */}
-              <section className="space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  <ArrowUpDown className="size-3.5 text-primary" />
-                  <span>Ordenar Resultados</span>
-                </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {SORT_OPTIONS.map((opt) => {
-                    const isSelected = localFilters.sort === opt.value
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => patch({ sort: opt.value as JobSort })}
-                        className={cn(
-                          "flex items-center justify-between rounded-xl border p-3 text-left transition-all",
-                          isSelected
-                            ? "border-primary bg-primary-subtle/80 text-primary-subtle-foreground font-bold shadow-xs ring-1 ring-primary/30"
-                            : "border-border bg-surface text-foreground hover:bg-muted hover:border-border-strong font-medium"
-                        )}
-                      >
-                        <span className="text-xs sm:text-sm truncate">{opt.label}</span>
-                        {isSelected && <Check className="size-4 shrink-0 text-primary" />}
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
-
-              {/* 2. Modalidade de Trabalho */}
-              <section className="space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  <Building2 className="size-3.5 text-primary" />
-                  <span>Modalidade de Trabalho</span>
-                </div>
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-                  {(["PRESENCIAL", "HIBRIDO", "REMOTO"] as VagaModalidade[]).map((m) => {
-                    const Icon = MODALIDADE_ICONS[m]
-                    const isSelected = localFilters.modalidades.includes(m)
-                    return (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => toggleModalidade(m)}
-                        className={cn(
-                          "flex flex-col items-start gap-1 rounded-2xl border p-3.5 text-left transition-all",
-                          isSelected
-                            ? "border-primary bg-primary-subtle/70 text-primary-subtle-foreground shadow-xs ring-2 ring-primary/20"
-                            : "border-border bg-surface text-foreground hover:border-border-strong hover:bg-muted"
-                        )}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <span
-                            className={cn(
-                              "grid size-8 place-items-center rounded-xl transition-colors",
-                              isSelected
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-card text-muted-foreground border border-border"
-                            )}
-                          >
-                            <Icon className="size-4" />
-                          </span>
-                          {isSelected && <Check className="size-4 text-primary" />}
-                        </div>
-                        <span className="mt-2 text-sm font-bold">{MODALIDADE_LABELS[m]}</span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {m === "REMOTO"
-                            ? "Trabalhe de qualquer lugar"
-                            : m === "HIBRIDO"
-                            ? "Presencial + home office"
-                            : "Atuação no escritório"}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
-
-              {/* 3. Faixa Salarial */}
-              <section className="space-y-3 rounded-2xl border border-border bg-surface/60 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    <DollarSign className="size-3.5 text-primary" />
-                    <span>Salário Mínimo Desejado</span>
-                  </div>
-                  <span className="text-sm font-bold text-primary">
-                    {localFilters.salarioMin > 0
-                      ? `${formatCurrency(localFilters.salarioMin)} /mês`
-                      : "Sem salário mínimo"}
-                  </span>
-                </div>
-
-                <input
-                  type="range"
-                  min={0}
-                  max={SALARIO_MAX}
-                  step={500}
-                  value={localFilters.salarioMin}
-                  onChange={(e) => patch({ salarioMin: Number(e.target.value) })}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary"
-                />
-
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>Qualquer valor</span>
-                  <span>{formatCurrency(SALARIO_MAX)}+</span>
-                </div>
-
-                {/* Presets rápidos de salário */}
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {SALARY_PRESETS.map((p) => {
-                    const active = localFilters.salarioMin === p
-                    return (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => patch({ salarioMin: p })}
-                        className={cn(
-                          "rounded-lg px-2.5 py-1 text-xs font-semibold transition-all",
-                          active
-                            ? "bg-primary text-primary-foreground shadow-xs"
-                            : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                        )}
-                      >
-                        {p === 0 ? "Todos" : `${formatCurrency(p)}+`}
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
-
-              {/* 5. Proximidade Geográfica */}
-              {onToggleProximity && (
-                <section className="space-y-3 rounded-2xl border border-border bg-surface/50 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Crosshair className="size-4 text-primary" />
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-strong-foreground">
-                          Busca por Proximidade (GPS)
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Encontre vagas perto de onde você está agora
-                        </p>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={onToggleProximity}
-                      disabled={isLocating}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all",
-                        isProximityActive
-                          ? "bg-primary text-primary-foreground shadow-xs"
-                          : "border border-border bg-card text-strong-foreground hover:bg-muted"
-                      )}
-                    >
-                      {isLocating ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : (
-                        <Navigation className="size-3.5" />
-                      )}
-                      <span>{isProximityActive ? "Ativo" : "Ativar GPS"}</span>
-                    </button>
-                  </div>
-
-                  {isProximityActive && onChangeRaio && (
-                    <div className="pt-2 border-t border-border flex items-center justify-between">
-                      <span className="text-xs font-semibold text-muted-foreground">
-                        Raio de distância máxima:
-                      </span>
-                      <div className="flex items-center gap-1">
-                        {RADII_OPTIONS.map((r) => (
-                          <button
-                            key={r}
-                            type="button"
-                            onClick={() => onChangeRaio(r)}
-                            className={cn(
-                              "rounded-lg px-2.5 py-1 text-xs font-bold transition-all",
-                              raioKm === r
-                                ? "bg-primary text-primary-foreground shadow-xs"
-                                : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                            )}
-                          >
-                            {r} km
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </section>
-              )}
-            </div>
-
-            {/* Footer com botão de ação e contagem de vagas */}
-            <footer className="flex items-center justify-between gap-3 border-t border-border bg-surface px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-              <div className="text-xs text-muted-foreground">
-                <strong className="font-bold text-foreground">{totalCount}</strong> vagas encontradas
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="rounded-xl border border-border bg-card px-4 py-2.5 text-xs sm:text-sm font-semibold text-strong-foreground transition-colors hover:bg-muted"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs sm:text-sm font-bold text-primary-foreground shadow-[0_4px_14px_rgba(124,58,237,0.3)] transition-colors hover:bg-primary-hover"
-                >
-                  <Sparkles className="size-4" />
-                  Ver vagas ({totalCount})
-                </button>
-              </div>
-            </footer>
-          </motion.div>
+              >
+                {opt.label}
+              </button>
+            )
+          })}
         </div>
+      </FilterSection>
+
+      <FilterSection
+        icon={Building2}
+        title="Modalidade"
+        aside={
+          filters.modalidades.length > 0 ? (
+            <span className="text-xs font-medium text-muted-foreground">
+              {filters.modalidades.length} selecionada{filters.modalidades.length > 1 ? "s" : ""}
+            </span>
+          ) : null
+        }
+      >
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {MODALIDADES.map(({ value, icon: Icon, hint }) => {
+            const selected = filters.modalidades.includes(value)
+            return (
+              <button
+                key={value}
+                type="button"
+                role="checkbox"
+                aria-checked={selected}
+                onClick={() => toggleModalidade(value)}
+                className={cn(
+                  "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors",
+                  selected
+                    ? "border-primary bg-primary-subtle"
+                    : "border-border bg-card hover:border-border-strong hover:bg-surface",
+                )}
+              >
+                <span
+                  className={cn(
+                    "grid size-9 shrink-0 place-items-center rounded-lg transition-colors",
+                    selected ? "bg-primary text-primary-foreground" : "bg-surface text-muted-foreground",
+                  )}
+                >
+                  <Icon className="size-4" aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-foreground">{MODALIDADE_LABELS[value]}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{hint}</span>
+                </span>
+                <span
+                  aria-hidden
+                  className={cn(
+                    "grid size-5 shrink-0 place-items-center rounded-md border transition-colors",
+                    selected ? "border-primary bg-primary text-primary-foreground" : "border-border-strong",
+                  )}
+                >
+                  {selected && <Check className="size-3.5" />}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </FilterSection>
+
+      <FilterSection
+        icon={Wallet}
+        title="Salário mínimo"
+        aside={
+          <span className="text-sm font-semibold tabular-nums text-foreground">
+            {filters.salarioMin > 0 ? `${formatCurrency(filters.salarioMin)}/mês` : "Qualquer valor"}
+          </span>
+        }
+      >
+        <input
+          type="range"
+          min={0}
+          max={SALARIO_MAX}
+          step={500}
+          value={filters.salarioMin}
+          onChange={(e) => patch({ salarioMin: Number(e.target.value) })}
+          aria-label="Salário mínimo"
+          className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary"
+        />
+        <div className="flex flex-wrap gap-1.5">
+          {SALARY_PRESETS.map((value) => {
+            const active = filters.salarioMin === value
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => patch({ salarioMin: value })}
+                aria-pressed={active}
+                className={cn(
+                  "h-8 rounded-full border px-3 text-xs font-medium transition-colors",
+                  active
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground",
+                )}
+              >
+                {value === 0 ? "Qualquer" : `${formatCurrency(value)}+`}
+              </button>
+            )
+          })}
+        </div>
+      </FilterSection>
+
+      {onToggleProximity && (
+        <FilterSection icon={Crosshair} title="Perto de mim">
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-relaxed text-muted-foreground text-pretty">
+              {isProximityActive
+                ? "Mostrando vagas próximas da sua localização atual."
+                : "Use sua localização para ver vagas próximas, ordenadas por distância."}
+            </p>
+            <button
+              type="button"
+              onClick={onToggleProximity}
+              disabled={isLocating}
+              aria-pressed={isProximityActive}
+              className={cn("shrink-0", isProximityActive ? "btn-secondary" : "btn-primary")}
+            >
+              {isLocating ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Navigation className="size-4" aria-hidden />
+              )}
+              {isLocating ? "Localizando..." : isProximityActive ? "Desativar" : "Usar localização"}
+            </button>
+          </div>
+
+          {isProximityActive && onChangeRaio && (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-sm text-muted-foreground">Raio máximo</span>
+              <div className="flex flex-wrap gap-1.5">
+                {RADII_OPTIONS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => onChangeRaio(r)}
+                    aria-pressed={raioKm === r}
+                    className={cn(
+                      "h-8 rounded-full border px-3 text-xs font-medium transition-colors",
+                      raioKm === r
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground",
+                    )}
+                  >
+                    {r} km
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </FilterSection>
       )}
-    </AnimatePresence>
+    </Modal>
   )
 }

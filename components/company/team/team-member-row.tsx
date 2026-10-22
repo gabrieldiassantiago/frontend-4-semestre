@@ -1,36 +1,36 @@
 "use client"
 
 import { useState } from "react"
-import { KeyRound, LoaderCircle, Power, Trash2 } from "lucide-react"
+import { KeyRound, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { getErrorMessage } from "@/lib/errors"
 import { useUpdateTeamMember } from "@/lib/queries/use-team"
 import { TEAM_ROLE_LABEL, type TeamMember, type TeamMemberRole } from "@/lib/types/team.types"
 
-const ROLE_VARIANT = { PROPRIETARIO: "primary", ADMIN: "info", RECRUTADOR: "neutral" } as const
+const ROLE_VARIANT = { ADMIN: "info", RECRUTADOR: "neutral" } as const
 
 export function TeamMemberRow({
   member,
   editable,
-  canGrantAdmin,
+  canChangeRole,
   onResetPassword,
   onRemove,
 }: {
   member: TeamMember
   editable: boolean
-  canGrantAdmin: boolean
+  /** O backend só permite que o proprietário altere o papel de alguém. */
+  canChangeRole: boolean
   onResetPassword: () => void
   onRemove: () => void
 }) {
   const update = useUpdateTeamMember()
   const [error, setError] = useState<string | null>(null)
 
-  const save = async (dto: { role?: TeamMemberRole; active?: boolean }) => {
-    if (!member.memberId) return
+  const changeRole = async (role: TeamMemberRole) => {
     setError(null)
     try {
-      await update.mutateAsync({ memberId: member.memberId, dto })
+      await update.mutateAsync({ userId: member.userId, dto: { role } })
     } catch (err) {
       setError(getErrorMessage(err, "Não foi possível atualizar o acesso."))
     }
@@ -50,21 +50,17 @@ export function TeamMemberRow({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {!member.active && <Badge variant="warning" size="sm">Desativado</Badge>}
-
-        {editable ? (
+        {editable && canChangeRole ? (
           <label className="flex items-center gap-2">
             <span className="sr-only">Papel de {member.name}</span>
             <select
               value={member.role}
               disabled={update.isPending}
-              onChange={(event) => void save({ role: event.target.value as TeamMemberRole })}
+              onChange={(event) => void changeRole(event.target.value as TeamMemberRole)}
               className="field-input h-9 w-auto py-0 pr-8 text-sm"
             >
               <option value="RECRUTADOR">{TEAM_ROLE_LABEL.RECRUTADOR}</option>
-              {(canGrantAdmin || member.role === "ADMIN") && (
-                <option value="ADMIN">{TEAM_ROLE_LABEL.ADMIN}</option>
-              )}
+              <option value="ADMIN">{TEAM_ROLE_LABEL.ADMIN}</option>
             </select>
           </label>
         ) : (
@@ -73,19 +69,6 @@ export function TeamMemberRow({
 
         {editable && (
           <>
-            <button
-              type="button"
-              onClick={() => void save({ active: !member.active })}
-              disabled={update.isPending}
-              className="btn-ghost h-9 px-3 text-sm"
-            >
-              {update.isPending ? (
-                <LoaderCircle className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Power className="size-4" aria-hidden />
-              )}
-              {member.active ? "Desativar" : "Reativar"}
-            </button>
             <button type="button" onClick={onResetPassword} className="btn-ghost h-9 px-3 text-sm">
               <KeyRound className="size-4" aria-hidden />
               Nova senha

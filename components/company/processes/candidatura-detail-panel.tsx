@@ -81,11 +81,13 @@ export function CandidaturaDetailPanel({
   const [aba, setAba] = useState<Aba>("processo")
   const [perguntarAgendamento, setPerguntarAgendamento] = useState(false)
 
+  console.log(detalhe)
+
   useEffect(() => {
     setAba("processo")
     setPerguntarAgendamento(false)
   }, [candidaturaId])
-
+''
   if (loading) {
     return (
       <div className="p-5">

@@ -83,7 +83,7 @@ function AgendamentosCandidato({ agendamentos }: { agendamentos: CandidaturaAgen
   const pending = confirmar.isPending || recusar.isPending
 
   async function responder(agendamento: CandidaturaAgendamento, acao: "confirmar" | "recusar") {
-    setErro(null)
+    setErro(null) 
     try {
       if (acao === "confirmar") {
         await confirmar.mutateAsync({ candidaturaId: agendamento.candidaturaId, agendamentoId: agendamento.id })
@@ -356,6 +356,9 @@ export function ApplicationDetailScreen({ id }: { id: string }) {
       setAcaoErro(getErrorMessage(requestError, "Não foi possível cancelar a candidatura."))
     }
   }
+
+    console.log(detalhe)
+
 
   return (
     <main className="application-detail mx-auto w-full max-w-[1280px] px-4 py-7 sm:px-8 lg:py-10">

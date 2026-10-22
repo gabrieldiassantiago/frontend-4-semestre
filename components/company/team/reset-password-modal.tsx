@@ -25,13 +25,13 @@ export function ResetPasswordModal({ member, onClose }: { member: TeamMember | n
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!member?.memberId) return
+    if (!member) return
     if (password.length < 8) {
       setError("A senha deve ter pelo menos 8 caracteres.")
       return
     }
     try {
-      await update.mutateAsync({ memberId: member.memberId, dto: { password } })
+      await update.mutateAsync({ userId: member.userId, dto: { password } })
       close()
     } catch (err) {
       setError(getErrorMessage(err, "Não foi possível alterar a senha."))

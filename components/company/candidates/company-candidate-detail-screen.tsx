@@ -202,23 +202,29 @@ export function CompanyCandidateDetailScreen({ candidaturaId }: { candidaturaId:
 
       <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
         <section aria-label="Dados do candidato" className="min-w-0 rounded-2xl border border-border bg-card">
-          <div role="tablist" aria-label="Dados do candidato" className="flex gap-5 overflow-x-auto border-b border-border px-5 sm:px-6">
-            {tabs.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={tab === item.id}
-                onClick={() => setTab(item.id)}
-                className={cn(
-                  "-mb-px shrink-0 border-b-2 py-3.5 text-sm font-semibold transition-colors",
-                  tab === item.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+       <div
+  role="tablist"
+  aria-label="Gestão da candidatura"
+  className="flex gap-4 overflow-x-auto overflow-y-hidden border-b border-border px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+>
+  {tabs.map((item) => (
+    <button
+      key={item.id}
+      type="button"
+      role="tab"
+      aria-selected={tab === item.id}
+      onClick={() => setTab(item.id)}
+      className={cn(
+        "-mb-px shrink-0 whitespace-nowrap border-b-2 py-3.5 text-sm font-semibold transition-colors",
+        tab === item.id
+          ? "border-primary text-foreground"
+          : "border-transparent text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {item.label}
+    </button>
+  ))}
+</div>
 
           <div className="p-5 sm:p-6">
             {tab === "perfil" &&
@@ -265,15 +271,24 @@ export function CompanyCandidateDetailScreen({ candidaturaId }: { candidaturaId:
           </div>
         </section>
 
-        <section aria-labelledby="gestao-title" className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card xl:sticky xl:top-24">
-          <div className="border-b border-border-subtle px-5 py-4">
-            <h2 id="gestao-title" className="text-base font-semibold tracking-tight text-foreground">
-              Avaliação e andamento
-            </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">Mova o candidato, agende conversas e registre feedbacks.</p>
-          </div>
-          <CandidaturaDetailPanel candidaturaId={candidaturaId} showDocuments={false} showHeader={false} />
-        </section>
+       <section
+  aria-labelledby="gestao-title"
+  className="min-w-0 rounded-2xl border border-border bg-card"
+>
+  <div className="border-b border-border-subtle px-5 py-4">
+    <h2 id="gestao-title" className="text-base font-semibold tracking-tight text-foreground">
+      Avaliação e andamento
+    </h2>
+    <p className="mt-0.5 text-xs text-muted-foreground">
+      Mova o candidato, agende conversas e registre feedbacks.
+    </p>
+  </div>
+
+  {/* Anula max-height/overflow que o painel usa quando está dentro da gaveta */}
+  <div className="min-w-0 [&>*]:h-auto [&>*]:max-h-none [&>*]:overflow-visible">
+    <CandidaturaDetailPanel candidaturaId={candidaturaId} showDocuments={false} showHeader={false} />
+  </div>
+</section>
       </div>
     </PageShell>
   )

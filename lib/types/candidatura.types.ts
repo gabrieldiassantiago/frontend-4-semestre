@@ -137,6 +137,7 @@ export interface Candidatura {
   id: string
   vagaId: string
   vagaTitulo: string
+  companyProfileId?: string
   nomeEmpresa?: string
   logoUrlEmpresa?: string
   candidatoNome?: string

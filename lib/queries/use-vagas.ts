@@ -15,7 +15,7 @@ import { unwrap } from "@/lib/actions/result"
 import { getErrorMessage } from "@/lib/errors"
 import { toastSuccess } from "@/lib/toast"
 import { queryKeys } from "./keys"
-import { useCompanyProfile } from "./use-company-profile"
+import { useCompanyIdentity } from "./use-company-profile"
 import type { CreateVagaDto, UpdateVagaDto, VagaFilters, VagaProximasParams } from "@/lib/types/vaga.types"
 
 function useDebouncedValue<T>(value: T, delayMs: number) {
@@ -31,7 +31,6 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
   return debounced
 }
 
-/** Lista pública de vagas com filtros; a busca é debounced para não disparar a cada tecla. */
 export function useVagas(filters?: VagaFilters, options?: { debounceMs?: number }) {
   const filtersKey = JSON.stringify(filters ?? {})
   const debouncedKey = useDebouncedValue(filtersKey, options?.debounceMs ?? 400)
@@ -70,8 +69,12 @@ export function useVaga(id: string | null) {
 
 /** Vagas da empresa logada — depende do perfil para descobrir o `companyProfileId`. */
 export function useCompanyVagas() {
-  const { profile, isLoading: profileLoading, error: profileError } = useCompanyProfile()
-  const companyProfileId = profile?.id ?? null
+  const { companyProfileId, unresolved, isLoading: profileLoading, error: identityError } = useCompanyIdentity()
+  const profileError =
+    identityError ??
+    (unresolved
+      ? "Sua conta de membro não tem perfil próprio e a API ainda não informa a qual empresa ela pertence. As vagas aparecem assim que a empresa tiver a primeira candidatura (ou após ajustar o GET /company-profile/me no backend)."
+      : null)
 
   const query = useQuery({
     queryKey: queryKeys.vagas.byEmpresa(companyProfileId ?? ""),

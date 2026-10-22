@@ -1,7 +1,7 @@
 "use server"
 
 import { cookies } from "next/headers"
-import { apiFetch, AUTH_COOKIE, getServerToken, setAuthCookies } from "@/lib/server/api"
+import { apiFetch, AUTH_COOKIE, getServerToken, REFRESH_COOKIE, setAuthCookies } from "@/lib/server/api"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
 import type {
   UserRole,
@@ -32,7 +32,7 @@ export async function loginAction(payload: LoginPayload): Promise<ActionResult<L
   const result = await apiFetch<AuthTokenResponse>("/auth", { method: "POST", body: payload })
   if (!result.ok) return result
 
-  const jwt = result.data?.tokenJwt ?? result.data?.tokenJwt ?? result.data?.token
+  const jwt = result.data?.tokenJwt ?? result.data?.tokenJwt
   const refreshToken = result.data?.refreshToken
   const expiresIn = result.data?.expiresInJwt ?? result.data?.expiresInJwt
 
@@ -45,6 +45,8 @@ export async function loginAction(payload: LoginPayload): Promise<ActionResult<L
 export async function logoutAction(): Promise<ActionResult<void>> {
   const store = await cookies()
   store.delete(AUTH_COOKIE)
+  store.delete(REFRESH_COOKIE)
+
   return ok(undefined)
 }
 

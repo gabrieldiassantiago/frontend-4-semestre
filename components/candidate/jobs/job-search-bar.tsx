@@ -49,6 +49,8 @@ export const EMPTY_SEARCH: JobSearchState = {
   estado: "",
 }
 
+const SEARCH_DEBOUNCE_MS = 400
+
 const POPULAR_SEARCH_SUGGESTIONS = [
   "Vendas",
   "Enfermagem",
@@ -510,31 +512,48 @@ export function JobSearchBar({
   onProximitySearch,
   isProximityActive = false,
   isLocating = false,
+  isSearching = false,
 }: {
   value: JobSearchState
+  /** Chamado automaticamente: texto com debounce, localização/área na hora. */
   onSubmit: (next: JobSearchState) => void
   onOpenFilters: () => void
   activeFilterCount: number
   onProximitySearch?: () => void
   isProximityActive?: boolean
   isLocating?: boolean
+  isSearching?: boolean
 }) {
-  const [draft, setDraft] = useState(value)
+  const [query, setQuery] = useState(value.query)
   const queryId = useId()
+  const valueRef = useRef(value)
+  const onSubmitRef = useRef(onSubmit)
 
   useEffect(() => {
-    setDraft(value)
-  }, [value])
+    valueRef.current = value
+    onSubmitRef.current = onSubmit
+  })
 
-  const update = <K extends keyof JobSearchState>(
-    key: K,
-    next: JobSearchState[K],
-  ) => {
-    setDraft((current) => ({
-      ...current,
-      [key]: next,
-    }))
+  // Sincroniza quando o termo muda por fora (busca global, limpar filtros, etc.)
+  useEffect(() => {
+    setQuery(value.query)
+  }, [value.query])
+
+  // Busca automática enquanto digita, sem precisar clicar em "Buscar".
+  useEffect(() => {
+    if (query.trim() === valueRef.current.query.trim()) return
+    const timer = window.setTimeout(() => {
+      onSubmitRef.current({ ...valueRef.current, query })
+    }, SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(timer)
+  }, [query])
+
+  const commit = (partial: Partial<JobSearchState>) => {
+    onSubmit({ ...value, query, ...partial })
   }
+
+  const isPendingQuery = query.trim() !== value.query.trim()
+  const showSpinner = isPendingQuery || isSearching
 
   return (
     <motion.section
@@ -547,7 +566,7 @@ export function JobSearchBar({
       <form
         onSubmit={(event) => {
           event.preventDefault()
-          onSubmit(draft)
+          if (isPendingQuery) commit({})
         }}
         className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-1"
       >
@@ -557,101 +576,119 @@ export function JobSearchBar({
             Cargo, empresa ou palavra-chave
           </label>
 
-          <Search
-            className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
+          {showSpinner ? (
+            <Loader2
+              className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 animate-spin text-primary"
+              aria-hidden
+            />
+          ) : (
+            <Search
+              className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+          )}
 
           <input
             id={queryId}
-            type="search"
-            value={draft.query}
-            onChange={(event) => update("query", event.target.value)}
+            type="text"
+            inputMode="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && query) {
+                event.preventDefault()
+                setQuery("")
+              }
+            }}
             placeholder="Cargo, empresa ou palavra-chave..."
-            className="h-12 w-full rounded-2xl bg-surface pl-11 pr-4 text-sm text-foreground outline-none transition-none placeholder:text-subtle-foreground focus:bg-surface focus:ring-0 focus:outline-none lg:bg-transparent lg:focus:bg-transparent"
+            className="h-12 w-full rounded-2xl bg-surface pl-11 pr-10 text-sm text-foreground outline-none transition-none placeholder:text-subtle-foreground focus:bg-surface focus:ring-0 focus:outline-none lg:bg-transparent lg:focus:bg-transparent"
           />
+
+          {query && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("")
+                commit({ query: "" })
+              }}
+              aria-label="Limpar busca"
+              className="absolute right-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <X className="size-4" aria-hidden />
+            </button>
+          )}
+          <span className="sr-only" aria-live="polite">
+            {isSearching ? "Atualizando resultados" : ""}
+          </span>
         </div>
 
         <span className="hidden h-8 w-px bg-border lg:block" aria-hidden />
 
         {/* Seletor de Localização unificado Cidade + Estado */}
         <UnifiedLocationSelect
-          cidade={draft.cidade}
-          estado={draft.estado}
-          onChange={(cidade, estado) => {
-            setDraft((curr) => ({
-              ...curr,
-              cidade,
-              estado,
-            }))
-          }}
+          cidade={value.cidade}
+          estado={value.estado}
+          onChange={(cidade, estado) => commit({ cidade, estado })}
         />
 
         <span className="hidden h-8 w-px bg-border lg:block" aria-hidden />
 
         {/* Seletor de Categoria/Área de atuação */}
         <CategorySelect
-          categoria={draft.categoria}
-          outro={draft.outro}
-          onChange={(cat, outroVal) => {
-            setDraft((curr) => ({
-              ...curr,
-              categoria: cat,
-              outro: outroVal ?? "",
-            }))
-          }}
+          categoria={value.categoria}
+          outro={value.outro}
+          onChange={(cat, outroVal) => commit({ categoria: cat, outro: outroVal ?? "" })}
         />
 
-        {/* Botão Principal de Busca */}
-        <motion.button
-          type="submit"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(124,58,237,0.3)] transition-all hover:bg-primary-hover lg:ml-1"
-        >
-          <Search className="size-4" aria-hidden />
-          <span>Buscar</span>
+        <span className="hidden h-8 w-px bg-border lg:block" aria-hidden />
 
-        </motion.button>
+        <div className={cn("grid gap-2 lg:flex lg:items-center lg:gap-1.5 lg:pr-1", onProximitySearch ? "grid-cols-2" : "grid-cols-1")}>
+          {onProximitySearch && (
+            <motion.button
+              type="button"
+              onClick={onProximitySearch}
+              disabled={isLocating}
+              aria-pressed={isProximityActive}
+              whileTap={{ scale: 0.97 }}
+              title="Buscar vagas mais próximas de você usando sua localização"
+              className={cn(
+                "inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3.5 text-sm font-semibold transition-colors disabled:opacity-70",
+                isProximityActive
+                  ? "border-primary/40 bg-primary-subtle text-primary"
+                  : "border-border bg-card text-foreground hover:bg-muted",
+              )}
+            >
+              {isLocating ? (
+                <Loader2 className="size-4 animate-spin text-primary" aria-hidden />
+              ) : (
+                <Navigation className={cn("size-4", isProximityActive ? "text-primary" : "text-muted-foreground")} aria-hidden />
+              )}
+              <span>{isLocating ? "Localizando..." : "Perto de mim"}</span>
+            </motion.button>
+          )}
 
-        {/* Botão de Busca por Proximidade */}
-        {onProximitySearch && (
           <motion.button
             type="button"
-            onClick={onProximitySearch}
-            disabled={isLocating}
-            whileTap={{ scale: 0.96 }}
-            title="Buscar vagas mais próximas de você usando sua localização"
+            onClick={onOpenFilters}
+            whileTap={{ scale: 0.97 }}
             className={cn(
-              "inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-2xl px-3.5 text-xs font-bold transition-all lg:ml-1 lg:h-10 lg:rounded-full",
-              isProximityActive
-                ? "border border-primary/30 bg-primary-subtle text-primary shadow-xs"
-                : "border border-border bg-surface text-foreground hover:bg-muted"
+              "inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors",
+              activeFilterCount > 0
+                ? "border-primary/40 bg-primary-subtle text-primary"
+                : "border-border bg-card text-foreground hover:bg-muted",
             )}
           >
-            {isLocating ? (
-              <Loader2 className="size-3.5 animate-spin text-primary" />
-            ) : (
-              <Navigation className={cn("size-3.5", isProximityActive ? "text-primary" : "text-subtle-foreground")} />
+            <SlidersHorizontal className="size-4" aria-hidden />
+            <span>Filtros</span>
+            {activeFilterCount > 0 && (
+              <span className="grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                {activeFilterCount}
+              </span>
             )}
-            <span>{isLocating ? "Localizando..." : "Perto de mim"}</span>
           </motion.button>
-        )}
-
-        <motion.button
-          type="button"
-          onClick={onOpenFilters}
-          whileTap={{ scale: 0.96 }}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted lg:ml-1 lg:h-10 lg:rounded-full"
-        >
-          <SlidersHorizontal className="size-4" aria-hidden />
-          <span>Filtros</span>
-          {activeFilterCount > 0 && (
-            <span className="grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-              {activeFilterCount}
-            </span>
-          )}
-        </motion.button>
+        </div>
       </form>
     </motion.section>
   )

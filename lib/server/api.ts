@@ -139,6 +139,9 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   if (!response.ok) {
     const record = (data ?? {}) as { message?: unknown; error?: unknown }
     const message = record.message ?? record.error
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(`[api] ${init.method ?? "GET"} ${path} -> ${response.status}`, message ?? "")
+    }
     return fail(
       typeof message === "string" && message ? message : "Não foi possível concluir a solicitação.",
       response.status,

@@ -16,14 +16,15 @@ import { Badge } from "@/components/ui/badge"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { cn } from "@/lib/utils"
 import { SettingsField, SettingsPanel, SettingsRow, SettingsSwitch } from "./settings-primitives"
+import { SettingsNav, type SettingsNavSection } from "./settings-nav"
 
 const SECTIONS = [
   { id: "conta", label: "Conta", icon: UserRound },
   { id: "notificacoes", label: "Notificações", icon: Bell },
   { id: "privacidade", label: "Privacidade", icon: Eye },
   { id: "seguranca", label: "Segurança", icon: ShieldCheck },
-  { id: "zona-de-risco", label: "Zona de risco", icon: TriangleAlert },
-] as const
+  { id: "zona-de-risco", label: "Zona de risco", icon: TriangleAlert, danger: true },
+] as const satisfies readonly SettingsNavSection[]
 
 const NOTIFICATIONS = [
   {
@@ -84,39 +85,10 @@ export function SettingsScreen() {
         description="Gerencie seus dados de acesso, preferências de notificação e quem pode ver o seu perfil."
       />
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-[220px_minmax(0,1fr)] xl:gap-8">
-        <nav aria-label="Seções das configurações" className="xl:sticky xl:top-24 xl:self-start">
-          <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 no-scrollbar xl:mx-0 xl:flex-col xl:gap-0.5 xl:overflow-visible xl:rounded-card xl:border xl:border-border xl:bg-card xl:p-2">
-            {SECTIONS.map((section, index) => {
-              const current = index === 0
-              const danger = section.id === "zona-de-risco"
-              return (
-                <li
-                  key={section.id}
-                  className={cn("shrink-0", danger && "xl:mt-1.5 xl:border-t xl:border-border-subtle xl:pt-1.5")}
-                >
-                  <a
-                    href={`#${section.id}`}
-                    aria-current={current ? "location" : undefined}
-                    className={cn(
-                      "flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-full border px-4 text-sm font-semibold transition-colors xl:w-full xl:rounded-lg xl:border-transparent xl:px-3",
-                      current
-                        ? "border-primary bg-primary-subtle text-primary-subtle-foreground xl:border-transparent"
-                        : danger
-                          ? "border-border bg-card text-danger-foreground hover:bg-danger-subtle xl:bg-transparent"
-                          : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground xl:bg-transparent",
-                    )}
-                  >
-                    <section.icon aria-hidden className="size-[18px] shrink-0" />
-                    {section.label}
-                  </a>
-                </li>
-              )
-            })}
-          </ul>
-        </nav>
+      <div className="mt-6 grid gap-4 sm:mt-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8">
+        <SettingsNav sections={SECTIONS} />
 
-        <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-4 sm:gap-6">
           <AccountPanel />
           <NotificationsPanel />
           <PrivacyPanel />
@@ -147,12 +119,16 @@ function AccountPanel() {
       }
     >
       <div className="flex flex-col gap-4 rounded-xl border border-border-subtle bg-muted p-4 sm:flex-row sm:items-center">
-        <EntityAvatar name="Carlos Silva" size="lg" className="rounded-full" />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground">Foto de perfil</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">JPG ou PNG, até 5 MB. Aparece no seu perfil público.</p>
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <EntityAvatar name="Carlos Silva" size="lg" className="rounded-full" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">Foto de perfil</p>
+            <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground text-pretty">
+              JPG ou PNG, até 5 MB. Aparece no seu perfil público.
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
           <button type="button" className="btn-secondary">
             Alterar foto
           </button>
@@ -162,7 +138,7 @@ function AccountPanel() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-5 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 sm:gap-5">
         <SettingsField id="settings-name" label="Nome completo">
           <input id="settings-name" className="field-input" defaultValue="Carlos Silva" autoComplete="name" />
         </SettingsField>
@@ -212,13 +188,13 @@ function NotificationsPanel() {
               <p className="text-sm font-semibold text-foreground">{item.title}</p>
               <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground text-pretty">{item.description}</p>
             </div>
-            <div className="flex shrink-0 items-center gap-6">
-              <span className="flex items-center gap-2">
-                <span className="text-xs font-medium text-muted-foreground sm:hidden">E-mail</span>
+            <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-6">
+              <span className="flex items-center justify-between gap-3 rounded-lg bg-muted px-3 py-2 sm:bg-transparent sm:p-0">
+                <span className="text-sm font-medium text-muted-foreground sm:hidden">E-mail</span>
                 <SettingsSwitch checked={item.email} label={`${item.title} por e-mail`} />
               </span>
-              <span className="flex items-center gap-2">
-                <span className="text-xs font-medium text-muted-foreground sm:hidden">Push</span>
+              <span className="flex items-center justify-between gap-3 rounded-lg bg-muted px-3 py-2 sm:bg-transparent sm:p-0">
+                <span className="text-sm font-medium text-muted-foreground sm:hidden">Push</span>
                 <SettingsSwitch checked={item.push} label={`${item.title} por push`} />
               </span>
             </div>
@@ -301,6 +277,7 @@ function SecurityPanel() {
       <SettingsRow
         title="Senha"
         description="Última alteração há 3 meses."
+        layout="stack"
         control={
           <button type="button" className="btn-secondary">
             <KeyRound aria-hidden className="size-4" />
@@ -322,11 +299,11 @@ function SecurityPanel() {
       />
 
       <div className="mt-6 border-t border-border-subtle pt-5">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <h3 className="text-sm font-semibold text-strong-foreground">Sessões ativas</h3>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-danger-foreground transition-colors hover:text-danger"
+            className="inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-danger-foreground transition-colors hover:text-danger"
           >
             <LogOut aria-hidden className="size-4" />
             Encerrar outras
@@ -336,7 +313,7 @@ function SecurityPanel() {
           {SESSIONS.map((session) => (
             <li
               key={session.device}
-              className="flex items-center gap-3 rounded-xl border border-border-subtle bg-muted px-4 py-3"
+              className="flex items-center gap-3 rounded-xl border border-border-subtle bg-muted px-3 py-3 sm:px-4"
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-card text-strong-foreground shadow-card">
                 <session.icon aria-hidden className="size-[18px]" />
@@ -379,6 +356,7 @@ function DangerPanel() {
       <SettingsRow
         title="Exportar meus dados"
         description="Receba por e-mail uma cópia do seu perfil e histórico de candidaturas."
+        layout="stack"
         control={
           <button type="button" className="btn-secondary">
             Solicitar
@@ -389,6 +367,7 @@ function DangerPanel() {
       <SettingsRow
         title="Excluir conta"
         description="Remove seu perfil, currículos e candidaturas. Esta ação não pode ser desfeita."
+        layout="stack"
         control={
           <button
             type="button"

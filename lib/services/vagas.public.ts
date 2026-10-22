@@ -6,8 +6,7 @@ import { API_BASE_URL } from "@/lib/http/config"
 export async function getVagaPublic(id: string): Promise<Vaga | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/vagas/${encodeURIComponent(id)}`, {
-      headers: { Accept: "application/json" },
-      next: { revalidate: 60 },
+      headers: { Accept: "application/json" }
     })
 
     if (!res.ok) return null

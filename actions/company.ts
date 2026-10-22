@@ -4,8 +4,9 @@ import { apiFetch } from "@/lib/server/api"
 import { fail, type ActionResult } from "@/lib/actions/result"
 import type { CompanyProfile, UpdateCompanyProfileDto } from "@/lib/types/company.types"
 
-export async function getCompanyProfileMeAction(): Promise<ActionResult<CompanyProfile>> {
-  return apiFetch<CompanyProfile>("/company-profile/me")
+
+export async function getCompanyProfileMeAction(): Promise<ActionResult<CompanyProfile | null>> {
+  return apiFetch<CompanyProfile | null>("/company-profile/me", { nullOn: [404] })
 }
 
 export async function updateCompanyProfileMeAction(dto: UpdateCompanyProfileDto): Promise<ActionResult<CompanyProfile>> {

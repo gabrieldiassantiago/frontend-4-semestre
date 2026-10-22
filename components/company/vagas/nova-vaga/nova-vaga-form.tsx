@@ -7,7 +7,7 @@ import { AlertCircle, CheckCircle2, ExternalLink, X } from "lucide-react"
 import { ROUTES } from "@/lib/config/routes"
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
 import { useCreateVaga, useUpdateVaga } from "@/lib/queries/use-vagas"
-import { useCompanyProfile } from "@/lib/queries/use-company-profile"
+import { useCompanyIdentity } from "@/lib/queries/use-company-profile"
 import { ShareVagaButton } from "@/components/shared/vaga/share-vaga-button"
 import type { CreateVagaDto, UpdateVagaDto, Vaga } from "@/lib/types/vaga.types"
 import { cn } from "@/lib/utils"
@@ -95,11 +95,12 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
   const editing = mode === "edit"
   const steps = editing ? EDIT_STEPS : FLOW_STEPS
   const reduceMotion = useReducedMotion()
-  const { profile, error: profileError, isLoading: loadingCompany } = useCompanyProfile()
+  const company = useCompanyIdentity()
+  const { profile, error: profileError, isLoading: loadingCompany } = company
   const createVaga = useCreateVaga()
   const updateVaga = useUpdateVaga()
-  const companyProfileId = profile?.id ?? null
-  const companyName = profile?.companyName || vaga?.nomeEmpresa || "Sua empresa"
+  const companyProfileId = company.companyProfileId
+  const companyName = company.companyName || vaga?.nomeEmpresa || "Sua empresa"
 
   const initialDraft = useMemo(() => (vaga ? draftFromVaga(vaga) : INITIAL_DRAFT), [vaga])
   const [draft, setDraft] = useState<VagaDraft>(initialDraft)
@@ -186,7 +187,11 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
 
   async function handleSubmit() {
     if (!editing && !companyProfileId) {
-      setFormError("Identificador da empresa não encontrado. Faça login novamente.")
+      setFormError(
+        company.isOwner
+          ? "Identificador da empresa não encontrado. Faça login novamente."
+          : "Ainda não foi possível identificar a empresa vinculada à sua conta. Peça ao proprietário para publicar a primeira vaga.",
+      )
       return
     }
 
@@ -407,7 +412,7 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
                         <LivePreview
                           draft={draft}
                           companyName={companyName}
-                          logoUrl={profile?.logoUrl}
+                          logoUrl={company.logoUrl ?? undefined}
                           className="mb-6 xl:hidden"
                         />
                       }
@@ -420,7 +425,7 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
 
           <aside className="hidden xl:block">
             <div className="sticky top-36 py-10">
-              <LivePreview draft={draft} companyName={companyName} logoUrl={profile?.logoUrl} />
+              <LivePreview draft={draft} companyName={companyName} logoUrl={company.logoUrl ?? undefined} />
             </div>
           </aside>
         </div>

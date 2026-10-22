@@ -3,6 +3,8 @@
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
 
 import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
+import { ROUTES } from "@/lib/config/routes"
 import { Globe2, LoaderCircle, MapPin, Upload } from "lucide-react"
 import { useCompanyProfile, useUpdateCompanyProfile, useUploadCompanyLogo, useDeleteCompanyLogo } from "@/lib/queries/use-company-profile"
 import type { CompanyProfile, UpdateCompanyProfileDto } from "@/lib/types/company.types"
@@ -77,6 +79,22 @@ export function CompanyProfileScreen() {
   }
 
   if (loading) return <RouteSkeleton variant="profile" />
+
+  if (!profile && !loadError) {
+    return (
+      <main className="mx-auto max-w-lg px-4 py-20 text-center">
+        <div className="rounded-2xl border border-border bg-background p-8">
+          <h1 className="text-lg font-bold">Perfil gerenciado pelo proprietário</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Você acessa a empresa como membro da equipe. Apenas o proprietário da conta pode editar os dados e o logotipo da empresa.
+          </p>
+          <Link href={ROUTES.company.dashboard} className="btn-primary mt-6">
+            Voltar ao painel
+          </Link>
+        </div>
+      </main>
+    )
+  }
 
   if (!profile) {
     return (

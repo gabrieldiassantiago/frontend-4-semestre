@@ -45,38 +45,33 @@ const CARTA_MAX = 2000
 /** Trilha compacta dos 3 passos, exibida no cabeçalho do diálogo. */
 function StepTrack({ current }: { current: number }) {
   return (
-    <ol className="flex items-center gap-1.5">
-      {STEPS.map((step, index) => {
+    <ol aria-label={`Etapa ${current} de ${STEPS.length}`} className="grid grid-cols-3 gap-2">
+      {STEPS.map((step) => {
         const active = step.id === current
         const done = step.id < current
+        const StepIcon = done ? Check : step.icon
 
         return (
-          <li key={step.id} className="flex items-center gap-1.5">
+          <li key={step.id} aria-current={active ? "step" : undefined} className="flex min-w-0 flex-col gap-2">
+            <span className="relative h-1 overflow-hidden rounded-full bg-border">
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-300 ease-out",
+                  done || active ? "w-full" : "w-0",
+                )}
+              />
+            </span>
             <span
-              aria-current={active ? "step" : undefined}
               className={cn(
-                "flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[11px] font-bold transition-colors",
-                active && "bg-primary-subtle text-primary-subtle-foreground",
-                done && "text-success-foreground",
-                !active && !done && "text-subtle-foreground",
+                "flex items-center gap-1.5 truncate text-xs font-medium transition-colors",
+                active ? "text-foreground" : done ? "text-primary" : "text-subtle-foreground",
               )}
             >
-              <span
-                className={cn(
-                  "grid size-5 shrink-0 place-items-center rounded-full text-[10px]",
-                  active && "bg-primary text-primary-foreground",
-                  done && "bg-success text-strong-contrast",
-                  !active && !done && "border border-border-strong",
-                )}
-              >
-                {done ? <Check className="size-3" aria-hidden /> : step.id}
-              </span>
-              <span className="hidden sm:inline">{step.label}</span>
+              <StepIcon className="size-3.5 shrink-0" aria-hidden />
+              <span className="truncate">{step.label}</span>
+              {done && <span className="sr-only">(concluída)</span>}
             </span>
-
-            {index < STEPS.length - 1 && (
-              <span aria-hidden className={cn("h-px w-3", done ? "bg-success" : "bg-border")} />
-            )}
           </li>
         )
       })}
@@ -104,9 +99,8 @@ export function ApplyModal({
   const uploadResume = useUploadCandidateResume({ silent: true })
   const criarCandidatura = useCriarCandidatura()
   const reduceMotion = useReducedMotion()
-  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const stepContent = useRef<HTMLDivElement>(null)
-  const [transitioning, setTransitioning] = useState(false)
+
 
   const [step, setStep] = useState(1)
   const [carta, setCarta] = useState("")
@@ -119,9 +113,6 @@ export function ApplyModal({
   const [criada, setCriada] = useState<Candidatura | null>(null)
 
   useEffect(() => {
-    if (transitionTimer.current) clearTimeout(transitionTimer.current)
-    transitionTimer.current = null
-    setTransitioning(false)
     if (!open) return
     setStep(1)
     setCarta("")
@@ -132,18 +123,11 @@ export function ApplyModal({
     setError(null)
     setCriada(null)
     setSubmitting(false)
-    return () => { if (transitionTimer.current) clearTimeout(transitionTimer.current) }
   }, [open, vaga?.id])
 
   function changeStep(next: number) {
-    if (transitionTimer.current || submitting || loadingProfile || checkingResume) return
-    if (reduceMotion) { setStep(next); return }
-    setTransitioning(true)
-    transitionTimer.current = setTimeout(() => {
-      setStep(next)
-      setTransitioning(false)
-      transitionTimer.current = null
-    }, 220)
+    if (submitting || loadingProfile || checkingResume) return
+    setStep(next)
   }
 
   const completion = useMemo(() => getProfileCompletion(profile), [profile])
@@ -219,18 +203,17 @@ export function ApplyModal({
         }
       >
         <div className="flex flex-col items-center py-2 text-center">
-          <div className="-my-2 flex size-64 items-center justify-center">
+          <div className="flex size-32 items-center justify-center">
             <Lottie
               src={sucessoVagaAnimation}
-              loop
+              loop={false}
               autoplay
-
               aria-label="Candidatura enviada com sucesso"
-              className="size-20"
+              className="size-64"
             />
           </div>
 
-          <h3 className="mt-2 text-lg font-bold tracking-tight text-foreground text-balance">
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground text-balance">
             Candidatura enviada para {company}
           </h3>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground text-pretty">
@@ -245,23 +228,24 @@ export function ApplyModal({
   const footer =
     step === 1 ? (
       <>
-        <button type="button" onClick={onClose} className="btn-secondary">
+        <button type="button" onClick={onClose} className="btn-ghost">
           Cancelar
         </button>
-        <button type="button" onClick={avancar} disabled={transitioning || loadingProfile} className="btn-primary min-w-28">
-          {transitioning ? "Continuando…" : "Continuar"}
-          {transitioning ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <ArrowRight className="size-4" aria-hidden />}
+        <button type="button" onClick={avancar} disabled={loadingProfile} className="btn-primary min-w-32">
+          Continuar
+          <ArrowRight className="size-4" aria-hidden />
         </button>
       </>
     ) : step === 2 ? (
       <>
-        <button type="button" onClick={() => changeStep(1)} disabled={transitioning || checkingResume} className="btn-secondary">
+        <button type="button" onClick={() => changeStep(1)} disabled={checkingResume} className="btn-ghost">
           <ArrowLeft className="size-4" aria-hidden />
           Voltar
         </button>
-        <button type="button" onClick={avancar} disabled={transitioning || checkingResume} className="btn-primary">
-          {transitioning ? "Preparando…" : "Revisar"}
-          {transitioning ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <ArrowRight className="size-4" aria-hidden />}
+        <button type="button" onClick={avancar} disabled={checkingResume} className="btn-primary min-w-32">
+          {checkingResume ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null}
+          {checkingResume ? "Verificando arquivo..." : "Revisar candidatura"}
+          {!checkingResume && <ArrowRight className="size-4" aria-hidden />}
         </button>
       </>
     ) : (
@@ -269,8 +253,8 @@ export function ApplyModal({
         <button
           type="button"
           onClick={() => changeStep(2)}
-          disabled={submitting || transitioning}
-          className="btn-secondary"
+          disabled={submitting}
+          className="btn-ghost"
         >
           <ArrowLeft className="size-4" aria-hidden />
           Voltar
@@ -290,12 +274,12 @@ export function ApplyModal({
       size="md"
       footer={footer}
       header={
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <EntityAvatar name={company} size="sm" />
+            <EntityAvatar name={company} size="md" />
             <div className="min-w-0">
-              <p className="truncate text-xs font-semibold text-muted-foreground">{company}</p>
-              <h2 className="truncate text-sm font-bold tracking-tight text-foreground">
+              <p className="truncate text-xs font-medium text-muted-foreground">Candidatura · {company}</p>
+              <h2 className="truncate text-base font-semibold tracking-tight text-foreground">
                 {vaga.titulo}
               </h2>
             </div>
@@ -304,17 +288,12 @@ export function ApplyModal({
         </div>
       }
     >
-      <div className="relative min-h-[320px]" aria-busy={transitioning}>
-        <AnimatePresence>
-          {transitioning && <motion.div key="step-loading" role="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-card/80 backdrop-blur-[2px]">
-            <span className="flex items-center gap-3 rounded-full border border-border bg-card px-5 py-3 text-sm text-muted-foreground shadow-sm"><LoaderCircle className="size-5 animate-spin text-primary" aria-hidden />Preparando próxima etapa…</span>
-          </motion.div>}
-        </AnimatePresence>
+      <div className="relative min-h-[320px]">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={step} ref={stepContent} tabIndex={-1} className="outline-none"
-            initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }} animate={{ opacity: transitioning ? 0.4 : 1, y: 0 }} exit={{ opacity: 0, y: reduceMotion ? 0 : -6 }}
-            transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
-            onAnimationComplete={() => { if (!transitioning) stepContent.current?.focus({ preventScroll: true }) }}>
+            initial={{ opacity: 0, x: reduceMotion ? 0 : 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: reduceMotion ? 0 : -12 }}
+            transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+            onAnimationComplete={() => stepContent.current?.focus({ preventScroll: true })}>
 
             {step === 1 && (
               <div className="flex flex-col gap-5">

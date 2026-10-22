@@ -13,7 +13,7 @@ const AUTH_COOKIE = "token"
 const REFRESH_COOKIE = "refresh_token"
 const DEFAULT_SESSION_SECONDS = 86400
 const REFRESH_SESSION_SECONDS = 7 * 24 * 60 * 60
-const SERVER_API_URL = API_BASE_URL || process.env.API_URL || "http://localhost:8000"
+const SERVER_API_URL = API_BASE_URL || process.env.API_URL || "selectaapi.azurewebsites.net"
 
 const authRoutes = ["/auth", "/auth/candidato", "/auth/recrutador", "/auth/empresa"]
 const candidateAuthRoutes = ["/auth/candidato"]
@@ -74,8 +74,7 @@ export async function proxy(request: NextRequest) {
   const isProtectedRoute = isCandidateRoute || isCompanyRoute
   const isAuthRoute = authRoutes.includes(pathname)
 
-  // Função auxiliar para anexar os novos cookies (ou limpar os vencidos) em qualquer resposta
-  const applyCookies = (res: NextResponse) => {
+-  const applyCookies = (res: NextResponse) => {
     const newJwt = refreshedTokens?.tokenJwt ?? refreshedTokens?.token
     if (newJwt) {
       const isProd = process.env.NODE_ENV === "production"
