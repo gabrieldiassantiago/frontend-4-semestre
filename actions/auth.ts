@@ -3,6 +3,7 @@
 import { cookies } from "next/headers"
 import { apiFetch, AUTH_COOKIE, getServerToken, REFRESH_COOKIE, setAuthCookies } from "@/lib/server/api"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
+import { isSessionExpired, readSessionClaims } from "@/lib/session"
 import type {
   UserRole,
   AuthTokenResponse,
@@ -40,6 +41,19 @@ export async function loginAction(payload: LoginPayload): Promise<ActionResult<L
   await setAuthCookies(jwt, refreshToken, expiresIn)
 
   return ok({ role: result.data.role, expiresIn })
+}
+
+export async function completeOAuthLoginAction(
+  tokenJwt: string,
+  refreshToken: string,
+  expiresIn?: number,
+): Promise<ActionResult<void>> {
+  const claims = readSessionClaims(tokenJwt)
+  if (!claims || isSessionExpired(claims) || claims.role !== "CANDIDATE") {
+    return fail("Token de login inválido.", 401)
+  }
+  await setAuthCookies(tokenJwt, refreshToken, expiresIn)
+  return ok(undefined)
 }
 
 export async function logoutAction(): Promise<ActionResult<void>> {
