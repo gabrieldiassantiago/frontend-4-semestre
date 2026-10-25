@@ -12,10 +12,8 @@ import { Field } from "@/components/ui/form-field"
 import { formatCurrency } from "@/lib/format"
 import {
   CATEGORIA_LABELS,
-  NIVEL_LABELS,
   type VagaCategoria,
   type VagaModalidade,
-  type NivelExperiencia,
 } from "@/lib/types/vaga.types"
 import { StepCard, StepHeader } from "./wizard"
 import { AddressAutocomplete } from "../address-autocomplete"
@@ -35,7 +33,6 @@ export function StepLocalSalario({
   salario,
   setSalario,
   categoria,
-  nivelExperiencia,
   errors,
 }: {
   cidade: string
@@ -50,7 +47,6 @@ export function StepLocalSalario({
   salario: number
   setSalario: (v: number) => void
   categoria: VagaCategoria
-  nivelExperiencia: NivelExperiencia
   errors: { cidade?: string; salario?: string }
 }) {
   const [estados, setEstados] = useState<EstadoIBGE[]>([])
@@ -85,7 +81,7 @@ export function StepLocalSalario({
     return base.slice(0, 12)
   }, [municipios, cidade])
 
-  const benchmark = SALARY_BENCHMARKS[categoria]?.[nivelExperiencia] ?? FALLBACK_BENCHMARK
+  const benchmark = SALARY_BENCHMARKS[categoria]?.["PLENO"] ?? FALLBACK_BENCHMARK
   const referencias = [
     { label: "Piso inicial", value: benchmark.min },
     { label: "Média de mercado", value: benchmark.avg, recommended: true },
@@ -183,7 +179,7 @@ export function StepLocalSalario({
                 Faixas praticadas no mercado
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Baseado em <strong className="text-foreground">{NIVEL_LABELS[nivelExperiencia]}</strong> na área de{" "}
+                Baseado na área de{" "}
                 <strong className="text-foreground">{CATEGORIA_LABELS[categoria]}</strong>
               </p>
             </div>

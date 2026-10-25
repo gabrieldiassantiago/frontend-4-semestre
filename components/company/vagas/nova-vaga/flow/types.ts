@@ -1,5 +1,4 @@
 import type {
-  NivelExperiencia,
   VagaCategoria,
   VagaModalidade,
 } from "@/lib/types/vaga.types"
@@ -8,8 +7,8 @@ import type { EtapaProcesso } from "@/lib/types/candidatura.types"
 export interface VagaDraft {
   titulo: string
   categoria: VagaCategoria
-  nivelExperiencia: NivelExperiencia
   modalidade: VagaModalidade
+  quantidadeVagas: number
   salario: number
   cidade: string
   estado: string
@@ -21,7 +20,7 @@ export interface VagaDraft {
   metaTags: string[]
 }
 
-export type DraftField = "titulo" | "cidade" | "salario" | "descricao" | "etapas"
+export type DraftField = "titulo" | "cidade" | "salario" | "descricao" | "etapas" | "quantidadeVagas"
 export type DraftErrors = Partial<Record<DraftField, string>>
 
 export type StepId =

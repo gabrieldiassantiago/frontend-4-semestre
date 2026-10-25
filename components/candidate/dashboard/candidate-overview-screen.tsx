@@ -76,7 +76,7 @@ export function CandidateOverviewScreen() {
         closed={closed}
       />
 
-      <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3 lg:gap-8">
+      <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-3 lg:gap-8">
         <div className="flex min-w-0 flex-col gap-10 lg:col-span-2">
           <Section
             title="Suas candidaturas"

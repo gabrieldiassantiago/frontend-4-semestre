@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils"
 import {
   CATEGORIA_LABELS,
   MODALIDADE_LABELS,
-  NIVEL_LABELS,
   type Vaga,
 } from "@/lib/types/vaga.types"
 
@@ -27,17 +26,12 @@ export function VagaTags({
   className,
   size = "md",
 }: {
-  vaga: Pick<Vaga, "nivelExperiencia" | "modalidade" | "categoria">
+  vaga: Pick<Vaga, "modalidade" | "categoria">
   className?: string
   size?: "sm" | "md"
 }) {
   return (
     <ul className={cn("flex list-none flex-wrap gap-1.5", className)}>
-      <li>
-        <Badge variant="neutral" size={size}>
-          {vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "—"}
-        </Badge>
-      </li>
       <li>
         <Badge variant="neutral" size={size}>
           {MODALIDADE_LABELS[vaga.modalidade]}

@@ -4,13 +4,7 @@ import type { EtapaProcesso } from "./candidatura.types"
 
 export type VagaModalidade = "PRESENCIAL" | "REMOTO" | "HIBRIDO"
 
-export type NivelExperiencia =
-  | "ESTAGIO"
-  | "JUNIOR"
-  | "PLENO"
-  | "SENIOR"
-  | "ESPECIALISTA"
-  | "LIDERANCA"
+
 
 export type VagaCategoria =
   | "DESENVOLVIMENTO_SOFTWARE"
@@ -38,15 +32,6 @@ export const MODALIDADE_LABELS: Record<VagaModalidade, string> = {
   PRESENCIAL: "Presencial",
   REMOTO: "Remoto",
   HIBRIDO: "Híbrido",
-}
-
-export const NIVEL_LABELS: Record<NivelExperiencia, string> = {
-  ESTAGIO: "Estágio",
-  JUNIOR: "Júnior",
-  PLENO: "Pleno",
-  SENIOR: "Sênior",
-  ESPECIALISTA: "Especialista",
-  LIDERANCA: "Liderança",
 }
 
 export const CATEGORIA_LABELS: Record<VagaCategoria, string> = {
@@ -77,6 +62,7 @@ export interface Vaga {
   id: string
   titulo: string
   salario: number
+  quantidadeVagas?: number
   descricao: string
   beneficios?: string
   companyProfileId: string
@@ -90,7 +76,7 @@ export interface Vaga {
   categoria: VagaCategoria
   modalidade: VagaModalidade
   metaTags?: string[]
-  nivelExperiencia?: NivelExperiencia
+
   etapas?: EtapaVaga[]
   ativa: boolean
   createdAt?: string
@@ -101,6 +87,7 @@ export interface Vaga {
 export interface CreateVagaDto {
   titulo: string
   salario: number
+  quantidadeVagas?: number
   descricao: string
   beneficios?: string
   companyProfileId: string
@@ -111,7 +98,7 @@ export interface CreateVagaDto {
   categoria: VagaCategoria
   modalidade: VagaModalidade
   metaTags?: string[]
-  nivelExperiencia?: NivelExperiencia
+
   etapas?: EtapaProcesso[]
 }
 
@@ -125,6 +112,7 @@ export interface EtapaVaga {
 export interface UpdateVagaDto {
   titulo?: string
   salario?: number
+  quantidadeVagas?: number
   descricao?: string
   beneficios?: string
   latitude?: number
@@ -133,7 +121,7 @@ export interface UpdateVagaDto {
   estado?: string
   categoria?: VagaCategoria
   modalidade?: VagaModalidade
-  nivelExperiencia?: NivelExperiencia
+
   metaTags?: string[]
   ativa?: boolean
 }

@@ -4,7 +4,7 @@ import { Minus, Plus, TrendingUp } from "lucide-react"
 import { SALARY_BENCHMARKS } from "@/lib/data/salary-benchmarks"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import { CATEGORIA_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
+import { CATEGORIA_LABELS } from "@/lib/types/vaga.types"
 import { FieldError, QuestionHeader } from "../primitives"
 import { isEnterSubmit } from "../steps"
 import type { StepProps } from "../types"
@@ -35,7 +35,7 @@ const TONE_CLASSES = {
 }
 
 export function StepSalario({ draft, update, errors, onEnter }: StepProps & { onEnter: () => void }) {
-  const range = SALARY_BENCHMARKS[draft.categoria]?.[draft.nivelExperiencia] ?? FALLBACK
+  const range = SALARY_BENCHMARKS[draft.categoria]?.["PLENO"] ?? FALLBACK
   const sliderMin = roundTo(range.min * 0.5, 100)
   const sliderMax = roundTo(range.max * 1.6, 100)
   const positioning = getPositioning(draft.salario, range)
@@ -138,7 +138,7 @@ export function StepSalario({ draft, update, errors, onEnter }: StepProps & { on
       <div className="mt-6">
         <p className="text-sm font-semibold text-strong-foreground">Referência de mercado</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          {NIVEL_LABELS[draft.nivelExperiencia]} em {CATEGORIA_LABELS[draft.categoria]}
+          {CATEGORIA_LABELS[draft.categoria]}
         </p>
         <div className="mt-3 grid grid-cols-3 gap-2.5">
           {quickPicks.map((pick) => {

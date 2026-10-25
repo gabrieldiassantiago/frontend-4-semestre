@@ -14,7 +14,7 @@ import { normalizeVagaDescription } from "@/lib/utils/vaga-description"
 import { getVagaPublic } from "@/lib/services/vagas.public"
 import { formatDate, formatCurrency } from "@/lib/format"
 import { ETAPA_LABELS } from "@/lib/types/candidatura.types"
-import { CATEGORIA_LABELS, MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
+import { CATEGORIA_LABELS, MODALIDADE_LABELS } from "@/lib/types/vaga.types"
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `${vaga.titulo} — ${company}`
   const description =
     toPlainText(vaga.descricao) ||
-    `Vaga de ${vaga.titulo} (${(vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "Nível não informado")}) em ${vaga.cidade} - ${vaga.estado} — ${MODALIDADE_LABELS[vaga.modalidade]}.`
+    `Vaga de ${vaga.titulo} em ${vaga.cidade} - ${vaga.estado} — ${MODALIDADE_LABELS[vaga.modalidade]}.`
 
   return {
     title,
@@ -77,7 +77,6 @@ export default async function VagaPublicaPage({ params }: PageProps) {
     { label: "Localização", value: location },
     { label: "Modalidade", value: MODALIDADE_LABELS[vaga.modalidade] || "Não informada" },
     { label: "Área de atuação", value: CATEGORIA_LABELS[vaga.categoria] || "Não informada" },
-    ...(vaga.nivelExperiencia ? [{ label: "Nível de experiência", value: NIVEL_LABELS[vaga.nivelExperiencia] }] : []),
   ]
 
   return (

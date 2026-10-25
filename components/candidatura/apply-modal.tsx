@@ -26,7 +26,7 @@ import { ApplicationResumePicker, type ResumeSelection } from "./application-res
 import { getProfileCompletion } from "@/lib/candidate-completion"
 import { getErrorMessage, isApiError } from "@/lib/errors"
 import { formatCurrency } from "@/lib/format"
-import { MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
+import { MODALIDADE_LABELS } from "@/lib/types/vaga.types"
 import type { Vaga } from "@/lib/types/vaga.types"
 import type { Candidatura } from "@/lib/types/candidatura.types"
 import { cn } from "@/lib/utils"
@@ -498,7 +498,7 @@ export function ApplyModal({
                   <div className="flex items-start justify-between gap-4 px-4 py-3">
                     <dt className="text-sm text-muted-foreground">Formato</dt>
                     <dd className="text-right text-sm font-semibold text-foreground">
-                      {MODALIDADE_LABELS[vaga.modalidade]} · {vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "—"}
+                      {MODALIDADE_LABELS[vaga.modalidade]}
                     </dd>
                   </div>
                   {vaga.salario > 0 && (

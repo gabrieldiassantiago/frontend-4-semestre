@@ -14,7 +14,6 @@ import { formatCurrency } from "@/lib/format"
 import {
   CATEGORIA_LABELS,
   MODALIDADE_LABELS,
-  NIVEL_LABELS,
 } from "@/lib/types/vaga.types"
 import type { DraftErrors, StepId, VagaDraft } from "./types"
 
@@ -38,7 +37,7 @@ export const FLOW_STEPS: FlowStep[] = [
     id: "perfil",
     label: "Perfil",
     title: "Como é essa posição?",
-    description: "Área, senioridade e modelo de trabalho ajudam a recomendar a vaga para as pessoas certas.",
+    description: "Área, modelo de trabalho e posições abertas ajudam a recomendar a vaga para as pessoas certas.",
     icon: Layers,
   },
   {
@@ -96,7 +95,7 @@ export const EDIT_STEPS: FlowStep[] = FLOW_STEPS.filter((step) => step.id !== "p
     case "titulo":
       return { ...step, title: "Nome da vaga", description: "Ajuste o título exibido na busca e na página pública." }
     case "perfil":
-      return { ...step, title: "Perfil da posição", description: "Área, senioridade e modelo de trabalho." }
+      return { ...step, title: "Perfil da posição", description: "Área, modelo de trabalho e quantidade de vagas." }
     case "local":
       return { ...step, title: "Local de trabalho", description: "Onde a pessoa contratada vai atuar." }
     case "salario":
@@ -127,6 +126,11 @@ export function validateStep(id: StepId, draft: VagaDraft): DraftErrors {
       if (!draft.titulo.trim()) return { titulo: "Dê um nome para a vaga." }
       if (draft.titulo.trim().length < 3) return { titulo: "Use pelo menos 3 caracteres." }
       return {}
+    case "perfil":
+      if (!draft.quantidadeVagas || draft.quantidadeVagas < 1) {
+        return { quantidadeVagas: "A vaga deve ter pelo menos 1 posição disponível." }
+      }
+      return {}
     case "local":
       return draft.cidade.trim() ? {} : { cidade: "Escolha onde fica a vaga." }
     case "salario":
@@ -145,8 +149,10 @@ export function stepSummary(id: StepId, draft: VagaDraft): string | null {
   switch (id) {
     case "titulo":
       return draft.titulo.trim() || null
-    case "perfil":
-      return `${NIVEL_LABELS[draft.nivelExperiencia]} · ${MODALIDADE_LABELS[draft.modalidade]}`
+    case "perfil": {
+      const vagas = draft.quantidadeVagas || 1
+      return `${MODALIDADE_LABELS[draft.modalidade]} · ${vagas} ${vagas === 1 ? "vaga" : "vagas"}`
+    }
     case "local":
       return draft.cidade ? `${draft.cidade}${draft.estado ? `, ${draft.estado}` : ""}` : null
     case "salario":
@@ -170,13 +176,12 @@ function escapeHtml(value: string) {
 
 export function buildDescriptionTemplate(draft: VagaDraft): string {
   const cargo = escapeHtml(draft.titulo.trim() || CATEGORIA_LABELS[draft.categoria])
-  const nivel = NIVEL_LABELS[draft.nivelExperiencia]
   const modalidade = MODALIDADE_LABELS[draft.modalidade]
   const area = CATEGORIA_LABELS[draft.categoria]
 
   return [
     "<h3>Sobre a vaga</h3>",
-    `<p>Estamos em busca de <strong>${cargo} (${nivel})</strong> para atuar em formato <strong>${modalidade}</strong>.</p>`,
+    `<p>Estamos em busca de <strong>${cargo}</strong> para atuar em formato <strong>${modalidade}</strong>.</p>`,
     "<h3>Responsabilidades</h3>",
     "<ul>",
     `<li><p>Atuar no desenvolvimento e na entrega de soluções da área de ${area}.</p></li>`,
@@ -185,7 +190,7 @@ export function buildDescriptionTemplate(draft: VagaDraft): string {
     "</ul>",
     "<h3>Requisitos</h3>",
     "<ul>",
-    `<li><p>Experiência compatível com o nível ${nivel}.</p></li>`,
+    `<li><p>Experiência compatível com a posição e área de atuação.</p></li>`,
     "<li><p>Autonomia e boa capacidade de resolução de problemas.</p></li>",
     "<li><p>Comunicação clara e trabalho colaborativo.</p></li>",
     "</ul>",
@@ -193,7 +198,6 @@ export function buildDescriptionTemplate(draft: VagaDraft): string {
     "<ul>",
     "<li><p>Vivência com metodologias ágeis.</p></li>",
     "<li><p>Cases ou projetos anteriores relevantes na área.</p></li>",
-    "</ul>",
   ].join("")
 }
 

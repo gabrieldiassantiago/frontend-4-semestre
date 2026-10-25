@@ -33,7 +33,6 @@ import { StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
 import { ETAPA_LABELS, type Candidatura } from "@/lib/types/candidatura.types"
 import {
   CATEGORY_METADATA,
-  NIVEL_METADATA,
 } from "@/lib/constants/vaga-categories"
 
 /**
@@ -59,7 +58,6 @@ export function JobDetailPanel({
 }) {
   const company = vaga.nomeEmpresa ?? "Empresa confidencial"
   const categoryMeta = CATEGORY_METADATA[vaga.categoria]
-  const nivelMeta = vaga.nivelExperiencia ? NIVEL_METADATA[vaga.nivelExperiencia] : undefined
 
   return (
     <aside
@@ -145,14 +143,6 @@ export function JobDetailPanel({
               </div>
             </div>
 
-            {nivelMeta?.description && (
-              <div className="mt-3 flex items-start gap-2 border-t border-border/60 pt-2.5 text-xs text-muted-foreground">
-                <Info className="size-3.5 shrink-0 text-primary mt-0.5" />
-                <span>
-                  <strong>Nível {nivelMeta.tag}:</strong> {nivelMeta.description}
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Alerta de Candidatura já enviada */}

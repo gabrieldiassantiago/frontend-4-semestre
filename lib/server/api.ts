@@ -11,7 +11,7 @@ export const REFRESH_COOKIE = "refresh_token"
 export const DEFAULT_SESSION_SECONDS = 86400
 export const REFRESH_SESSION_SECONDS = 7 * 24 * 60 * 60 // 7 dias (igual ao backend)
 
-const SERVER_API_URL = API_BASE_URL || process.env.API_URL || "https://selectaapi.azurewebsites.net"
+const SERVER_API_URL = API_BASE_URL || process.env.API_URL || "http://localhost:8080"
 
 interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   body?: unknown

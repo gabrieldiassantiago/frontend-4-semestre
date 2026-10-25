@@ -23,9 +23,9 @@ const profile: CandidateProfile = {
 }
 
 const jobs: Vaga[] = [
-  { id: "v1", titulo: "Estágio em desenvolvimento frontend", salario: 2200, descricao: "", companyProfileId: "c1", nomeEmpresa: "Horizonte Tecnologia", cidade: "São Paulo", estado: "SP", categoria: "DESENVOLVIMENTO_SOFTWARE", modalidade: "HIBRIDO", nivelExperiencia: "ESTAGIO", ativa: true, createdAt: "2026-10-01T12:00:00" },
-  { id: "v2", titulo: "Analista de dados júnior", salario: 4200, descricao: "", companyProfileId: "c2", nomeEmpresa: "Banco Aurora", cidade: "Campinas", estado: "SP", categoria: "DESENVOLVIMENTO_SOFTWARE", modalidade: "REMOTO", nivelExperiencia: "JUNIOR", ativa: true, createdAt: "2026-09-29T12:00:00" },
-  { id: "v3", titulo: "Designer de produto", salario: 5000, descricao: "", companyProfileId: "c3", nomeEmpresa: "Estúdio Norte", cidade: "Curitiba", estado: "PR", categoria: "DESIGN_UX_UI", modalidade: "PRESENCIAL", nivelExperiencia: "PLENO", ativa: true, createdAt: "2026-09-25T12:00:00" },
+  { id: "v1", titulo: "Estágio em desenvolvimento frontend", salario: 2200, descricao: "", companyProfileId: "c1", nomeEmpresa: "Horizonte Tecnologia", cidade: "São Paulo", estado: "SP", categoria: "DESENVOLVIMENTO_SOFTWARE", modalidade: "HIBRIDO", ativa: true, createdAt: "2026-10-01T12:00:00" },
+  { id: "v2", titulo: "Analista de dados júnior", salario: 4200, descricao: "", companyProfileId: "c2", nomeEmpresa: "Banco Aurora", cidade: "Campinas", estado: "SP", categoria: "DESENVOLVIMENTO_SOFTWARE", modalidade: "REMOTO", ativa: true, createdAt: "2026-09-29T12:00:00" },
+  { id: "v3", titulo: "Designer de produto", salario: 5000, descricao: "", companyProfileId: "c3", nomeEmpresa: "Estúdio Norte", cidade: "Curitiba", estado: "PR", categoria: "DESIGN_UX_UI", modalidade: "PRESENCIAL", ativa: true, createdAt: "2026-09-25T12:00:00" },
 ]
 
 const applications: Candidatura[] = [

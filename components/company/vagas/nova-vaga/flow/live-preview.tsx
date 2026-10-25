@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils"
 import {
   CATEGORIA_LABELS,
   MODALIDADE_LABELS,
-  NIVEL_LABELS,
 } from "@/lib/types/vaga.types"
 import type { VagaDraft } from "./types"
 
@@ -69,14 +68,12 @@ export function LivePreview({
           </h3>
 
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {[MODALIDADE_LABELS[draft.modalidade], NIVEL_LABELS[draft.nivelExperiencia]].map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-primary-subtle px-2.5 py-1 text-[11px] font-semibold text-primary-subtle-foreground"
-              >
-                <Animated value={tag} />
-              </span>
-            ))}
+            <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-strong-foreground">
+              {MODALIDADE_LABELS[draft.modalidade]}
+            </span>
+            <span className="rounded-md bg-primary-subtle px-2 py-0.5 text-xs font-semibold text-primary-subtle-foreground">
+              {draft.quantidadeVagas || 1} {(draft.quantidadeVagas || 1) === 1 ? "vaga disponível" : "vagas disponíveis"}
+            </span>
           </div>
 
           <p className="mt-4 text-2xl font-bold tracking-tight text-foreground">

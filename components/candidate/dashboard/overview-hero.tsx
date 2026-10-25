@@ -5,10 +5,10 @@ import {
   FileText,
   Hourglass,
   Search,
+  Sparkles,
   XCircle,
 } from "lucide-react"
 import { ROUTES } from "@/lib/config/routes"
-import { cn } from "@/lib/utils"
 import { OverviewGreeting, OverviewToday } from "./overview-greeting"
 import { OverviewUpdates } from "./overview-updates"
 
@@ -42,101 +42,80 @@ export function OverviewHero({
 }: OverviewHeroProps) {
   const stats = [
     {
-      label: "Total de candidaturas",
+      label: "Candidaturas",
       value: total,
       icon: FileText,
-      iconStyle: "bg-primary/10 text-primary",
+      tone: "bg-primary-subtle text-primary",
     },
     {
       label: "Em andamento",
       value: inProgress,
       icon: Hourglass,
-      iconStyle: "bg-info-subtle text-info",
+      tone: "bg-info-subtle text-info",
     },
     {
       label: "Aprovadas",
       value: approved,
       icon: CheckCircle2,
-      iconStyle: "bg-success-subtle text-success",
+      tone: "bg-success-subtle text-success",
     },
     {
       label: "Encerradas",
       value: closed,
       icon: XCircle,
-      iconStyle: "bg-muted text-muted-foreground",
+      tone: "bg-muted text-muted-foreground",
     },
   ]
 
   return (
-    <section aria-labelledby="overview-title" className="space-y-8">
-      {/* 1. Cabeçalho Aberto: Saudação à esquerda, Ações à direita */}
-      <div className="flex flex-col justify-between gap-6 border-b border-border pb-8 lg:flex-row lg:items-end">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <OverviewToday />
-          </p>
-
-          <h1
-            id="overview-title"
-            className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
-          >
-            <OverviewGreeting firstName={firstName} />
-          </h1>
-
-          <p className="max-w-xl text-sm text-muted-foreground sm:text-base">
-            {summaryFor(inProgress, total)}
-          </p>
+    <section aria-labelledby="overview-title" className="flex flex-col gap-5 lg:flex-row lg:items-stretch">
+      <div className="flex min-w-0 flex-1 flex-col gap-6 rounded-2xl border border-border-subtle bg-surface p-5 sm:p-7">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-2">
+            <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+              <Sparkles aria-hidden className="size-3.5 text-primary" />
+              <OverviewToday />
+            </p>
+            <h1 id="overview-title" className="text-2xl font-bold tracking-tight text-foreground text-balance sm:text-3xl">
+              <OverviewGreeting firstName={firstName} />
+            </h1>
+            <p className="max-w-md text-sm leading-relaxed text-muted-foreground text-pretty">
+              {summaryFor(inProgress, total)}
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Link href={ROUTES.candidate.jobs} className="btn-primary inline-flex items-center gap-2">
+              <Search aria-hidden className="size-4" />
+              Buscar vagas
+            </Link>
+            <Link
+              href={ROUTES.candidate.applications}
+              className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              Candidaturas
+              <ArrowUpRight aria-hidden className="size-4" />
+            </Link>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={ROUTES.candidate.jobs}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
-          >
-            <Search aria-hidden className="size-4" />
-            Buscar vagas
-          </Link>
-
-          <Link
-            href={ROUTES.candidate.applications}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-          >
-            Minhas candidaturas
-            <ArrowUpRight aria-hidden className="size-4 text-muted-foreground" />
-          </Link>
-        </div>
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {stats.map(({ label, value, icon: Icon, tone }) => (
+            <div key={label} className="flex items-center gap-3 rounded-xl border border-border-subtle bg-background p-3.5">
+              <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${tone}`}>
+                <Icon aria-hidden className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <dd className="text-2xl font-bold leading-none tabular-nums text-foreground">{value}</dd>
+                <dt className="mt-1 truncate text-xs text-muted-foreground">{label}</dt>
+              </div>
+            </div>
+          ))}
+        </dl>
       </div>
 
-      {/* 2. Grid Distribuído de Cards de Métricas (4 colunas bem espaçadas) */}
-      <dl className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
-        {stats.map(({ label, value, icon: Icon, iconStyle }) => (
-          <div
-            key={label}
-            className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-2xs"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <dt className="text-xs font-medium text-muted-foreground sm:text-sm">
-                {label}
-              </dt>
-              <span
-                className={cn(
-                  "grid size-9 shrink-0 place-items-center rounded-xl",
-                  iconStyle,
-                )}
-              >
-                <Icon aria-hidden className="size-4" />
-              </span>
-            </div>
-
-            <dd className="mt-4 text-3xl font-bold tracking-tight tabular-nums text-foreground">
-              {value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-
-      {/* 3. Novidades Desacopladas em Grid Próprio */}
-      <OverviewUpdates />
+      <div className="lg:w-[340px] lg:shrink-0">
+        <OverviewUpdates />
+      </div>
     </section>
   )
 }

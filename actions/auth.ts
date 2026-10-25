@@ -33,14 +33,11 @@ export async function loginAction(payload: LoginPayload): Promise<ActionResult<L
   const result = await apiFetch<AuthTokenResponse>("/auth", { method: "POST", body: payload })
   if (!result.ok) return result
 
-  const jwt = result.data?.tokenJwt ?? result.data?.tokenJwt
-  const refreshToken = result.data?.refreshToken
-  const expiresIn = result.data?.expiresInJwt ?? result.data?.expiresInJwt
-
+  const { tokenJwt: jwt, refreshToken, expiresInJwt: expiresIn, role } = result.data
 
   await setAuthCookies(jwt, refreshToken, expiresIn)
 
-  return ok({ role: result.data.role, expiresIn })
+  return ok({ role, expiresIn })
 }
 
 export async function completeOAuthLoginAction(

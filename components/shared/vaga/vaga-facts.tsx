@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils"
 import {
   CATEGORIA_LABELS,
   MODALIDADE_LABELS,
-  NIVEL_LABELS,
   type Vaga,
 } from "@/lib/types/vaga.types"
 
@@ -27,19 +26,12 @@ export function VagaTags({
   className,
   size = "md",
 }: {
-  vaga: Pick<Vaga, "nivelExperiencia" | "modalidade" | "categoria">
+  vaga: Pick<Vaga, "modalidade" | "categoria"> & { quantidadeVagas?: number }
   className?: string
   size?: "sm" | "md"
 }) {
   return (
     <ul className={cn("flex list-none flex-wrap gap-1.5", className)}>
-      {vaga.nivelExperiencia && (
-        <li>
-          <Badge variant="neutral" size={size}>
-            {NIVEL_LABELS[vaga.nivelExperiencia]}
-          </Badge>
-        </li>
-      )}
       <li>
         <Badge variant="neutral" size={size}>
           {MODALIDADE_LABELS[vaga.modalidade]}
@@ -50,6 +42,13 @@ export function VagaTags({
           {CATEGORIA_LABELS[vaga.categoria]}
         </Badge>
       </li>
+      {Boolean(vaga.quantidadeVagas && vaga.quantidadeVagas > 1) && (
+        <li>
+          <Badge variant="primary" size={size}>
+            {vaga.quantidadeVagas} vagas
+          </Badge>
+        </li>
+      )}
     </ul>
   )
 }
@@ -81,14 +80,14 @@ function Highlight({
 }
 
 /**
- * Linhas de destaque (salário, local, área) com o ícone em chip colorido.
+ * Linhas de destaque (salário, local, área, vagas) com o ícone em chip colorido.
  */
 export function VagaHighlights({
   vaga,
   applicants,
   className,
 }: {
-  vaga: Pick<Vaga, "salario" | "cidade" | "estado" | "categoria" | "distanciaKm">
+  vaga: Pick<Vaga, "salario" | "cidade" | "estado" | "categoria" | "distanciaKm"> & { quantidadeVagas?: number }
   applicants?: number
   className?: string
 }) {
@@ -113,6 +112,12 @@ export function VagaHighlights({
       <Highlight icon={Layers} tone="area">
         {CATEGORIA_LABELS[vaga.categoria]}
       </Highlight>
+
+      {typeof vaga.quantidadeVagas === "number" && vaga.quantidadeVagas > 0 && (
+        <Highlight icon={Users} tone="people">
+          {vaga.quantidadeVagas} {vaga.quantidadeVagas === 1 ? "vaga disponível" : "vagas disponíveis"}
+        </Highlight>
+      )}
 
       {typeof applicants === "number" && (
         <Highlight icon={Users} tone="people">

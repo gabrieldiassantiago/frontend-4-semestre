@@ -50,12 +50,6 @@ export const PROFILE_STEPS = [
     description: "Inclua iniciativas do trabalho, dos estudos ou da comunidade. O que você fez e qual foi sua contribuição?",
   },
   {
-    id: "revisao",
-    label: "Revisão",
-    title: "Confira antes de finalizar",
-    description: "É exatamente isso que a empresa vai ver quando você se candidatar.",
-  },
-  {
     id: "certificados",
     label: "Certificados",
     title: "Seus certificados",
@@ -66,6 +60,12 @@ export const PROFILE_STEPS = [
     label: "Idiomas",
     title: "Seus idiomas",
     description: "Domínio de línguas estrangeiras que podem ser relevantes para o cargo.",
+  },
+  {
+    id: "revisao",
+    label: "Revisão",
+    title: "Confira antes de finalizar",
+    description: "É exatamente isso que a empresa vai ver quando você se candidatar.",
   },
 ] as const
 
@@ -210,6 +210,8 @@ export function getProfileCompletion(
   }
 }
 
+const VISUAL_OPTIONAL_STEPS: ProfileStepId[] = ["certificados", "idiomas"]
+
 export interface StepStatus {
   done: boolean
   required: boolean
@@ -224,7 +226,7 @@ export function getStepStatus(completion: ProfileCompletion, stepId: ProfileStep
   return {
     done: items.length > 0 && items.every((item) => item.done),
     required,
-    optional: items.length > 0 && !required,
+    optional: items.length > 0 ? !required : VISUAL_OPTIONAL_STEPS.includes(stepId),
     pending: items.filter((item) => !item.done).length,
   }
 }

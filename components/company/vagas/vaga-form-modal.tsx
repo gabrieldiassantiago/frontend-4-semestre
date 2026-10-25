@@ -1,23 +1,21 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Briefcase, DollarSign, Loader2, MapPin, X, Crosshair } from "lucide-react"
+import { Briefcase, DollarSign, Loader2, MapPin, X, Crosshair, Users } from "lucide-react"
 import { useCreateVaga, useUpdateVaga } from "@/lib/queries/use-vagas"
 import { AddressAutocomplete } from "@/components/company/vagas/address-autocomplete"
 import {
   CATEGORIA_LABELS,
   MODALIDADE_LABELS,
-  NIVEL_LABELS,
   type CreateVagaDto,
+  type UpdateVagaDto,
   type Vaga,
   type VagaCategoria,
   type VagaModalidade,
-  type NivelExperiencia,
 } from "@/lib/types/vaga.types"
 
 const CATEGORIAS = Object.entries(CATEGORIA_LABELS) as [VagaCategoria, string][]
 const MODALIDADES = Object.entries(MODALIDADE_LABELS) as [VagaModalidade, string][]
-const NIVEIS = Object.entries(NIVEL_LABELS) as [NivelExperiencia, string][]
 
 const EMPTY_FORM: FormState = {
   titulo: "",
@@ -30,13 +28,14 @@ const EMPTY_FORM: FormState = {
   longitude: -46.6333,
   categoria: "DESENVOLVIMENTO_SOFTWARE",
   modalidade: "HIBRIDO",
-  nivelExperiencia: "PLENO",
+  quantidadeVagas: "1",
   metaTags: "",
 }
 
 interface FormState {
   titulo: string
   salario: string
+  quantidadeVagas: string
   descricao: string
   beneficios: string
   cidade: string
@@ -45,7 +44,6 @@ interface FormState {
   longitude?: number
   categoria: VagaCategoria
   modalidade: VagaModalidade
-  nivelExperiencia: NivelExperiencia
   metaTags: string
 }
 
@@ -70,6 +68,7 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
       setForm({
         titulo: vagaToEdit.titulo,
         salario: String(vagaToEdit.salario),
+        quantidadeVagas: vagaToEdit.quantidadeVagas ? String(vagaToEdit.quantidadeVagas) : "1",
         descricao: vagaToEdit.descricao,
         beneficios: vagaToEdit.beneficios ?? "",
         cidade: vagaToEdit.cidade,
@@ -78,7 +77,6 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
         longitude: vagaToEdit.longitude ?? -46.6333,
         categoria: vagaToEdit.categoria,
         modalidade: vagaToEdit.modalidade,
-        nivelExperiencia: vagaToEdit.nivelExperiencia ?? "JUNIOR",
         metaTags: vagaToEdit.metaTags?.join(", ") ?? "",
       })
     } else {
@@ -102,6 +100,8 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
     if (!form.titulo.trim()) { setError("O título é obrigatório."); return }
     const salarioNum = parseFloat(form.salario)
     if (isNaN(salarioNum) || salarioNum <= 0) { setError("Informe um salário válido."); return }
+    const vagasNum = parseInt(form.quantidadeVagas, 10)
+    if (isNaN(vagasNum) || vagasNum < 1) { setError("A vaga deve ter pelo menos 1 posição disponível."); return }
     if (!form.descricao.trim()) { setError("A descrição é obrigatória."); return }
     if (!form.cidade.trim()) { setError("Informe a cidade."); return }
     if (!form.estado.trim()) { setError("Informe o estado."); return }
@@ -109,9 +109,10 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
     try {
       let saved: Vaga
       if (isEditing && vagaToEdit) {
-        saved = await updateVaga.mutateAsync({ id: vagaToEdit.id, dto: {
+        const dto: UpdateVagaDto = {
           titulo: form.titulo,
           salario: salarioNum,
+          quantidadeVagas: vagasNum,
           descricao: form.descricao,
           beneficios: form.beneficios || undefined,
           cidade: form.cidade,
@@ -120,13 +121,14 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
           longitude: form.longitude,
           categoria: form.categoria,
           modalidade: form.modalidade,
-          nivelExperiencia: form.nivelExperiencia,
           metaTags: form.metaTags.split(",").map((tag) => tag.trim()).filter(Boolean),
-        } })
+        }
+        saved = await updateVaga.mutateAsync({ id: vagaToEdit.id, dto })
       } else {
         const dto: CreateVagaDto = {
           titulo: form.titulo,
           salario: salarioNum,
+          quantidadeVagas: vagasNum,
           descricao: form.descricao,
           beneficios: form.beneficios || undefined,
           companyProfileId,
@@ -136,7 +138,6 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
           estado: form.estado,
           categoria: form.categoria,
           modalidade: form.modalidade,
-          nivelExperiencia: form.nivelExperiencia,
           metaTags: form.metaTags.split(",").map((tag) => tag.trim()).filter(Boolean),
         }
         saved = await createVaga.mutateAsync(dto)
@@ -211,6 +212,54 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
             </div>
           </div>
 
+          <div className="flex flex-col justify-between gap-3 rounded-xl border border-border bg-muted/40 p-3.5 sm:flex-row sm:items-center">
+            <div className="space-y-0.5">
+              <label htmlFor="vf-vagas" className="block text-sm font-semibold text-strong-foreground">
+                Quantidade de vagas disponíveis <span className="text-primary">*</span>
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Número de posições abertas para contratação imediata
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 self-start sm:self-center">
+              <button
+                type="button"
+                onClick={() => {
+                  const current = parseInt(form.quantidadeVagas, 10) || 1
+                  if (current > 1) set("quantidadeVagas", String(current - 1))
+                }}
+                className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-background text-sm font-bold hover:bg-muted disabled:opacity-50"
+                disabled={(parseInt(form.quantidadeVagas, 10) || 1) <= 1}
+              >
+                -
+              </button>
+              <div className="relative w-20">
+                <Users className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-subtle-foreground" />
+                <input
+                  id="vf-vagas"
+                  type="number"
+                  min={1}
+                  max={999}
+                  step={1}
+                  value={form.quantidadeVagas}
+                  onChange={(e) => set("quantidadeVagas", e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-2 text-center text-sm font-semibold outline-none focus:ring-4 focus:ring-primary/10"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const current = parseInt(form.quantidadeVagas, 10) || 0
+                  set("quantidadeVagas", String(current + 1))
+                }}
+                className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-background text-sm font-bold hover:bg-muted"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label htmlFor="vf-descricao" className="block text-sm font-semibold text-strong-foreground">
               Descrição <span className="text-primary">*</span>
@@ -251,7 +300,9 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
               placeholder="Ex.: Java, Spring Boot, SQL, React"
               className="w-full rounded-xl border border-border bg-muted p-2.5 text-sm outline-none focus:bg-background focus:ring-4 focus:ring-primary/10"
             />
-            <p className="text-xs text-muted-foreground">Separe as tags por vírgula. Elas ajudam a recomendar a vaga aos candidatos certos.</p>
+            <p className="text-xs text-muted-foreground">
+              Separe as tags por vírgula. Elas ajudam a recomendar a vaga aos candidatos certos.
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -320,7 +371,7 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label htmlFor="vf-categoria" className="block text-sm font-semibold text-strong-foreground">
                 Categoria
@@ -347,21 +398,6 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
                 className="w-full rounded-xl border border-border bg-muted p-2.5 text-sm outline-none focus:bg-background"
               >
                 {MODALIDADES.map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="vf-nivel" className="block text-sm font-semibold text-strong-foreground">
-                Nível
-              </label>
-              <select
-                id="vf-nivel"
-                value={form.nivelExperiencia}
-                onChange={(e) => set("nivelExperiencia", e.target.value as NivelExperiencia)}
-                className="w-full rounded-xl border border-border bg-muted p-2.5 text-sm outline-none focus:bg-background"
-              >
-                {NIVEIS.map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>

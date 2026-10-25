@@ -4,10 +4,8 @@ import { Building2, Laptop, Home, Sparkles } from "lucide-react"
 import { Field } from "@/components/ui/form-field"
 import {
   CATEGORIA_LABELS,
-  NIVEL_LABELS,
   type VagaCategoria,
   type VagaModalidade,
-  type NivelExperiencia,
 } from "@/lib/types/vaga.types"
 import { StepCard, StepHeader, RadioCards, type Choice } from "./wizard"
 
@@ -29,17 +27,13 @@ const CATEGORIA_OPTIONS = (Object.entries(CATEGORIA_LABELS) as [VagaCategoria, s
   ([value, label]) => ({ value, label }),
 )
 
-const NIVEL_OPTIONS = (Object.entries(NIVEL_LABELS) as [NivelExperiencia, string][]).map(
-  ([value, label]) => ({ value, label }),
-)
+
 
 export function StepCargo({
   titulo,
   setTitulo,
   categoria,
   setCategoria,
-  nivelExperiencia,
-  setNivelExperiencia,
   modalidade,
   setModalidade,
   error,
@@ -48,8 +42,6 @@ export function StepCargo({
   setTitulo: (v: string) => void
   categoria: VagaCategoria
   setCategoria: (v: VagaCategoria) => void
-  nivelExperiencia: NivelExperiencia
-  setNivelExperiencia: (v: NivelExperiencia) => void
   modalidade: VagaModalidade
   setModalidade: (v: VagaModalidade) => void
   error?: string
@@ -116,18 +108,7 @@ export function StepCargo({
         />
       </StepCard>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <StepCard>
-          <RadioCards
-            legend="Senioridade esperada"
-            hint="Define o nível de autonomia e experiência da pessoa."
-            options={NIVEL_OPTIONS}
-            value={nivelExperiencia}
-            onChange={setNivelExperiencia}
-            columns={2}
-          />
-        </StepCard>
-
+      <div className="mt-6">
         <StepCard>
           <RadioCards
             legend="Modelo de trabalho"

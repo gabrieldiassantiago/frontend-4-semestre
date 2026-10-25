@@ -10,7 +10,7 @@ import { ROUTES } from "@/lib/config/routes"
 import { useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
 import { useCompanyVagas } from "@/lib/queries/use-vagas"
 import { ETAPA_DOT, ETAPA_SHORT_LABELS, etapasDaVaga, type Candidatura } from "@/lib/types/candidatura.types"
-import { MODALIDADE_LABELS, NIVEL_LABELS, type Vaga } from "@/lib/types/vaga.types"
+import { MODALIDADE_LABELS, type Vaga } from "@/lib/types/vaga.types"
 import { cn } from "@/lib/utils"
 import { SegmentedControl } from "../segmented-control"
 import { VagaPipelineScreen } from "./vaga-pipeline-screen"
@@ -119,7 +119,6 @@ function JobPipelineCard({ vaga, candidaturas }: { vaga: Vaga; candidaturas: Can
           <p className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground">
             <MapPin aria-hidden className="size-3 shrink-0" />
             {vaga.cidade}, {vaga.estado} · {MODALIDADE_LABELS[vaga.modalidade]}
-            {vaga.nivelExperiencia ? ` · ${NIVEL_LABELS[vaga.nivelExperiencia]}` : ""}
           </p>
         </div>
         <span

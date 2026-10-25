@@ -22,6 +22,7 @@ export function StepTitulo({ draft, update, errors, onEnter }: StepProps & { onE
   const length = draft.titulo.length
   const editing = useFlow().mode === "edit"
 
+
   return (
     <div>
       <QuestionHeader stepId="titulo" />

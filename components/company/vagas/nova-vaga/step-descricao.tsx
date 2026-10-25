@@ -6,10 +6,8 @@ import { formatCurrency } from "@/lib/format"
 import {
   CATEGORIA_LABELS,
   MODALIDADE_LABELS,
-  NIVEL_LABELS,
   type VagaCategoria,
   type VagaModalidade,
-  type NivelExperiencia,
 } from "@/lib/types/vaga.types"
 import { StepCard, StepHeader } from "./wizard"
 import { RichTextEditor } from "./rich-text-editor"
@@ -17,7 +15,6 @@ import { RichTextEditor } from "./rich-text-editor"
 export function StepDescricao({
   titulo,
   categoria,
-  nivelExperiencia,
   modalidade,
   salario,
   cidade,
@@ -30,7 +27,6 @@ export function StepDescricao({
 }: {
   titulo: string
   categoria: VagaCategoria
-  nivelExperiencia: NivelExperiencia
   modalidade: VagaModalidade
   salario: number
   cidade: string
@@ -44,7 +40,6 @@ export function StepDescricao({
   const resumo = [
     { label: "Título", value: titulo || "Não informado" },
     { label: "Área", value: CATEGORIA_LABELS[categoria] },
-    { label: "Senioridade", value: NIVEL_LABELS[nivelExperiencia] },
     { label: "Modelo", value: MODALIDADE_LABELS[modalidade] },
     { label: "Local", value: cidade && estado ? `${cidade}, ${estado}` : "Não informado" },
     { label: "Salário", value: formatCurrency(salario) },

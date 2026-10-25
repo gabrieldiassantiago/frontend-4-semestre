@@ -31,8 +31,8 @@ import { StepRevisao } from "./flow/steps/step-revisao"
 const INITIAL_DRAFT: VagaDraft = {
   titulo: "",
   categoria: "DESENVOLVIMENTO_SOFTWARE",
-  nivelExperiencia: "PLENO",
   modalidade: "HIBRIDO",
+  quantidadeVagas: 1,
   salario: 8500,
   cidade: "São Paulo",
   estado: "SP",
@@ -65,8 +65,8 @@ function draftFromVaga(vaga: Vaga): VagaDraft {
   return {
     titulo: vaga.titulo,
     categoria: vaga.categoria,
-    nivelExperiencia: vaga.nivelExperiencia ?? "JUNIOR",
     modalidade: vaga.modalidade,
+    quantidadeVagas: vaga.quantidadeVagas ?? 1,
     salario: vaga.salario,
     cidade: vaga.cidade,
     estado: vaga.estado,
@@ -211,6 +211,7 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
     const common = {
       titulo: draft.titulo.trim(),
       salario: Number(draft.salario),
+      quantidadeVagas: Math.max(1, Math.floor(Number(draft.quantidadeVagas) || 1)),
       descricao: draft.descricao.trim(),
       latitude: Number(draft.latitude),
       longitude: Number(draft.longitude),
@@ -218,7 +219,6 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
       estado: draft.estado.trim().toUpperCase(),
       categoria: draft.categoria,
       modalidade: draft.modalidade,
-      nivelExperiencia: draft.nivelExperiencia,
       metaTags: draft.metaTags,
     }
 

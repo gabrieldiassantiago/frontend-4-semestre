@@ -28,6 +28,8 @@ import { messageFrom, toForm } from "./profile-form.utils"
 import { BasicStep, EducationStep, LocationStep, ReviewStep, SkillsStep } from "./wizard/wizard-steps"
 import { WizardSidebar } from "./wizard/wizard-sidebar"
 import { WizardComplete } from "./wizard/wizard-complete"
+import { CertificatesStep, type CertificateDraft } from "./wizard/certificates-step"
+import { LanguagesStep, type LanguageDraft } from "./wizard/languages-step"
 
 const FORM_STEPS: ProfileStepId[] = ["basico", "localizacao", "formacao", "skills", "links"]
 
@@ -57,6 +59,8 @@ export function CompleteProfileWizard({
   const [editorOpen, setEditorOpen] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof UpdateCandidateProfileDto, string>>>({})
   const [concluido, setConcluido] = useState(false)
+  const [certificados, setCertificados] = useState<CertificateDraft[]>([])
+  const [idiomas, setIdiomas] = useState<LanguageDraft[]>([])
 
   // Inicializa o rascunho uma vez por perfil para não apagar o que foi digitado
   // quando a foto, o currículo ou uma experiência atualizam o perfil em cache.
@@ -125,7 +129,11 @@ export function CompleteProfileWizard({
   const step = PROFILE_STEPS[indice]
   const ultimo = indice === PROFILE_STEPS.length - 1
   const stepStatus = getStepStatus(completion, step.id)
-  const canSkip = stepStatus.optional && !stepStatus.done && stepStatus.pending === completion.items.filter((item) => item.step === step.id).length
+  const visualCount = step.id === "certificados" ? certificados.length : step.id === "idiomas" ? idiomas.length : null
+  const canSkip =
+    visualCount !== null
+      ? visualCount === 0
+      : stepStatus.optional && !stepStatus.done && stepStatus.pending === completion.items.filter((item) => item.step === step.id).length
   const blocked = editorOpen || uploading || saving || changingStep
   const stepProgress = Math.round(((indice + 1) / PROFILE_STEPS.length) * 100)
 
@@ -342,6 +350,8 @@ export function CompleteProfileWizard({
                   {step.id === "curriculo" && profile && (
                     <ResumeUpload profile={profile} onProfileChange={aplicarPerfil} onUploadingChange={setUploading} />
                   )}
+                  {step.id === "certificados" && <CertificatesStep items={certificados} onChange={setCertificados} />}
+                  {step.id === "idiomas" && <LanguagesStep items={idiomas} onChange={setIdiomas} />}
                   {step.id === "revisao" && (
                     <ReviewStep
                       completion={completion}
@@ -376,7 +386,9 @@ export function CompleteProfileWizard({
               <span className="hidden flex-1 text-center text-xs text-muted-foreground lg:block">
                 {step.id === "experiencias" || step.id === "projetos"
                   ? "Salve cada item antes de continuar."
-                  : "Seu progresso é salvo a cada etapa."}
+                  : visualCount !== null
+                    ? "Prévia visual: estes dados ainda não são enviados."
+                    : "Seu progresso é salvo a cada etapa."}
               </span>
               <button
                 type="submit"

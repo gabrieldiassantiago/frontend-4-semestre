@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { BriefcaseBusiness, MapPin, Pencil, Trash2, Users } from "lucide-react"
 import { ROUTES } from "@/lib/config/routes"
-import { MODALIDADE_LABELS, NIVEL_LABELS, type Vaga } from "@/lib/types/vaga.types"
+import { MODALIDADE_LABELS, type Vaga } from "@/lib/types/vaga.types"
 import { cn } from "@/lib/utils"
 
 interface VagaRowProps {
@@ -21,7 +21,7 @@ export function VagaRow({ vaga, detailed, deleting, onDelete, onToggleActive }: 
   const meta = [
     vaga.cidade && vaga.estado ? `${vaga.cidade} - ${vaga.estado}` : vaga.cidade || vaga.estado,
     vaga.modalidade && MODALIDADE_LABELS[vaga.modalidade],
-    vaga.nivelExperiencia && NIVEL_LABELS[vaga.nivelExperiencia],
+    vaga.quantidadeVagas ? `${vaga.quantidadeVagas} ${vaga.quantidadeVagas === 1 ? "vaga" : "vagas"}` : null,
   ].filter(Boolean)
 
   return (

@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og"
 import { getVagaPublic } from "@/lib/services/vagas.public"
-import { CATEGORIA_LABELS, MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
+import { CATEGORIA_LABELS, MODALIDADE_LABELS } from "@/lib/types/vaga.types"
 
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
@@ -16,7 +16,6 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const tags = (
     vaga
       ? [
-        vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "",
         MODALIDADE_LABELS[vaga.modalidade],
         CATEGORIA_LABELS[vaga.categoria],
       ]

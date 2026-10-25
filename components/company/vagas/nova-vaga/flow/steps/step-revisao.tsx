@@ -6,7 +6,6 @@ import { formatCurrency } from "@/lib/format"
 import {
   CATEGORIA_LABELS,
   MODALIDADE_LABELS,
-  NIVEL_LABELS,
 } from "@/lib/types/vaga.types"
 import { QuestionHeader } from "../primitives"
 import { FLOW_STEPS, stripHtml } from "../steps"
@@ -81,7 +80,7 @@ export function StepRevisao({
         <ReviewSection stepId="perfil" onEdit={onEdit}>
           <p className="font-medium">{CATEGORIA_LABELS[draft.categoria]}</p>
           <p className="text-muted-foreground">
-            {NIVEL_LABELS[draft.nivelExperiencia]} · {MODALIDADE_LABELS[draft.modalidade]}
+            {MODALIDADE_LABELS[draft.modalidade]} · {draft.quantidadeVagas || 1} {draft.quantidadeVagas === 1 ? "vaga disponível" : "vagas disponíveis"}
           </p>
         </ReviewSection>
 

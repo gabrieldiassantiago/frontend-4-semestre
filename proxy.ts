@@ -13,7 +13,7 @@ const AUTH_COOKIE = "token"
 const REFRESH_COOKIE = "refresh_token"
 const DEFAULT_SESSION_SECONDS = 86400
 const REFRESH_SESSION_SECONDS = 7 * 24 * 60 * 60
-const SERVER_API_URL = API_BASE_URL || process.env.API_URL || "selectaapi.azurewebsites.net"
+const SERVER_API_URL = API_BASE_URL || process.env.API_URL || "http://localhost:8080"
 
 const authRoutes = ["/auth", "/auth/candidato", "/auth/recrutador", "/auth/empresa"]
 const candidateAuthRoutes = ["/auth/candidato"]

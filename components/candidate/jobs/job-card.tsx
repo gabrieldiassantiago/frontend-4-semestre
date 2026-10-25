@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatCurrency, formatRelativeDate } from "@/lib/format"
-import { CATEGORIA_LABELS, MODALIDADE_LABELS, NIVEL_LABELS } from "@/lib/types/vaga.types"
+import { CATEGORIA_LABELS, MODALIDADE_LABELS } from "@/lib/types/vaga.types"
 import type { Vaga } from "@/lib/types/vaga.types"
 import type { StatusCandidatura } from "@/lib/types/candidatura.types"
 import { CompanyLogo } from "@/components/shared/company-logo"
@@ -103,8 +103,6 @@ export function JobCard({
     return null
   }
 
-  // Tags do card (Nível, Modalidade, Categoria)
-  const nivelLabel = (vaga.nivelExperiencia ? NIVEL_LABELS[vaga.nivelExperiencia] : "") || "Pleno"
   const modalidadeLabel = MODALIDADE_LABELS[vaga.modalidade] || "Híbrido"
   const categoriaLabel = CATEGORIA_LABELS[vaga.categoria] || "Geral"
 
@@ -131,9 +129,6 @@ export function JobCard({
 
             {/* Tags Pills */}
             <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-                {nivelLabel}
-              </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                 {modalidadeLabel}
               </span>
