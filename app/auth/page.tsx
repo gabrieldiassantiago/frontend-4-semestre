@@ -20,7 +20,7 @@ export default async function AuthPage({
 
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden bg-surface text-foreground selection:bg-primary/15 selection:text-primary">
-      {/* Efeitos sutis de iluminação de fundo */}
+
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] bg-gradient-to-b from-primary/[0.06] via-primary/[0.02] to-transparent"

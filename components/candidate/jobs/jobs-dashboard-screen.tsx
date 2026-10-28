@@ -63,7 +63,6 @@ function JobCardSkeleton() {
   )
 }
 
-/** Gera a lista de páginas com reticências para paginação numerada */
 function getVisiblePages(currentPage: number, totalPages: number): (number | "...")[] {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -385,7 +384,7 @@ export function JobsDashboardScreen() {
           onSubmit={setSearch}
           onOpenFilters={() => setFiltersOpen(true)}
           activeFilterCount={activeFilterCount}
-          onProximitySearch={handleRequestProximity}
+          onProximitySearch={proximityCoords ? handleClearProximity : handleRequestProximity}
           isProximityActive={Boolean(proximityCoords)}
           isLocating={isLocating}
           isSearching={isRefreshing}

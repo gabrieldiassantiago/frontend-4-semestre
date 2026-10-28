@@ -1,13 +1,14 @@
 "use client"
 import { ROUTES } from "@/lib/config/routes"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
   ArrowUpRight,
   CalendarClock,
   CalendarDays,
+  CalendarPlus,
   Check,
   ChevronDown,
   Clock,
@@ -76,24 +77,267 @@ function DetailSkeleton() {
   )
 }
 
+/**
+ * Substitui a função `AgendamentosCandidato` do arquivo da tela de detalhe da candidatura.
+ *
+ * Imports a ADICIONAR no topo do arquivo original:
+ *   import { CalendarPlus, ChevronDown } from "lucide-react"   // (ChevronDown já existe)
+ *   import { useMemo } from "react"                            // junto do useState
+ *
+ * Continua usando: cardBase, SectionHeader, EmptyHint, useConfirmarAgendamento,
+ * useRecusarAgendamento, getErrorMessage, formatDate, isWebUrl, STATUS_AGENDAMENTO_LABELS,
+ * ETAPA_LABELS, CandidaturaAgendamento, e os ícones já importados.
+ */
+
+type StatusAgendamento = CandidaturaAgendamento["status"]
+
+const STATUS_STYLES: Record<StatusAgendamento, string> = {
+  PENDENTE: "border-warning/25 bg-warning-subtle text-warning-foreground",
+  CONFIRMADO: "border-success-border bg-success-subtle text-success-foreground",
+  REALIZADO: "border-primary/20 bg-primary-subtle text-primary",
+  NAO_COMPARECEU: "border-danger/20 bg-danger-subtle text-danger-foreground",
+  CANCELADO: "border-border bg-surface text-muted-foreground",
+  RECUSADO: "border-border bg-surface text-muted-foreground",
+}
+
+const CLOSED: StatusAgendamento[] = ["CANCELADO", "RECUSADO", "REALIZADO", "NAO_COMPARECEU"]
+
+const fmtTime = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" })
+const fmtWeekdayShort = new Intl.DateTimeFormat("pt-BR", { weekday: "short" })
+const fmtMonthShort = new Intl.DateTimeFormat("pt-BR", { month: "short" })
+const fmtLongDate = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" })
+
+function hostOf(url: string) {
+  try {
+    return new URL(url).host.replace(/^www\./, "")
+  } catch {
+    return null
+  }
+}
+
+/** "amanhã", "daqui a 3 dias", "daqui a 2 horas"... */
+function relativeLabel(date: Date) {
+  const rtf = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" })
+  const minutes = Math.round((date.getTime() - Date.now()) / 60_000)
+  if (Math.abs(minutes) < 60) return rtf.format(minutes, "minute")
+  const hours = Math.round(minutes / 60)
+  if (Math.abs(hours) < 24) return rtf.format(hours, "hour")
+  return rtf.format(Math.round(hours / 24), "day")
+}
+
+function googleCalendarUrl(item: CandidaturaAgendamento, start: Date) {
+  const end = new Date(start.getTime() + item.duracaoMinutos * 60_000)
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: item.titulo,
+    dates: `${fmt(start)}/${fmt(end)}`,
+    details: [item.mensagem, item.link].filter(Boolean).join("\n\n"),
+    location: item.link,
+  })
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
+}
+
+function DateTile({ start, status }: { start: Date; status: StatusAgendamento }) {
+  const weekday = fmtWeekdayShort.format(start).replace(".", "")
+  const month = fmtMonthShort.format(start).replace(".", "")
+  const tone =
+    status === "CONFIRMADO"
+      ? "bg-primary text-primary-foreground border-primary"
+      : status === "PENDENTE"
+        ? "bg-card text-primary border-primary/30"
+        : "bg-surface text-muted-foreground border-border"
+
+  return (
+    <div
+      aria-hidden
+      style={{ width: 68, minWidth: 68, flex: "none" }}
+      className={cn("flex flex-col items-center justify-center self-start rounded-xl border py-2.5", tone)}
+    >
+      <span className="block text-xs font-medium leading-4 opacity-80">{weekday}</span>
+      <span className="block text-[1.65rem] font-semibold leading-8 tabular-nums">{start.getDate()}</span>
+      <span className="block text-xs font-medium leading-4 opacity-80">{month}</span>
+    </div>
+  )
+}
+
+function AgendamentoCard({
+  item,
+  busy,
+  disabled,
+  onRespond,
+  responding,
+}: {
+  item: CandidaturaAgendamento
+  busy: boolean
+  disabled: boolean
+  responding: "confirmar" | "recusar" | null
+  onRespond: (item: CandidaturaAgendamento, acao: "confirmar" | "recusar") => void
+}) {
+  const start = new Date(item.inicio)
+  const validDate = !Number.isNaN(start.getTime())
+  const end = validDate ? new Date(start.getTime() + item.duracaoMinutos * 60_000) : null
+  const pendente = item.status === "PENDENTE"
+  const confirmado = item.status === "CONFIRMADO"
+  const closed = CLOSED.includes(item.status)
+  const host = isWebUrl(item.link) ? hostOf(item.link) : null
+  const endsNextDay = validDate && end ? end.getDate() !== start.getDate() : false
+
+  return (
+    <article
+      className={cn(
+        "min-w-0 max-w-full overflow-hidden rounded-2xl border transition-colors",
+        pendente && "border-primary/30 bg-card shadow-xs",
+        confirmado && "border-border bg-card",
+        closed && "border-border bg-surface/60",
+      )}
+    >
+      <div className="flex gap-4 p-4 sm:gap-5 sm:p-5">
+        {validDate && <DateTile start={start} status={item.status} />}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+            <div className="min-w-0 flex-1">
+              <h3 className={cn("break-words text-base font-semibold leading-snug", closed ? "text-muted-foreground" : "text-foreground")}>
+                {item.titulo}
+              </h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {item.etapaDescricao ?? ETAPA_LABELS[item.etapa]}
+              </p>
+            </div>
+            <span className={cn("shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold", STATUS_STYLES[item.status])}>
+              {STATUS_AGENDAMENTO_LABELS[item.status]}
+            </span>
+          </div>
+
+          {validDate && end && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <p className={cn("inline-flex items-center gap-1.5 text-sm font-semibold tabular-nums", closed ? "text-muted-foreground" : "text-foreground")}>
+                <Clock className="size-4 text-muted-foreground" aria-hidden />
+                {fmtTime.format(start)} – {fmtTime.format(end)}
+                <span className="font-normal text-muted-foreground">
+                  ({item.duracaoMinutos} min{endsNextDay ? ", termina no dia seguinte" : ""})
+                </span>
+              </p>
+              <p className="text-sm text-muted-foreground first-letter:capitalize">
+                {fmtLongDate.format(start)}
+                {!closed && <span className="text-primary"> · {relativeLabel(start)}</span>}
+              </p>
+            </div>
+          )}
+
+          {item.mensagem && (
+            <blockquote className="mt-4 whitespace-pre-line break-words border-l-2 border-primary/30 pl-3 text-sm leading-6 text-muted-foreground">
+              {item.mensagem}
+            </blockquote>
+          )}
+
+          {!closed && host && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {confirmado ? (
+                <>
+                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="btn-primary">
+                    <Video className="size-4" aria-hidden />
+                    Entrar na reunião
+                  </a>
+                  {validDate && (
+                    <a href={googleCalendarUrl(item, start)} target="_blank" rel="noopener noreferrer" className="btn-ghost">
+                      <CalendarPlus className="size-4" aria-hidden />
+                      Adicionar à agenda
+                    </a>
+                  )}
+                </>
+              ) : (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-surface px-3 text-xs font-medium text-strong-foreground transition-colors hover:bg-muted"
+                >
+                  <Video className="size-3.5 text-muted-foreground" aria-hidden />
+                  <span className="text-muted-foreground">Link da reunião</span>
+                  {host}
+                  <ArrowUpRight className="size-3.5 text-muted-foreground" aria-hidden />
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {pendente && (
+        <div className="flex flex-col gap-3 border-t border-border bg-surface/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p className="text-sm text-muted-foreground">A empresa aguarda sua resposta.</p>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <button
+              type="button"
+              onClick={() => onRespond(item, "recusar")}
+              className="btn-secondary text-danger-foreground"
+              disabled={busy || disabled}
+            >
+              {busy && responding === "recusar" && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
+              Recusar
+            </button>
+            <button
+              type="button"
+              onClick={() => onRespond(item, "confirmar")}
+              className="btn-primary"
+              disabled={busy || disabled}
+            >
+              {busy && responding === "confirmar" ? (
+                <LoaderCircle className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Check className="size-4" aria-hidden />
+              )}
+              Confirmar presença
+            </button>
+          </div>
+        </div>
+      )}
+    </article>
+  )
+}
+
 function AgendamentosCandidato({ agendamentos }: { agendamentos: CandidaturaAgendamento[] }) {
   const confirmar = useConfirmarAgendamento()
   const recusar = useRecusarAgendamento()
   const [erro, setErro] = useState<string | null>(null)
+  // Controla qual card está respondendo, para não girar spinner em todos.
+  const [ativo, setAtivo] = useState<{ id: string; acao: "confirmar" | "recusar" } | null>(null)
   const pending = confirmar.isPending || recusar.isPending
 
+  const { proximos, encerrados } = useMemo(() => {
+    const byDate = (a: CandidaturaAgendamento, b: CandidaturaAgendamento) =>
+      (Date.parse(a.inicio) || 0) - (Date.parse(b.inicio) || 0)
+    const abertos = agendamentos.filter((item) => !CLOSED.includes(item.status)).sort(byDate)
+    const fechados = agendamentos.filter((item) => CLOSED.includes(item.status)).sort((a, b) => byDate(b, a))
+    return { proximos: abertos, encerrados: fechados }
+  }, [agendamentos])
+
   async function responder(agendamento: CandidaturaAgendamento, acao: "confirmar" | "recusar") {
-    setErro(null) 
+    setErro(null)
+    setAtivo({ id: agendamento.id, acao })
     try {
-      if (acao === "confirmar") {
-        await confirmar.mutateAsync({ candidaturaId: agendamento.candidaturaId, agendamentoId: agendamento.id })
-      } else {
-        await recusar.mutateAsync({ candidaturaId: agendamento.candidaturaId, agendamentoId: agendamento.id })
-      }
+      const vars = { candidaturaId: agendamento.candidaturaId, agendamentoId: agendamento.id }
+      if (acao === "confirmar") await confirmar.mutateAsync(vars)
+      else await recusar.mutateAsync(vars)
     } catch (requestError) {
       setErro(getErrorMessage(requestError, "Não foi possível atualizar o agendamento."))
+    } finally {
+      setAtivo(null)
     }
   }
+
+  const renderCard = (item: CandidaturaAgendamento) => (
+    <AgendamentoCard
+      key={item.id}
+      item={item}
+      busy={pending && ativo?.id === item.id}
+      disabled={pending}
+      responding={ativo?.id === item.id ? ativo.acao : null}
+      onRespond={(a, acao) => void responder(a, acao)}
+    />
+  )
 
   return (
     <section aria-labelledby="application-appointments-title" className={cn(cardBase, "p-6 sm:p-7")}>
@@ -102,89 +346,38 @@ function AgendamentosCandidato({ agendamentos }: { agendamentos: CandidaturaAgen
         icon={CalendarClock}
         title="Entrevistas e agendamentos"
         description="Convites e próximos encontros deste processo."
-        aside={agendamentos.length > 0 && <span className="rounded-full bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground">{agendamentos.length}</span>}
+        aside={
+          proximos.length > 0 && (
+            <span className="rounded-full bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground">
+              {proximos.length} {proximos.length === 1 ? "ativo" : "ativos"}
+            </span>
+          )
+        }
       />
 
-      {erro && <p className="mt-4 rounded-xl border border-danger/20 bg-danger-subtle px-4 py-3 text-sm text-danger-foreground" role="alert">{erro}</p>}
+      {erro && (
+        <p role="alert" className="mt-4 rounded-xl border border-danger/20 bg-danger-subtle px-4 py-3 text-sm text-danger-foreground">
+          {erro}
+        </p>
+      )}
 
       {agendamentos.length === 0 ? (
-        <EmptyHint icon={CalendarDays}>Ainda não há entrevistas ou reuniões agendadas.</EmptyHint>
+        <EmptyHint icon={CalendarDays}>
+          Ainda não há entrevistas ou reuniões agendadas. Quando a empresa enviar um convite, ele aparece aqui.
+        </EmptyHint>
       ) : (
         <div className="mt-5 flex flex-col gap-3">
-          {agendamentos.map((agendamento) => {
-            const pendente = agendamento.status === "PENDENTE"
-            const encerrado = agendamento.status === "CANCELADO" || agendamento.status === "RECUSADO"
-            const inicio = new Date(agendamento.inicio)
-            const validDate = !Number.isNaN(inicio.getTime())
-            return (
-              <article
-                key={agendamento.id}
-                className={cn(
-                  "overflow-hidden rounded-xl border transition-colors",
-                  pendente ? "border-primary/25 bg-primary-subtle/40" : "border-border bg-card",
-                  encerrado && "opacity-75",
-                )}
-              >
-                <div className="flex gap-4 p-4 sm:p-5">
-                  {validDate && (
-                    <div className={cn("flex w-14 shrink-0 flex-col items-center justify-center rounded-xl border py-2 text-center", pendente ? "border-primary/20 bg-card text-primary" : "border-border bg-surface text-foreground")} aria-hidden>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider">{formatDate(agendamento.inicio, { month: "short" }).replace(".", "")}</span>
-                      <span className="text-xl font-semibold leading-none">{inicio.getDate()}</span>
-                    </div>
-                  )}
-                  <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-foreground">{agendamento.titulo}</h3>
-                        <span
-                          className={cn(
-                            "rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
-                            pendente && "border-warning/25 bg-warning-subtle text-warning-foreground",
-                            agendamento.status === "CONFIRMADO" && "border-success-border bg-success-subtle text-success-foreground",
-                            encerrado && "border-border bg-surface text-muted-foreground",
-                            agendamento.status === "REALIZADO" && "border-primary/20 bg-primary-subtle text-primary",
-                            agendamento.status === "NAO_COMPARECEU" && "border-danger/20 bg-danger-subtle text-danger-foreground",
-                          )}
-                        >
-                          {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
-                        </span>
-                      </div>
-                      <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-sm text-strong-foreground">
-                        <Clock className="size-3.5 text-muted-foreground" aria-hidden />
-                        {formatDate(agendamento.inicio, { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
-                        <span className="text-muted-foreground">· {agendamento.duracaoMinutos} min</span>
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">Etapa: {agendamento.etapaDescricao ?? ETAPA_LABELS[agendamento.etapa]}</p>
-                      {agendamento.mensagem && <p className="mt-3 whitespace-pre-line rounded-lg bg-surface p-3 text-sm leading-relaxed text-muted-foreground">{agendamento.mensagem}</p>}
-                    </div>
+          {proximos.map(renderCard)}
 
-                    {!encerrado && isWebUrl(agendamento.link) && (
-                      <a href={agendamento.link} target="_blank" rel="noopener noreferrer" className="btn-secondary shrink-0 self-start">
-                        <Video className="size-4" aria-hidden />
-                        Entrar na reunião
-                      </a>
-                    )}
-                  </div>
-                </div>
-
-                {pendente && (
-                  <div className="flex flex-col gap-2 border-t border-primary/15 bg-card/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                    <p className="text-xs font-medium text-muted-foreground">A empresa aguarda sua resposta.</p>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <button type="button" onClick={() => void responder(agendamento, "recusar")} className="btn-secondary text-danger-foreground" disabled={pending}>
-                        {recusar.isPending && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
-                        Recusar
-                      </button>
-                      <button type="button" onClick={() => void responder(agendamento, "confirmar")} className="btn-primary" disabled={pending}>
-                        {confirmar.isPending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Check className="size-4" aria-hidden />}
-                        Confirmar presença
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </article>
-            )
-          })}
+          {encerrados.length > 0 && (
+            <details className="group mt-1">
+              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+                <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
+                Encerrados ({encerrados.length})
+              </summary>
+              <div className="mt-2 flex flex-col gap-3">{encerrados.map(renderCard)}</div>
+            </details>
+          )}
         </div>
       )}
     </section>
@@ -325,22 +518,22 @@ export function ApplicationDetailScreen({ id }: { id: string }) {
   const currentLabel = ETAPA_LABELS[candidatura.etapaAtual] || candidatura.etapaAtual
   const progress = etapas.length > 0 && currentIndex >= 0 ? Math.round(((currentIndex + 1) / etapas.length) * 100) : 0
   const statusDot =
-  candidatura.status === "APROVADA"
-  ? "bg-success-foreground"
-  : candidatura.status === "REPROVADA"
-  ? "bg-danger-foreground"
-  : candidatura.status === "CANCELADA"
-  ? "bg-muted-foreground"
-  : "bg-primary"
+    candidatura.status === "APROVADA"
+      ? "bg-success-foreground"
+      : candidatura.status === "REPROVADA"
+        ? "bg-danger-foreground"
+        : candidatura.status === "CANCELADA"
+          ? "bg-muted-foreground"
+          : "bg-primary"
   const StatusIcon = candidatura.status === "APROVADA" ? Check : candidatura.status === "REPROVADA" || candidatura.status === "CANCELADA" ? X : Clock
   const statusTitle = encerrada ? STATUS_LABELS[candidatura.status] : currentLabel
   const statusDescription = encerrada
     ? candidatura.motivoEncerramento ||
-      (candidatura.status === "APROVADA"
-        ? "A empresa aprovou sua candidatura neste processo seletivo."
-        : candidatura.status === "REPROVADA"
-          ? "A empresa encerrou sua participação neste processo seletivo."
-          : "Sua participação neste processo seletivo foi cancelada.")
+    (candidatura.status === "APROVADA"
+      ? "A empresa aprovou sua candidatura neste processo seletivo."
+      : candidatura.status === "REPROVADA"
+        ? "A empresa encerrou sua participação neste processo seletivo."
+        : "Sua participação neste processo seletivo foi cancelada.")
     : candidatura.etapaAtualDescricao || ETAPA_HINTS[candidatura.etapaAtual] || "Acompanhe as atualizações da empresa nesta página."
   const history = [...historico].sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0))
   const feedbackList = [...feedbacks].sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0))
@@ -357,7 +550,7 @@ export function ApplicationDetailScreen({ id }: { id: string }) {
     }
   }
 
-    console.log(detalhe)
+  console.log(detalhe)
 
 
   return (
@@ -421,25 +614,25 @@ export function ApplicationDetailScreen({ id }: { id: string }) {
 
       <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6">
-  <section aria-labelledby="application-status-title" className={cn(cardBase, "p-6 sm:p-7")}>
-  <div className="flex items-center justify-between gap-4">
-  <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-  <span className="relative flex size-2" aria-hidden>
-  {!encerrada && <span className={cn("absolute inline-flex size-full animate-ping rounded-full opacity-60", statusDot)} />}
-  <span className={cn("relative inline-flex size-2 rounded-full", statusDot)} />
-  </span>
-  {encerrada ? "Resultado do processo" : "Etapa atual"}
-  </p>
-  {candidatura.updatedAt && (
-  <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-  <StatusIcon className="size-3.5" aria-hidden />
-  <span>Atualizado em <time dateTime={candidatura.updatedAt}>{formatDate(candidatura.updatedAt, { day: "2-digit", month: "short" })}</time></span>
-  </p>
-  )}
-  </div>
-  <h2 id="application-status-title" className="mt-4 text-3xl font-semibold tracking-tight text-foreground text-balance">{statusTitle}</h2>
-  <p className="mt-3 max-w-prose whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{statusDescription}</p>
-  </section>
+          <section aria-labelledby="application-status-title" className={cn(cardBase, "p-6 sm:p-7")}>
+            <div className="flex items-center justify-between gap-4">
+              <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <span className="relative flex size-2" aria-hidden>
+                  {!encerrada && <span className={cn("absolute inline-flex size-full animate-ping rounded-full opacity-60", statusDot)} />}
+                  <span className={cn("relative inline-flex size-2 rounded-full", statusDot)} />
+                </span>
+                {encerrada ? "Resultado do processo" : "Etapa atual"}
+              </p>
+              {candidatura.updatedAt && (
+                <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <StatusIcon className="size-3.5" aria-hidden />
+                  <span>Atualizado em <time dateTime={candidatura.updatedAt}>{formatDate(candidatura.updatedAt, { day: "2-digit", month: "short" })}</time></span>
+                </p>
+              )}
+            </div>
+            <h2 id="application-status-title" className="mt-4 text-3xl font-semibold tracking-tight text-foreground text-balance">{statusTitle}</h2>
+            <p className="mt-3 max-w-prose whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{statusDescription}</p>
+          </section>
 
           {pendingInvites > 0 && (
             <a href="#application-appointments" className="group flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning-subtle p-4 text-sm font-medium text-warning-foreground transition-shadow hover:shadow-sm">

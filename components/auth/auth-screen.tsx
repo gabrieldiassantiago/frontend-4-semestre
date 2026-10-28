@@ -54,6 +54,7 @@ export function AuthScreen({
     password: "",
     confirmPassword: "",
   })
+  
   const [remember, setRemember] = useState(false)
   const [modalTerms, setModalTerms] = useState(false)
 

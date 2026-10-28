@@ -202,10 +202,10 @@ export function ApplyModal({
         }
       >
         <div className="flex flex-col items-center py-2 text-center">
-          <div className="flex size-32 items-center justify-center">
+          <div className="flex size-64 items-center justify-center">
             <Lottie
               src={sucessoVagaAnimation}
-              loop={false}
+              loop={true}
               autoplay
               aria-label="Candidatura enviada com sucesso"
               className="size-64"

@@ -32,16 +32,15 @@ export type StatusAgendamento = (typeof STATUS_AGENDAMENTO)[number]
 
 
 export const ETAPA_LABELS: Record<EtapaProcesso, string> = {
-  INSCRICAO: "Sua inscrição foi recebida, e a empresa irá analisá-la.",
-  TRIAGEM: "Você está na fase de triagem, onde a empresa avalia seu perfil e currículo.",
-  ENTREVISTA_RH: "Entrevista RH",
+  INSCRICAO: "Inscrição recebida",
+  TRIAGEM: "Em triagem",
+  ENTREVISTA_RH: "Entrevista com RH",
   TESTE_TECNICO: "Teste técnico",
   ENTREVISTA_TECNICA: "Entrevista técnica",
-  PROPOSTA: "Proposta",
+  PROPOSTA: "Proposta de contratação",
   CONTRATACAO: "Contratação",
 }
 
-/** Rótulos curtos para a visão da empresa (colunas, filtros e gráficos). */
 export const ETAPA_SHORT_LABELS: Record<EtapaProcesso, string> = {
   INSCRICAO: "Inscrição",
   TRIAGEM: "Triagem",

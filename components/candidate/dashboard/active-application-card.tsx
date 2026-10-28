@@ -6,7 +6,6 @@ import { ROUTES } from "@/lib/config/routes"
 import { formatDate } from "@/lib/format"
 import type { Candidatura } from "@/lib/types/candidatura.types"
 
-/** Destaque do processo seletivo mais recente, com a trilha de etapas. */
 export function ActiveApplicationCard({ candidatura }: { candidatura: Candidatura }) {
   const company = candidatura.nomeEmpresa ?? "Empresa"
   const href = ROUTES.candidate.application(candidatura.id)

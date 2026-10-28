@@ -81,13 +81,10 @@ export function CandidaturaDetailPanel({
   const [aba, setAba] = useState<Aba>("processo")
   const [perguntarAgendamento, setPerguntarAgendamento] = useState(false)
 
-  console.log(detalhe)
-
   useEffect(() => {
     setAba("processo")
     setPerguntarAgendamento(false)
   }, [candidaturaId])
-''
   if (loading) {
     return (
       <div className="p-5">
@@ -149,7 +146,7 @@ export function CandidaturaDetailPanel({
         </a>
       )}
 
-      <div role="tablist" aria-label="Seções da candidatura" className="flex gap-3.5 overflow-x-auto border-b border-border px-4">
+      <div role="tablist" aria-label="Seções da candidatura" className="flex gap-3.5 overflow-x-auto border-b border-border px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {ABAS.map((item) => {
           const selected = aba === item.id
           const count = tabCounts[item.id]
@@ -161,7 +158,7 @@ export function CandidaturaDetailPanel({
               aria-selected={selected}
               onClick={() => setAba(item.id)}
               className={cn(
-                "relative -mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 py-3 text-sm font-semibold transition-colors",
+                "relative -mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 py-3 text-sm font-semibold transition-all duration-200",
                 selected ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
@@ -169,8 +166,8 @@ export function CandidaturaDetailPanel({
               {count ? (
                 <span
                   className={cn(
-                    "rounded-full px-1.5 text-[11px] tabular-nums",
-                    selected ? "bg-primary-subtle text-primary-subtle-foreground" : "bg-muted text-muted-foreground",
+                    "rounded-full px-1.5 py-px text-[11px] tabular-nums transition-colors",
+                    selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
                   )}
                 >
                   {count}
@@ -181,7 +178,7 @@ export function CandidaturaDetailPanel({
         })}
       </div>
 
-      <div key={aba} className="motion-pop flex flex-col gap-6 p-5">
+      <div key={aba} className="motion-pop flex flex-col gap-5 p-5">
         {aba === "processo" && (
           <>
             {finalizada ? (
@@ -392,12 +389,13 @@ function AgendamentosManager({
       etapa: form.etapa,
       titulo: form.titulo.trim(),
       mensagem: form.mensagem?.trim() || undefined,
-      inicio: form.inicio,
+      inicio: new Date(form.inicio).toISOString(),
       duracaoMinutos: Number(form.duracaoMinutos),
       link: form.link.trim(),
     }
     try {
       if (form.id) await atualizar.mutateAsync({ id: candidaturaId, agendamentoId: form.id, dto })
+      
       else await criar.mutateAsync({ id: candidaturaId, dto })
       setForm(null)
       onDone()
@@ -421,12 +419,14 @@ function AgendamentosManager({
       {erro && <Alert tone="danger">{erro}</Alert>}
 
       {form && (
-        <section className="rounded-card border border-border bg-muted/50 p-4">
-          <h4 className="text-sm font-bold text-foreground">{form.id ? "Editar agendamento" : "Novo agendamento"}</h4>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            O candidato receberá o convite e poderá confirmar ou recusar.
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <section className="motion-pop rounded-xl border border-border bg-muted/40 p-4">
+          <div className="mb-3 flex items-start justify-between gap-2">
+            <div>
+              <h4 className="text-sm font-bold text-foreground">{form.id ? "Editar agendamento" : "Novo agendamento"}</h4>
+              <p className="mt-0.5 text-xs text-muted-foreground">O candidato receberá o convite e poderá confirmar ou recusar.</p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Etapa">
               <select className="field-input" value={form.etapa} onChange={(event) => setForm({ ...form, etapa: event.target.value as EtapaProcesso })}>
                 {etapasDisponiveis.map((item) => <option key={item} value={item}>{ETAPA_SHORT_LABELS[item]}</option>)}
@@ -443,18 +443,18 @@ function AgendamentosManager({
             <Field label="Data e horário">
               <input className="field-input" type="datetime-local" value={form.inicio} onChange={(event) => setForm({ ...form, inicio: event.target.value })} />
             </Field>
-            <Field label="Link da reunião">
+            <Field label="Link da reunião" wide>
               <input className="field-input" type="url" value={form.link} onChange={(event) => setForm({ ...form, link: event.target.value })} placeholder="https://meet.google.com/..." />
             </Field>
             <Field label="Mensagem" wide hint="Opcional. Aparece para o candidato junto do convite.">
-              <textarea className="field-input min-h-24 resize-y" value={form.mensagem ?? ""} onChange={(event) => setForm({ ...form, mensagem: event.target.value })} placeholder="Explique como será a conversa ou o que o candidato deve preparar." />
+              <textarea className="field-input min-h-[88px] resize-y" value={form.mensagem ?? ""} onChange={(event) => setForm({ ...form, mensagem: event.target.value })} placeholder="Explique como será a conversa ou o que o candidato deve preparar." />
             </Field>
           </div>
-          <div className="mt-4 flex gap-2">
+          <div className="mt-3 flex gap-2">
             <button type="button" onClick={() => setForm(null)} className="btn-ghost flex-1" disabled={saving}>Cancelar</button>
             <button type="button" onClick={() => void salvar()} className="btn-primary flex-1" disabled={saving}>
               {saving && <Loader2 className="size-4 animate-spin" aria-hidden />}
-              {saving ? "Salvando" : "Enviar convite"}
+              {saving ? "Salvando…" : form.id ? "Salvar alterações" : "Enviar convite"}
             </button>
           </div>
         </section>
@@ -471,37 +471,58 @@ function AgendamentosManager({
         <p className="text-sm leading-relaxed text-muted-foreground">Nenhum agendamento para esta candidatura.</p>
       ) : (
         <div className="motion-stagger flex flex-col gap-3">
-          {agendamentos.map((agendamento, index) => (
-            <article key={agendamento.id} style={{ "--stagger-index": index } as React.CSSProperties} className="rounded-card border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-raised">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h4 className="font-bold text-foreground">{agendamento.titulo}</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">{ETAPA_SHORT_LABELS[agendamento.etapa]} · {formatDate(agendamento.inicio, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })} · {agendamento.duracaoMinutos} min</p>
+          {agendamentos.map((agendamento, index) => {
+            const isPast = ["CANCELADO", "RECUSADO", "REALIZADO", "NAO_COMPARECEU"].includes(agendamento.status)
+            return (
+              <article
+                key={agendamento.id}
+                style={{ "--stagger-index": index } as React.CSSProperties}
+                className={cn(
+                  "rounded-xl border bg-card p-4 transition-all duration-200",
+                  isPast
+                    ? "border-border opacity-70 hover:opacity-100"
+                    : "border-border hover:border-primary/25 hover:shadow-[0_2px_12px_-4px_rgba(124,58,237,0.12)]",
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-foreground">{agendamento.titulo}</h4>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {ETAPA_SHORT_LABELS[agendamento.etapa]}
+                      {" · "}
+                      {formatDate(agendamento.inicio, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      {" · "}{agendamento.duracaoMinutos} min
+                    </p>
+                  </div>
+                  <Badge variant={agendamento.status === "CONFIRMADO" ? "success" : agendamento.status === "CANCELADO" || agendamento.status === "RECUSADO" ? "danger" : "outline"} size="sm">
+                    {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
+                  </Badge>
                 </div>
-                <Badge variant={agendamento.status === "CONFIRMADO" ? "success" : agendamento.status === "CANCELADO" || agendamento.status === "RECUSADO" ? "danger" : "outline"} size="sm">
-                  {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
-                </Badge>
-              </div>
-              {agendamento.mensagem && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{agendamento.mensagem}</p>}
-              <div className="mt-4 flex flex-wrap gap-2">
-                {agendamento.status !== "CANCELADO" && agendamento.status !== "RECUSADO" && (
-                  <a href={agendamento.link} target="_blank" rel="noopener noreferrer" className="btn-secondary">
-                    <ExternalLink className="size-3.5" aria-hidden /> Abrir link
-                  </a>
+                {agendamento.mensagem && (
+                  <p className="mt-2.5 whitespace-pre-line rounded-lg bg-muted px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                    {agendamento.mensagem}
+                  </p>
                 )}
-                {!disabled && !agendamento.status.includes("CANCELADO") && !agendamento.status.includes("RECUSADO") && !["REALIZADO", "NAO_COMPARECEU"].includes(agendamento.status) && (
-                  <>
-                    <button type="button" onClick={() => setForm({ id: agendamento.id, etapa: agendamento.etapa, titulo: agendamento.titulo, mensagem: agendamento.mensagem ?? "", inicio: toDateTimeLocal(agendamento.inicio), duracaoMinutos: agendamento.duracaoMinutos, link: agendamento.link })} className="btn-ghost">
-                      Editar
-                    </button>
-                    <button type="button" onClick={() => void remover(agendamento)} className="btn-ghost text-danger-foreground" disabled={saving}>
-                      Cancelar agendamento
-                    </button>
-                  </>
-                )}
-              </div>
-            </article>
-          ))}
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border-subtle pt-3">
+                  {agendamento.status !== "CANCELADO" && agendamento.status !== "RECUSADO" && (
+                    <a href={agendamento.link} target="_blank" rel="noopener noreferrer" className="btn-secondary h-7 gap-1 px-2.5 text-xs">
+                      <ExternalLink className="size-3" aria-hidden /> Abrir link
+                    </a>
+                  )}
+                  {!disabled && !agendamento.status.includes("CANCELADO") && !agendamento.status.includes("RECUSADO") && !["REALIZADO", "NAO_COMPARECEU"].includes(agendamento.status) && (
+                    <>
+                      <button type="button" onClick={() => setForm({ id: agendamento.id, etapa: agendamento.etapa, titulo: agendamento.titulo, mensagem: agendamento.mensagem ?? "", inicio: toDateTimeLocal(agendamento.inicio), duracaoMinutos: agendamento.duracaoMinutos, link: agendamento.link })} className="btn-ghost h-7 px-2.5 text-xs">
+                        Editar
+                      </button>
+                      <button type="button" onClick={() => void remover(agendamento)} className="btn-ghost h-7 px-2.5 text-xs text-danger-foreground" disabled={saving}>
+                        Cancelar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </article>
+            )
+          })}
         </div>
       )}
     </div>

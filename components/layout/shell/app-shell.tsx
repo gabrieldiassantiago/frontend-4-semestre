@@ -71,7 +71,7 @@ export function AppShell({
       <aside
         aria-label={areaLabel}
         className={cn(
-          "fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-border bg-card transition-[width] duration-200 lg:flex",
+          "fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-border-subtle bg-card transition-[width] duration-200 lg:flex",
           collapsed ? "w-[76px]" : "w-64",
         )}
       >
@@ -115,7 +115,7 @@ export function AppShell({
       </aside>
 
       <div className={cn("flex min-h-dvh min-w-0 flex-col transition-[padding] duration-200", collapsed ? "lg:pl-[76px]" : "lg:pl-64")}>
-        <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur-md">
+        <header className="sticky top-0 z-20 border-b border-border-subtle bg-background/80 backdrop-blur-xl">
           <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
             <button
               type="button"

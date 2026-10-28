@@ -1,3 +1,7 @@
+"use client"
+
+import { useId } from "react"
+import { motion } from "framer-motion"
 import Link from "next/link"
 import { isNavItemActive, type NavGroup, type NavItem } from "@/lib/config/navigation"
 import { cn } from "@/lib/utils"
@@ -15,12 +19,15 @@ export function SidebarNavLink({
   collapsed = false,
   badge,
   onNavigate,
+  layoutId,
 }: {
   item: NavItem
   pathname: string
   collapsed?: boolean
   badge?: number
   onNavigate?: () => void
+  /** Quando informado, o destaque do item ativo desliza entre os itens. */
+  layoutId?: string
 }) {
   const active = isNavItemActive(pathname, item)
   const Icon = item.icon
@@ -36,14 +43,23 @@ export function SidebarNavLink({
         "group relative flex min-h-10 items-center gap-3 rounded-lg text-sm transition-colors",
         collapsed ? "mx-auto size-10 justify-center" : "px-3",
         active
-          ? "bg-primary-subtle font-semibold text-primary-subtle-foreground"
+          ? cn("font-semibold text-primary-subtle-foreground", !layoutId && "bg-primary-subtle")
           : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
-      {active && !collapsed && (
-        <span aria-hidden className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+      {active && layoutId && (
+        <motion.span
+          layoutId={layoutId}
+          aria-hidden
+          transition={{ type: "spring", stiffness: 380, damping: 32 }}
+          className="absolute inset-0 rounded-lg bg-primary-subtle"
+        >
+          {!collapsed && (
+            <span className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+          )}
+        </motion.span>
       )}
-      <span className="relative shrink-0">
+      <span className="relative shrink-0 transition-transform duration-200 group-hover:scale-110">
         <Icon
           aria-hidden
           strokeWidth={active ? 2 : 1.75}
@@ -60,7 +76,7 @@ export function SidebarNavLink({
         </span>
       ) : (
         <>
-          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+          <span className="relative min-w-0 flex-1 truncate transition-transform duration-200 group-hover:translate-x-0.5">{item.label}</span>
           {hasBadge && (
             <span
               className={cn(
@@ -92,6 +108,8 @@ export function SidebarNav({
   onNavigate?: () => void
   label?: string
 }) {
+  const layoutId = `nav-active-${useId()}`
+
   return (
     <nav aria-label={label} className="flex flex-col gap-5">
       {groups.map((group, index) => (
@@ -112,6 +130,7 @@ export function SidebarNav({
               collapsed={collapsed}
               badge={badges?.[item.href]}
               onNavigate={onNavigate}
+              layoutId={layoutId}
             />
           ))}
         </div>

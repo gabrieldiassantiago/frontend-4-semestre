@@ -510,12 +510,12 @@ export function JobSearchBar({
   onOpenFilters,
   activeFilterCount,
   onProximitySearch,
+  
   isProximityActive = false,
   isLocating = false,
   isSearching = false,
 }: {
   value: JobSearchState
-  /** Chamado automaticamente: texto com debounce, localização/área na hora. */
   onSubmit: (next: JobSearchState) => void
   onOpenFilters: () => void
   activeFilterCount: number
