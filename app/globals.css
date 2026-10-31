@@ -70,13 +70,20 @@
   --card: #ffffff;
   --foreground: #09090b;
 
-  /* Marca (violeta) */
-  --primary: #7c3aed;
-  --primary-hover: #6d28d9;
+  /* Marca: roxo e verde extraídos do logo Selecta (#6D47F1 / #6CEA96 / #201D1D) */
+  --primary: #6d47f1;
+  --primary-hover: #5733e0;
   --primary-foreground: #ffffff;
-  --primary-subtle: #f5f3ff;
-  --primary-subtle-foreground: #6d28d9;
-  --primary-ring: rgba(124, 58, 237, 0.1);
+  --primary-subtle: #f2effe;
+  --primary-subtle-foreground: #5733e0;
+  --primary-ring: rgba(109, 71, 241, 0.12);
+  --primary-soft: #b8a6fa;
+  --primary-deep: #3b1fae;
+  --mint: #6cea96;
+  --mint-hover: #52dd80;
+  --mint-subtle: #e8fbef;
+  --mint-strong: #137a45;
+  --ink: #201d1d;
 
   /* Neutros */
   --muted: #fafafa;
@@ -125,6 +132,13 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-subtle: var(--primary-subtle);
   --color-primary-subtle-foreground: var(--primary-subtle-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-deep: var(--primary-deep);
+  --color-mint: var(--mint);
+  --color-mint-hover: var(--mint-hover);
+  --color-mint-subtle: var(--mint-subtle);
+  --color-mint-strong: var(--mint-strong);
+  --color-ink: var(--ink);
   --color-ring: var(--primary);
 
   --color-muted: var(--muted);

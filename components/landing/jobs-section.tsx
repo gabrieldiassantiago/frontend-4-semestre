@@ -108,7 +108,7 @@ export function JobsSection({ jobs }: { jobs: LandingJob[] }) {
 
       <div ref={grid} data-reveal className="mt-10 grid min-h-[320px] gap-5 md:grid-cols-2 lg:grid-cols-3">
         {visible.map((j) => (
-          <article key={j.id} className="flex flex-col overflow-hidden rounded-3xl border border-border bg-background transition-[box-shadow,translate] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_50px_-30px_rgba(76,29,149,0.35)]">
+          <article key={j.id} className="flex flex-col overflow-hidden rounded-3xl border border-border bg-background transition-[box-shadow,translate] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_50px_-30px_rgba(59,31,174,0.35)]">
             <header className="flex items-start gap-3 border-b border-border bg-muted px-6 py-5">
               <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-border bg-white">
                 <CompanyLogo name={j.empresa} size="sm" />

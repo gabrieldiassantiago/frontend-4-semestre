@@ -74,7 +74,7 @@ export function AuthMenu({ intent, className }: { intent: Intent; className?: st
           "inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-sm font-medium transition-colors",
           intent === "login"
             ? "border border-border bg-muted text-foreground hover:bg-border-subtle"
-            : "bg-primary text-primary-foreground shadow-[0_8px_20px_-8px_rgba(124,58,237,0.7)] hover:bg-primary-hover",
+            : "bg-primary text-primary-foreground shadow-[0_8px_20px_-8px_rgba(109,71,241,0.7)] hover:bg-primary-hover",
         )}
       >
         {copy.trigger}

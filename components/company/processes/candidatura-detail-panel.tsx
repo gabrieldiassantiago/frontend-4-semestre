@@ -80,7 +80,7 @@ export function CandidaturaDetailPanel({
   const { detalhe, loading, error, refetch } = useCandidaturaEmpresa(candidaturaId)
   const [aba, setAba] = useState<Aba>("processo")
   const [perguntarAgendamento, setPerguntarAgendamento] = useState(false)
-  ''
+
   useEffect(() => {
     setAba("processo")
     setPerguntarAgendamento(false)
@@ -395,7 +395,7 @@ function AgendamentosManager({
     }
     try {
       if (form.id) await atualizar.mutateAsync({ id: candidaturaId, agendamentoId: form.id, dto })
-
+      
       else await criar.mutateAsync({ id: candidaturaId, dto })
       setForm(null)
       onDone()

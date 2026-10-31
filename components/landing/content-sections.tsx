@@ -40,19 +40,19 @@ export function AboutSection() {
               className={cn(
                 "flex min-h-[240px] flex-col justify-between rounded-3xl border p-6 lg:min-h-[295px]",
                 s.featured
-                  ? "border-transparent bg-[radial-gradient(120%_120%_at_0%_0%,#f43f5e_0%,#d946ef_45%,#7c3aed_100%)] text-white shadow-[0_30px_60px_-30px_rgba(192,38,211,0.6)]"
+                  ? "border-transparent bg-[radial-gradient(120%_120%_at_0%_0%,#8b6dff_0%,#6d47f1_45%,#3b1fae_100%)] text-white shadow-[0_30px_60px_-30px_rgba(109,71,241,0.7)]"
                   : "border-border bg-background",
               )}
             >
               <div>
                 <p className="text-6xl font-normal tracking-[-0.04em]">
-                  {s.prefix && <span className={s.featured ? "" : "text-primary"}>{s.prefix}</span>}
+                  {s.prefix && <span className={s.featured ? "text-mint" : "text-primary"}>{s.prefix}</span>}
                   <span data-count={s.value}>{s.value}</span>
-                  <span className={s.featured ? "" : "text-primary"}>{s.suffix}</span>
+                  <span className={s.featured ? "text-mint" : "text-primary"}>{s.suffix}</span>
                 </p>
                 <p className={cn("mt-3 max-w-[26ch] text-[15px] leading-relaxed", s.featured ? "text-white/90" : "text-muted-foreground")}>{s.label}</p>
               </div>
-              <span className={cn("w-fit rounded-full px-3.5 py-1.5 text-xs font-medium", s.featured ? "bg-white/20 backdrop-blur" : "border border-border bg-muted text-strong-foreground")}>{s.tag}</span>
+              <span className={cn("w-fit rounded-full px-3.5 py-1.5 text-xs font-medium", s.featured ? "bg-mint text-ink" : "border border-border bg-muted text-strong-foreground")}>{s.tag}</span>
             </div>
           ))}
           <Link
@@ -112,16 +112,16 @@ function MiniStats() {
         {rows.map(([n, l, w]) => (
           <div key={l} className="flex items-center gap-3">
             <span data-bar className="flex h-8 flex-1 origin-left overflow-hidden rounded-md">
-              <span className="h-full bg-[#7c3aed]" style={{ width: w }} />
-              <span className="h-full flex-1 bg-[#b794ff]" />
+              <span className="h-full bg-primary" style={{ width: w }} />
+              <span className="h-full flex-1 bg-mint" />
             </span>
             <span className="w-[76px] text-sm text-muted-foreground"><strong className="font-semibold text-foreground">{n}</strong> {l}</span>
           </div>
         ))}
       </div>
       <div className="mt-4 flex gap-4 text-xs text-strong-foreground">
-        <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#7c3aed]" /> Normal</span>
-        <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#b794ff]" /> Impulsionado</span>
+        <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-primary" /> Normal</span>
+        <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-mint" /> Impulsionado</span>
       </div>
     </div>
   )
@@ -226,9 +226,9 @@ export function TipsSection() {
 }
 
 const TONES: Record<string, string> = {
-  violet: "bg-[linear-gradient(180deg,#e9dcff_0%,#ffffff_75%)]",
-  pink: "bg-[linear-gradient(180deg,#fbd5ff_0%,#ffffff_75%)]",
-  blue: "bg-[linear-gradient(180deg,#d8e0ff_0%,#ffffff_75%)]",
+  violet: "bg-[linear-gradient(180deg,#e6dffd_0%,#ffffff_75%)]",
+  pink: "bg-[linear-gradient(180deg,#d6f8e2_0%,#ffffff_75%)]",
+  blue: "bg-[linear-gradient(180deg,#f0ecfe_0%,#ffffff_75%)]",
   none: "bg-muted",
 }
 
@@ -249,7 +249,7 @@ export function TestimonialsSection() {
                 <span className="block font-medium">{t.author}</span>
                 <span className="text-sm text-muted-foreground">{t.role}</span>
               </span>
-              <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#c026d3] text-sm font-semibold text-white">
+              <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary-deep text-sm font-semibold text-white">
                 {getInitials(t.author, "?")}
               </span>
             </figcaption>

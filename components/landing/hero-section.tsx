@@ -28,21 +28,21 @@ export function HeroSection() {
     <section aria-labelledby="hero-title" className="px-3 sm:px-6">
       <div
         data-hero-stage
-        className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[28px] border border-border-subtle bg-[linear-gradient(180deg,#ffffff_0%,#f6f0ff_38%,#e6d8ff_100%)]"
+        className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[28px] border border-border-subtle bg-[linear-gradient(180deg,#ffffff_0%,#f3f0fe_40%,#e2dafd_100%)]"
       >
         <div className="hero-dots pointer-events-none absolute inset-0" aria-hidden />
-        <div data-parallax="-18" className="pointer-events-none absolute -right-32 top-24 size-[420px] rounded-full bg-[#c4a8ff]/40 blur-[100px]" aria-hidden />
-        <div data-parallax="-10" className="pointer-events-none absolute -left-40 bottom-0 size-[380px] rounded-full bg-[#f0abfc]/30 blur-[100px]" aria-hidden />
+        <div data-parallax="-18" className="pointer-events-none absolute -right-32 top-24 size-[420px] rounded-full bg-primary-soft/45 blur-[100px]" aria-hidden />
+        <div data-parallax="-10" className="pointer-events-none absolute -left-40 bottom-0 size-[380px] rounded-full bg-mint/35 blur-[100px]" aria-hidden />
 
         <div className="relative mx-auto max-w-5xl px-5 pb-10 pt-12 text-center sm:pt-14 lg:pt-16">
           <p data-hero="pill" className="mx-auto mb-7 inline-flex items-center gap-2.5 rounded-full border border-border bg-white/80 py-1.5 pl-2 pr-4 text-xs text-strong-foreground backdrop-blur sm:text-sm">
             <span className="flex -space-x-1.5" aria-hidden>
-              {["CL", "AV", "RM"].map((i, idx) => (
-                <span
-                  key={i}
-                  className="grid size-6 place-items-center rounded-full border-2 border-white text-[9px] font-semibold text-white"
-                  style={{ background: ["#7c3aed", "#c026d3", "#f43f5e"][idx] }}
-                >
+              {[
+                { i: "CL", cls: "bg-primary text-white" },
+                { i: "AV", cls: "bg-mint text-ink" },
+                { i: "RM", cls: "bg-ink text-white" },
+              ].map(({ i, cls }) => (
+                <span key={i} className={`grid size-6 place-items-center rounded-full border-2 border-white text-[9px] font-semibold ${cls}`}>
                   {i}
                 </span>
               ))}
@@ -52,7 +52,7 @@ export function HeroSection() {
 
           <h1 id="hero-title" data-hero="title" className="text-balance text-[38px] font-normal leading-[1.05] tracking-[-0.035em] text-foreground sm:text-[56px] lg:text-[68px]">
             <span className="block overflow-hidden pb-2"><span className="block">Encontre oportunidades que</span></span>
-            <span className="block overflow-hidden pb-2"><span className="block">fazem sentido <span className="bg-gradient-to-r from-[#7c3aed] to-[#c026d3] bg-clip-text text-transparent">para você</span></span></span>
+            <span className="block overflow-hidden pb-2"><span className="block">fazem sentido <span className="bg-[linear-gradient(transparent_64%,var(--mint)_64%,var(--mint)_90%,transparent_90%)] px-1 text-primary">para você</span></span></span>
           </h1>
 
           <p data-hero="text" className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
@@ -63,7 +63,7 @@ export function HeroSection() {
             data-hero="search"
             role="search"
             onSubmit={submit}
-            className="mx-auto mt-9 flex max-w-[740px] flex-col gap-1 rounded-3xl border border-white bg-white/95 p-2 shadow-[0_20px_50px_-20px_rgba(76,29,149,0.35)] backdrop-blur sm:flex-row sm:items-center sm:rounded-full"
+            className="mx-auto mt-9 flex max-w-[740px] flex-col gap-1 rounded-3xl border border-white bg-white/95 p-2 shadow-[0_20px_50px_-20px_rgba(59,31,174,0.35)] backdrop-blur sm:flex-row sm:items-center sm:rounded-full"
           >
             <label className="flex flex-1 items-center gap-3 px-4">
               <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden />
@@ -98,7 +98,7 @@ function HeroCards() {
     <div className="relative mx-auto h-[300px] max-w-[1180px] sm:h-[360px] lg:h-[400px]">
       {/* Seus dados */}
       <div data-hero="card" data-depth="14" className="absolute bottom-12 left-0 hidden w-[260px] lg:block lg:left-[3%] lg:w-[320px]">
-        <div data-float="8" className="-rotate-[4deg] rounded-2xl border border-white bg-white p-5 shadow-[0_24px_60px_-24px_rgba(76,29,149,0.35)]">
+        <div data-float="8" className="-rotate-[4deg] rounded-2xl border border-white bg-white p-5 shadow-[0_24px_60px_-24px_rgba(59,31,174,0.35)]">
           <div className="flex items-center justify-between">
             <span className="text-base font-medium">Seus dados</span>
             <span className="flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground">Em 7 dias <ChevronDown className="size-3" aria-hidden /></span>
@@ -107,23 +107,23 @@ function HeroCards() {
             {BARS.map((b) => (
               <div key={b.label} className="flex items-center gap-3">
                 <span data-bar className="flex h-7 flex-1 origin-left overflow-hidden rounded-md">
-                  <span className="h-full bg-[#7c3aed]" style={{ width: b.normal }} />
-                  <span className="h-full bg-[#b794ff]" style={{ width: b.boosted }} />
+                  <span className="h-full bg-primary" style={{ width: b.normal }} />
+                  <span className="h-full bg-mint" style={{ width: b.boosted }} />
                 </span>
                 <span className="w-[84px] whitespace-nowrap text-sm text-muted-foreground"><strong className="font-semibold text-foreground">{b.value}</strong> {b.label}</span>
               </div>
             ))}
           </div>
           <div className="mt-4 flex gap-4 text-xs text-strong-foreground">
-            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#7c3aed]" /> Normal</span>
-            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#b794ff]" /> Impulsionado</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-primary" /> Normal</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-mint" /> Impulsionado</span>
           </div>
         </div>
       </div>
 
       {/* Detalhes da vaga */}
       <div data-hero="card" data-depth="6" className="absolute bottom-0 left-1/2 w-[min(92%,380px)] -translate-x-1/2 lg:w-[400px]">
-        <div className="overflow-hidden rounded-t-3xl border border-b-0 border-white bg-white shadow-[0_-10px_60px_-20px_rgba(76,29,149,0.35)]">
+        <div className="overflow-hidden rounded-t-3xl border border-b-0 border-white bg-white shadow-[0_-10px_60px_-20px_rgba(59,31,174,0.35)]">
           <div className="bg-muted px-5 pb-4 pt-5">
             <div className="flex items-center justify-between">
               <span className="text-lg font-medium">Detalhes da vaga</span>
@@ -157,8 +157,8 @@ function HeroCards() {
 
       {/* Chips da direita */}
       <div data-hero="card" data-depth="18" className="absolute right-0 top-0 hidden lg:block lg:right-[6%]">
-        <div data-float="7" className="flex items-center gap-3 rounded-2xl border border-white bg-white py-3 pl-3 pr-8 shadow-[0_20px_50px_-24px_rgba(76,29,149,0.4)]">
-          <span className="grid size-11 place-items-center rounded-full bg-gradient-to-br from-[#f43f5e] to-[#a855f7] text-white"><Palette className="size-5" aria-hidden /></span>
+        <div data-float="7" className="flex items-center gap-3 rounded-2xl border border-white bg-white py-3 pl-3 pr-8 shadow-[0_20px_50px_-24px_rgba(59,31,174,0.4)]">
+          <span className="grid size-11 place-items-center rounded-full bg-primary text-white"><Palette className="size-5" aria-hidden /></span>
           <div>
             <p className="font-medium leading-tight">Designer UX/UI</p>
             <p className="text-xs text-muted-foreground">1.392 resultados</p>
@@ -167,8 +167,8 @@ function HeroCards() {
       </div>
 
       <div data-hero="card" data-depth="24" className="absolute bottom-20 right-0 hidden lg:block lg:right-[5%]">
-        <div data-float="10" className="-rotate-[4deg] flex items-center gap-4 rounded-2xl border border-white bg-white py-4 pl-4 pr-6 shadow-[0_20px_50px_-24px_rgba(76,29,149,0.4)]">
-          <span className="grid size-14 place-items-center rounded-full bg-gradient-to-br from-[#f43f5e] to-[#a855f7] text-white"><Rocket className="size-6" aria-hidden /></span>
+        <div data-float="10" className="-rotate-[4deg] flex items-center gap-4 rounded-2xl border border-white bg-white py-4 pl-4 pr-6 shadow-[0_20px_50px_-24px_rgba(59,31,174,0.4)]">
+          <span className="grid size-14 place-items-center rounded-full bg-mint text-ink"><Rocket className="size-6" aria-hidden /></span>
           <div>
             <p className="text-3xl font-medium leading-none tracking-tight" data-hero-count="90" data-suffix="%">90%</p>
             <p className="mt-1.5 text-sm text-muted-foreground">Taxa de contratação</p>
@@ -179,7 +179,7 @@ function HeroCards() {
       {/* Mobile: um destaque compacto sobre o card central */}
       <div data-hero="card" className="absolute right-3 top-2 sm:right-[12%] lg:hidden">
         <div data-float="6" className="flex rotate-[4deg] items-center gap-2.5 rounded-2xl bg-white py-2 pl-2 pr-4 shadow-raised">
-          <span className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-[#f43f5e] to-[#a855f7] text-white"><Rocket className="size-4" aria-hidden /></span>
+          <span className="grid size-9 place-items-center rounded-full bg-mint text-ink"><Rocket className="size-4" aria-hidden /></span>
           <div className="text-left">
             <p className="text-lg font-semibold leading-none">90%</p>
             <p className="text-[10px] text-muted-foreground">Taxa de contratação</p>
