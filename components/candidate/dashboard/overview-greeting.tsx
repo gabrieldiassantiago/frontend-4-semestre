@@ -8,9 +8,8 @@ function greetingFor(hour: number) {
   return "Boa noite"
 }
 
-const subscribe = () => () => {}
+const subscribe = () => () => { }
 
-/** Saudação pelo horário local; destaca o nome na cor primária (roxo). */
 export function OverviewGreeting({ firstName }: { firstName?: string }) {
   const greeting = useSyncExternalStore(
     subscribe,

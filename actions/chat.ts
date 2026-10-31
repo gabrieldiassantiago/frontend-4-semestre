@@ -49,11 +49,6 @@ function montarChat(candidatura: Candidatura, mensagens: ChatMensagem[]): Chat {
   }
 }
 
-/**
- * A API não tem endpoint de "lista de conversas": a conversa de uma candidatura
- * existe quando há histórico em `/message/{candidaturaId}`. Por isso a lista é
- * montada a partir das candidaturas do usuário + o histórico de cada uma.
- */
 export async function getConversasAction(
   perspectiva: ChatPerspectiva,
 ): Promise<ActionResult<Chat[]>> {

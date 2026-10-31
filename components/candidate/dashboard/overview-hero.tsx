@@ -3,7 +3,6 @@ import { ArrowUpRight, Search } from "lucide-react"
 import { ROUTES } from "@/lib/config/routes"
 import { OverviewGreeting, OverviewToday } from "./overview-greeting"
 import { OverviewStatGrid } from "./overview-stat-grid"
-import { OverviewUpdates } from "./overview-updates"
 
 interface OverviewHeroProps {
   firstName?: string
@@ -28,31 +27,34 @@ function summaryFor(inProgress: number, total: number) {
 
 export function OverviewHero({ firstName, total, inProgress, approved, closed }: OverviewHeroProps) {
   return (
-    <section aria-labelledby="overview-title" className="flex flex-col gap-8">
+    <section aria-labelledby="overview-title" className="flex flex-col gap-7">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1.5">
-          <p className="text-sm text-muted-foreground">
+        <div className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             <OverviewToday />
           </p>
-          <h1 id="overview-title" className="text-3xl font-semibold tracking-tight text-foreground text-balance sm:text-4xl">
+          <h1
+            id="overview-title"
+            className="text-2xl font-semibold tracking-tight text-foreground text-balance sm:text-3xl"
+          >
             <OverviewGreeting firstName={firstName} />
           </h1>
-          <p className="max-w-lg text-sm leading-relaxed text-muted-foreground text-pretty">
+          <p className="max-w-xl text-sm text-muted-foreground text-pretty">
             {summaryFor(inProgress, total)}
           </p>
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2.5">
           <Link
             href={ROUTES.candidate.applications}
-            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-border bg-card px-5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            className="inline-flex h-10 items-center gap-1.5 rounded-full border border-border/80 bg-card px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
           >
-            Candidaturas
-            <ArrowUpRight aria-hidden className="size-4" />
+            Minhas candidaturas
+            <ArrowUpRight aria-hidden className="size-4 text-muted-foreground" />
           </Link>
           <Link
             href={ROUTES.candidate.jobs}
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-raised transition-all hover:-translate-y-0.5 hover:bg-primary-hover"
+            className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-2xs transition-all hover:bg-primary-hover active:scale-[0.98]"
           >
             <Search aria-hidden className="size-4" />
             Buscar vagas
@@ -60,12 +62,12 @@ export function OverviewHero({ firstName, total, inProgress, approved, closed }:
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
-        <OverviewStatGrid total={total} inProgress={inProgress} approved={approved} closed={closed} />
-        <div className="lg:w-[360px] lg:shrink-0">
-          <OverviewUpdates />
-        </div>
-      </div>
+      <OverviewStatGrid
+        total={total}
+        inProgress={inProgress}
+        approved={approved}
+        closed={closed}
+      />
     </section>
   )
 }

@@ -12,7 +12,7 @@ import {
 function formatExperienceMonth(value: string) {
   const match = /^(\d{4})-(\d{2})/.exec(value)
   if (!match) return "—"
-  return new Intl.DateTimeFormat("pt-BR", {month:"short", year:"numeric"}).format(new Date(Number(match[1]), Number(match[2]) - 1, 1))
+  return new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" }).format(new Date(Number(match[1]), Number(match[2]) - 1, 1))
 }
 import type {
   CandidateExperience,
@@ -58,7 +58,8 @@ export function ExperienceEditor({
   onEditingChange?: (editing: boolean) => void
 }) {
   const [rascunho, setRascunho] = useState<Rascunho | null>(null)
-  const addExperience = useAddCandidateExperience()
+  const addExperience = useAddCandidateExperience();
+
   const updateExperience = useUpdateCandidateExperience()
   const deleteExperience = useDeleteCandidateExperience()
   const saving = addExperience.isPending || updateExperience.isPending
@@ -90,6 +91,8 @@ export function ExperienceEditor({
       endDate: rascunho.isCurrent || !rascunho.endDate ? undefined : `${rascunho.endDate}-01`,
       isCurrent: rascunho.isCurrent,
     }
+
+    console.log(dto)
 
     try {
       const atualizado = rascunho.id
@@ -197,105 +200,105 @@ export function ExperienceEditor({
       {rascunho ? (
         <section aria-label="Formulário de experiência" className="overflow-hidden rounded-2xl border border-primary/25 bg-card p-5 shadow-sm sm:p-6">
           <fieldset disabled={busy} className="min-w-0">
-          <h4 className="text-lg font-bold tracking-tight text-foreground">
-            {rascunho.id ? "Editar experiência" : "Nova experiência"}
-          </h4>
+            <h4 className="text-lg font-bold tracking-tight text-foreground">
+              {rascunho.id ? "Editar experiência" : "Nova experiência"}
+            </h4>
 
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">Conte onde você atuou e como contribuiu. Estágio e voluntariado também valem.</p>
-          <p className="mt-3 text-xs text-muted-foreground">* Campo obrigatório · salvo ao clicar no botão abaixo.</p>
-          <div className="mt-6 grid gap-5 sm:grid-cols-2">
-            <Field label="Empresa ou organização *" error={fieldErrors.companyName}>
-              <input
-                className="field-input"
-                aria-invalid={Boolean(fieldErrors.companyName)}
-                value={rascunho.companyName}
-                onChange={(event) =>
-                  setRascunho({ ...rascunho, companyName: event.target.value })
-                }
-                placeholder="Ex.: Hospital Santa Casa, Loja Central"
-              />
-            </Field>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">Conte onde você atuou e como contribuiu. Estágio e voluntariado também valem.</p>
+            <p className="mt-3 text-xs text-muted-foreground">* Campo obrigatório · salvo ao clicar no botão abaixo.</p>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <Field label="Empresa ou organização *" error={fieldErrors.companyName}>
+                <input
+                  className="field-input"
+                  aria-invalid={Boolean(fieldErrors.companyName)}
+                  value={rascunho.companyName}
+                  onChange={(event) =>
+                    setRascunho({ ...rascunho, companyName: event.target.value })
+                  }
+                  placeholder="Ex.: Hospital Santa Casa, Loja Central"
+                />
+              </Field>
 
-            <Field label="Cargo ou atividade *" error={fieldErrors.role}>
-              <input
-                className="field-input"
-                aria-invalid={Boolean(fieldErrors.role)}
-                value={rascunho.role}
-                onChange={(event) => setRascunho({ ...rascunho, role: event.target.value })}
-                placeholder="Ex.: Assistente de vendas"
-              />
-            </Field>
+              <Field label="Cargo ou atividade *" error={fieldErrors.role}>
+                <input
+                  className="field-input"
+                  aria-invalid={Boolean(fieldErrors.role)}
+                  value={rascunho.role}
+                  onChange={(event) => setRascunho({ ...rascunho, role: event.target.value })}
+                  placeholder="Ex.: Assistente de vendas"
+                />
+              </Field>
 
-            <Field label="Data de início *" error={fieldErrors.startDate}>
-              <input
-                type="month"
-                min="1900-01"
-                max={new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0")}
-                className="field-input"
-                aria-invalid={Boolean(fieldErrors.startDate)}
-                value={rascunho.startDate}
-                onChange={(event) => setRascunho({ ...rascunho, startDate: event.target.value })}
-              />
-            </Field>
+              <Field label="Data de início *" error={fieldErrors.startDate}>
+                <input
+                  type="month"
+                  min="1900-01"
+                  max={new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0")}
+                  className="field-input"
+                  aria-invalid={Boolean(fieldErrors.startDate)}
+                  value={rascunho.startDate}
+                  onChange={(event) => setRascunho({ ...rascunho, startDate: event.target.value })}
+                />
+              </Field>
 
-            <Field error={fieldErrors.endDate} label="Data de término" hint={rascunho.isCurrent ? "Desativado: é o seu trabalho atual." : undefined}>
-              <input
-                type="month"
-                min="1900-01"
-                max={new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0")}
-                className="field-input"
-                aria-invalid={Boolean(fieldErrors.endDate)}
-                value={rascunho.endDate ?? ""}
-                disabled={rascunho.isCurrent}
-                onChange={(event) => setRascunho({ ...rascunho, endDate: event.target.value })}
-              />
-            </Field>
+              <Field error={fieldErrors.endDate} label="Data de término" hint={rascunho.isCurrent ? "Desativado: é o seu trabalho atual." : undefined}>
+                <input
+                  type="month"
+                  min="1900-01"
+                  max={new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0")}
+                  className="field-input"
+                  aria-invalid={Boolean(fieldErrors.endDate)}
+                  value={rascunho.endDate ?? ""}
+                  disabled={rascunho.isCurrent}
+                  onChange={(event) => setRascunho({ ...rascunho, endDate: event.target.value })}
+                />
+              </Field>
 
-            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface p-4 sm:col-span-2">
-              <input
-                type="checkbox"
-                checked={rascunho.isCurrent}
-                onChange={(event) =>
-                  setRascunho({
-                    ...rascunho,
-                    isCurrent: event.target.checked,
-                    endDate: event.target.checked ? "" : rascunho.endDate,
-                  })
-                }
-                className="size-4 rounded border-border-strong accent-primary"
-              />
-              <span className="text-sm font-semibold text-strong-foreground">
-                Ainda trabalho aqui
-              </span>
-            </label>
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface p-4 sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={rascunho.isCurrent}
+                  onChange={(event) =>
+                    setRascunho({
+                      ...rascunho,
+                      isCurrent: event.target.checked,
+                      endDate: event.target.checked ? "" : rascunho.endDate,
+                    })
+                  }
+                  className="size-4 rounded border-border-strong accent-primary"
+                />
+                <span className="text-sm font-semibold text-strong-foreground">
+                  Ainda trabalho aqui
+                </span>
+              </label>
 
-            <Field label="O que você fazia" wide hint="Opcional. Foque em resultados e ferramentas.">
-              <textarea
-                rows={4}
-                className="field-input resize-y"
-                value={rascunho.description ?? ""}
-                onChange={(event) =>
-                  setRascunho({ ...rascunho, description: event.target.value })
-                }
-                placeholder="Ex.: Organizei o atendimento e ajudei a reduzir o tempo de espera dos clientes."
-              />
-            </Field>
-          </div>
+              <Field label="O que você fazia" wide hint="Opcional. Foque em resultados e ferramentas.">
+                <textarea
+                  rows={4}
+                  className="field-input resize-y"
+                  value={rascunho.description ?? ""}
+                  onChange={(event) =>
+                    setRascunho({ ...rascunho, description: event.target.value })
+                  }
+                  placeholder="Ex.: Organizei o atendimento e ajudei a reduzir o tempo de espera dos clientes."
+                />
+              </Field>
+            </div>
 
-          <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-border pt-5">
-            <button
-              type="button"
-              onClick={() => { setRascunho(null); setErro(null); setFieldErrors({}) }}
-              className="btn-ghost"
-              disabled={busy}
-            >
-              Cancelar
-            </button>
-            <button type="button" onClick={salvar} className="btn-primary" disabled={busy}>
-              {saving && <Loader2 className="size-4 animate-spin" aria-hidden />}
-              Salvar experiência
-            </button>
-          </div>
+            <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-border pt-5">
+              <button
+                type="button"
+                onClick={() => { setRascunho(null); setErro(null); setFieldErrors({}) }}
+                className="btn-ghost"
+                disabled={busy}
+              >
+                Cancelar
+              </button>
+              <button type="button" onClick={salvar} className="btn-primary" disabled={busy}>
+                {saving && <Loader2 className="size-4 animate-spin" aria-hidden />}
+                Salvar experiência
+              </button>
+            </div>
           </fieldset>
         </section>
       ) : (

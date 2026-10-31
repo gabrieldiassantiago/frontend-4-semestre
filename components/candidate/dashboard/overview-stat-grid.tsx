@@ -21,7 +21,7 @@ function CountUp({ value }: { value: number }) {
       count.set(value)
       return
     }
-    const controls = animate(count, value, { duration: 0.9, ease: [0.22, 1, 0.36, 1] })
+    const controls = animate(count, value, { duration: 0.8, ease: [0.22, 1, 0.36, 1] })
     return () => controls.stop()
   }, [count, reduce, value])
 
@@ -34,34 +34,58 @@ function percentOf(value: number, total: number) {
 
 export function OverviewStatGrid({ total, inProgress, approved, closed }: OverviewStatGridProps) {
   const stats: { label: string; value: number; hint: string; icon: LucideIcon; tone: string }[] = [
-    { label: "Candidaturas", value: total, hint: "Enviadas até hoje", icon: FileText, tone: "bg-primary-subtle text-primary" },
-    { label: "Em andamento", value: inProgress, hint: `${percentOf(inProgress, total)} do total`, icon: Hourglass, tone: "bg-info-subtle text-info" },
-    { label: "Aprovadas", value: approved, hint: `${percentOf(approved, total)} do total`, icon: CheckCircle2, tone: "bg-success-subtle text-success" },
-    { label: "Encerradas", value: closed, hint: `${percentOf(closed, total)} do total`, icon: XCircle, tone: "bg-muted text-muted-foreground" },
+    {
+      label: "Candidaturas",
+      value: total,
+      hint: "Total enviadas",
+      icon: FileText,
+      tone: "bg-primary-subtle text-primary",
+    },
+    {
+      label: "Em andamento",
+      value: inProgress,
+      hint: `${percentOf(inProgress, total)} do total`,
+      icon: Hourglass,
+      tone: "bg-info-subtle text-info",
+    },
+    {
+      label: "Aprovadas",
+      value: approved,
+      hint: `${percentOf(approved, total)} do total`,
+      icon: CheckCircle2,
+      tone: "bg-success-subtle text-success",
+    },
+    {
+      label: "Encerradas",
+      value: closed,
+      hint: `${percentOf(closed, total)} do total`,
+      icon: XCircle,
+      tone: "bg-muted text-muted-foreground",
+    },
   ]
 
   return (
-    <dl className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
+    <dl className="grid grid-cols-2 gap-3.5 lg:grid-cols-4 lg:gap-4">
       {stats.map(({ label, value, hint, icon: Icon, tone }, index) => (
         <motion.div
           key={label}
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
-          whileHover={{ y: -3 }}
-          className="group flex flex-col justify-between gap-6 rounded-2xl border border-border-subtle bg-card p-5 shadow-card transition-shadow hover:shadow-raised"
+          transition={{ duration: 0.4, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+          className="group flex flex-col justify-between gap-4 rounded-2xl border border-border/70 bg-card p-4 shadow-2xs transition-all hover:border-border hover:shadow-card sm:p-5"
         >
-          <div className="flex items-center gap-3">
-            <span className={`grid size-10 place-items-center rounded-full transition-transform duration-300 group-hover:scale-110 ${tone}`}>
-              <Icon aria-hidden className="size-[18px]" />
+          <div className="flex items-center justify-between gap-2">
+            <dt className="text-xs font-medium text-muted-foreground sm:text-sm">{label}</dt>
+            <span className={`grid size-8 shrink-0 place-items-center rounded-xl transition-transform duration-300 group-hover:scale-105 ${tone}`}>
+              <Icon aria-hidden className="size-4" />
             </span>
-            <dt className="text-sm font-medium text-foreground">{label}</dt>
           </div>
-          <div className="flex items-end justify-between gap-3">
-            <dd className="text-4xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
+
+          <div className="flex items-baseline justify-between gap-2">
+            <dd className="text-2xl font-semibold tracking-tight tabular-nums text-foreground sm:text-3xl">
               <CountUp value={value} />
             </dd>
-            <p className="pb-1 text-xs text-muted-foreground">{hint}</p>
+            <p className="truncate text-[11px] text-muted-foreground">{hint}</p>
           </div>
         </motion.div>
       ))}
