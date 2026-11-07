@@ -1,3 +1,4 @@
+import { etapasDaVaga } from "@/lib/types/candidatura.types"
 import type { Candidatura } from "@/lib/types/candidatura.types"
 import type { Vaga } from "@/lib/types/vaga.types"
 
@@ -51,7 +52,7 @@ export function periodComparison(items: { createdAt?: string }[], days = 7) {
 }
 
 export function isAwaitingReview(item: Candidatura) {
-  return item.status === "EM_ANDAMENTO" && (item.etapaAtual === "INSCRICAO" || item.etapaAtual === "TRIAGEM")
+  return item.status === "EM_ANDAMENTO" && etapasDaVaga(item.etapasVaga).indexOf(item.etapaAtual) === 0
 }
 
 export function daysSince(value?: string) {

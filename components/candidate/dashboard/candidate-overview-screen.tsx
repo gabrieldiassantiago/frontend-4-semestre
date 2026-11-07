@@ -13,6 +13,7 @@ import { useMinhasCandidaturas } from "@/lib/queries/use-candidaturas"
 import { useVagas } from "@/lib/queries/use-vagas"
 import { ActiveApplicationCard } from "./active-application-card"
 import { OverviewHero } from "./overview-hero"
+import { OverviewStatGrid } from "./overview-stat-grid"
 import { ProfileCompletionCard } from "./profile-completion-card"
 import { QuickLinks } from "./quick-links"
 import { RecentApplications } from "./recent-applications"
@@ -67,19 +68,36 @@ export function CandidateOverviewScreen() {
   const recommended = jobsQuery.vagas.slice(0, RECOMMENDED_LIMIT)
 
   return (
-    <PageShell className="max-w-6xl">
-      <OverviewHero
-        firstName={firstName}
-        total={candidaturas.length}
-        inProgress={inProgress}
-        approved={approved}
-        closed={closed}
-      />
+    <PageShell className="max-w-[1280px]">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="flex min-w-0 flex-col gap-5">
+          <OverviewHero />
+          <OverviewStatGrid total={candidaturas.length} inProgress={inProgress} approved={approved} closed={closed} />
 
-      <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-3 lg:gap-8">
-        <div className="flex min-w-0 flex-col gap-10 lg:col-span-2">
+        <Section
+          title="Vagas para você"
+          description="Oportunidades abertas recentemente na plataforma."
+          actions={recommended.length > 0 && <SectionLink href={ROUTES.candidate.jobs}>Ver todas</SectionLink>}
+        >
+          {recommended.length === 0 ? (
+            <EmptyState
+              icon={Briefcase}
+              title="Nenhuma vaga aberta no momento"
+              description="Novas oportunidades aparecem aqui assim que forem publicadas."
+            />
+          ) : (
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {recommended.map((vaga) => (
+                <li key={vaga.id}>
+                  <RecommendedJobCard vaga={vaga} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
           <Section
             title="Suas candidaturas"
+            description="Acompanhe os próximos passos da sua jornada."
             actions={candidaturas.length > 0 && <SectionLink href={ROUTES.candidate.applications}>Ver todas</SectionLink>}
           >
             {highlighted ? (
@@ -102,34 +120,10 @@ export function CandidateOverviewScreen() {
           </Section>
         </div>
 
-        <aside aria-label="Seu perfil e atalhos" className="flex flex-col gap-4">
-          <ProfileCompletionCard completion={completion} />
+        <aside aria-label="Seu perfil e atalhos" className="flex min-w-0 flex-col gap-5">
+          <ProfileCompletionCard completion={completion} firstName={firstName} imageUrl={profileQuery.profile?.profileImageUrl} />
           <QuickLinks />
         </aside>
-      </div>
-
-      <div className="mt-10">
-        <Section
-          title="Vagas para você"
-          description="Oportunidades abertas recentemente na plataforma."
-          actions={recommended.length > 0 && <SectionLink href={ROUTES.candidate.jobs}>Ver todas</SectionLink>}
-        >
-          {recommended.length === 0 ? (
-            <EmptyState
-              icon={Briefcase}
-              title="Nenhuma vaga aberta no momento"
-              description="Novas oportunidades aparecem aqui assim que forem publicadas."
-            />
-          ) : (
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {recommended.map((vaga) => (
-                <li key={vaga.id}>
-                  <RecommendedJobCard vaga={vaga} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
       </div>
     </PageShell>
   )

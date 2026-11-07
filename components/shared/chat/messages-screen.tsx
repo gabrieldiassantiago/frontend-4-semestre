@@ -1,5 +1,8 @@
 "use client"
 
+import { etapaLabel } from "@/lib/types/candidatura.types"
+
+
 import Link from "next/link"
 import { ArrowLeft, ArrowUpRight, Briefcase, MessageSquare, Workflow } from "lucide-react"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
@@ -11,7 +14,7 @@ import { useChat, useChatSocket, useChats, type ChatConexao } from "@/lib/querie
 import { useCandidaturaEmpresa } from "@/lib/queries/use-candidaturas"
 import { ROUTES } from "@/lib/config/routes"
 import { formatDate } from "@/lib/format"
-import { ETAPA_SHORT_LABELS, etapasDaVaga } from "@/lib/types/candidatura.types"
+import { etapasDaVaga } from "@/lib/types/candidatura.types"
 import { chatContato, type Chat, type ChatPerspectiva } from "@/lib/types/chat.types"
 import { cn } from "@/lib/utils"
 
@@ -43,7 +46,7 @@ export function MessagesScreen({ perspectiva, activeId }: MessagesScreenProps) {
   return (
     <main className="mx-auto w-full max-w-[1480px] lg:px-6 lg:py-6">
       <h1 className="sr-only">Mensagens</h1>
-      <div className="flex h-[calc(100dvh-8rem-env(safe-area-inset-bottom))] overflow-hidden border-border bg-card lg:h-[calc(100dvh-7rem)] lg:rounded-2xl lg:border">
+      <div className="chat-workspace flex h-[calc(100dvh-8rem-env(safe-area-inset-bottom))] overflow-hidden border-border bg-card lg:h-[calc(100dvh-7rem)] lg:rounded-2xl lg:border">
         <ChatList
           chats={chats}
           naoLidas={naoLidas}
@@ -165,7 +168,7 @@ function ContextoConversa({ chat, candidaturaId, perspectiva }: { chat: Chat | n
           <div>
             <dt className="text-xs font-medium text-muted-foreground">Etapa atual</dt>
             <dd className="mt-1">
-              <span className="font-semibold text-foreground">{ETAPA_SHORT_LABELS[candidatura.etapaAtual]}</span>
+              <span className="font-semibold text-foreground">{etapaLabel(candidatura.etapaAtual, candidatura.etapasVaga, candidatura.etapaAtualDescricao)}</span>
               <span className="ml-1 text-xs text-subtle-foreground">
                 {current + 1} de {flow.length}
               </span>

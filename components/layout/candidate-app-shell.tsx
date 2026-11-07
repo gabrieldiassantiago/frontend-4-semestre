@@ -13,6 +13,7 @@ import { ROUTES } from "@/lib/config/routes"
 import { getProfileCompletion } from "@/lib/candidate-completion"
 import { useCurrentUser, useLogout } from "@/lib/queries/use-auth"
 import { useCandidateProfile } from "@/lib/queries/use-candidate-profile"
+import styles from "./candidate-workspace.module.css"
 
 const ACCOUNT_LINKS = [
   { href: ROUTES.candidate.profile, label: "Meu perfil", icon: UserRound },
@@ -37,6 +38,7 @@ export function CandidateAppShell({ children, currentPath }: { children: React.R
 
   return (
     <AppShell
+      className={styles.workspace}
       navigation={CANDIDATE_NAVIGATION}
       pathname={currentPath}
       areaLabel="Área do candidato"
@@ -50,6 +52,7 @@ export function CandidateAppShell({ children, currentPath }: { children: React.R
           <UserMenu
             name={name}
             secondary={email}
+            triggerLabel="Minha conta"
             avatar={<EntityAvatar name={name} size="sm" className="rounded-full" />}
             links={ACCOUNT_LINKS}
             onLogout={logout}

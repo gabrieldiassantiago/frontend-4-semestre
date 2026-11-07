@@ -129,7 +129,7 @@ export function CandidateProfileScreen() {
     setFieldErrors({})
     requestAnimationFrame(() => {
       sectionRef.current?.focus({ preventScroll: true })
-      sectionRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" })
+      sectionRef.current?.scrollIntoView({ block: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })
     })
   }
 
@@ -165,41 +165,42 @@ export function CandidateProfileScreen() {
   const showSaveBar = activeSection.editable || dirty
 
   return (
-    <PageShell className="candidate-profile min-w-0 max-w-[1280px]">
+    <PageShell className="candidate-profile min-w-0 max-w-[1200px] lg:py-6 [&_.field-input]:rounded-lg [&_.field-input]:border-border/80 [&_.field-input]:bg-card [&_.field-input:disabled]:bg-surface [&_.field-input]:sm:text-sm">
       <PageHeader
-        eyebrow="Sua conta"
         title="Meu perfil"
-        description="É este perfil que a empresa vê quando você se candidata a uma vaga."
+        description="Sua trajetória, suas habilidades e o que vem a seguir."
         actions={
           section !== "preview" ? (
             <button type="button" className="btn-secondary" disabled={navDisabled} onClick={() => goTo("preview")}>
               <Eye className="size-4" aria-hidden />
-              Ver como empresa
+              Visualizar perfil
             </button>
           ) : null
         }
       />
 
-      <div className="mt-6 grid min-w-0 items-start gap-5 sm:mt-8 sm:gap-6 xl:grid-cols-[300px_minmax(0,1fr)] xl:gap-8">
-        <aside className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-24">
-          <ProfileSummaryCard profile={profile} form={form} completion={completion} disabled={navDisabled} onGoTo={goTo} />
+      <div className="mt-5">
+        <ProfileSummaryCard profile={profile} form={form} completion={completion} disabled={navDisabled} onGoTo={goTo} />
+      </div>
+      <div className="mt-5 grid min-w-0 items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-5">
+        <aside className="min-w-0 lg:sticky lg:top-20">
           <ProfileSectionNav active={section} completion={completion} disabled={navDisabled} onSelect={goTo} />
         </aside>
 
         <section
           aria-labelledby="profile-section-title"
-          className="min-w-0 scroll-mt-24 rounded-card border border-border bg-card shadow-card"
+          className="min-w-0 scroll-mt-24 rounded-2xl border border-border/80 bg-card"
         >
-          <header className="flex items-center gap-4 border-b border-border px-5 py-5 sm:px-8">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-subtle text-primary-subtle-foreground">
-              <activeSection.icon className="size-5" aria-hidden />
+          <header className="flex items-center gap-3 border-b border-border/70 px-5 py-4 sm:px-6">
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-subtle text-primary-subtle-foreground">
+              <activeSection.icon className="size-[18px]" aria-hidden />
             </span>
             <div className="min-w-0">
               <h2
                 id="profile-section-title"
                 ref={sectionRef}
                 tabIndex={-1}
-                className="text-lg font-bold tracking-tight text-foreground outline-none"
+                className="scroll-mt-24 text-sm font-semibold tracking-tight text-foreground outline-none sm:text-base"
               >
                 {activeSection.label}
               </h2>
@@ -208,7 +209,7 @@ export function CandidateProfileScreen() {
           </header>
 
           <form onSubmit={salvar} noValidate>
-            <div className="min-w-0 px-5 py-6 sm:px-8 sm:py-8">
+            <div className="min-w-0 px-5 py-5 sm:px-6 sm:py-6">
               {saveError && (
                 <div className="mb-6">
                   <Alert tone="danger">{saveError}</Alert>
@@ -271,8 +272,8 @@ export function CandidateProfileScreen() {
             {showSaveBar && (
               <footer
                 className={cn(
-                  "z-20 flex flex-wrap items-center gap-3 rounded-b-card border-t px-5 py-4 transition-colors sm:px-8",
-                  dirty ? "sticky bottom-0 border-primary/30 bg-primary-subtle/90 backdrop-blur" : "border-border bg-card",
+                  "z-20 flex flex-wrap items-center gap-3 rounded-b-2xl border-t px-5 py-3 transition-colors sm:px-6",
+                  dirty ? "sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] border-primary/20 bg-primary-subtle/95 backdrop-blur lg:bottom-0" : "border-border/70 bg-surface/40",
                 )}
               >
                 <p role="status" className="flex w-full items-center gap-2 text-xs font-medium sm:mr-auto sm:w-auto">

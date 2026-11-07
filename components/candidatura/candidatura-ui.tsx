@@ -4,7 +4,7 @@ import { formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import {
   ETAPA_HINTS,
-  ETAPA_LABELS,
+  etapaLabel,
   STATUS_BADGE,
   STATUS_LABELS,
   etapasDaVaga,
@@ -49,7 +49,7 @@ export function NotaEstrelas({ nota }: { nota: number }) {
 }
 
 /**
- * Barra compacta das 7 etapas, para linhas de lista e cards.
+ * Barra compacta das etapas configuradas para a vaga, para linhas de lista e cards.
  * Quando a candidatura é encerrada, a etapa alcançada continua marcada — é a
  * informação de "até onde a pessoa chegou".
  */
@@ -61,7 +61,7 @@ export function EtapaProgresso({
 }: {
   etapa: EtapaProcesso
   status: StatusCandidatura
-  etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number }>
+  etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number; nome?: string; descricao?: string }>
   className?: string
 }) {
   const etapas = etapasDaVaga(etapasVaga)
@@ -79,7 +79,7 @@ export function EtapaProgresso({
     <div className={cn("flex items-center gap-2", className)}>
       <ol
         className="flex items-center gap-1"
-        aria-label={`Etapa ${current + 1} de ${etapas.length}: ${ETAPA_LABELS[etapa]}`}
+        aria-label={`Etapa ${current + 1} de ${etapas.length}: ${etapaLabel(etapa, etapasVaga)}`}
       >
         {etapas.map((item, index) => (
           <li key={item}>
@@ -90,13 +90,13 @@ export function EtapaProgresso({
               )}
             />
             <span className="sr-only">
-              {ETAPA_LABELS[item]}: {index <= current ? "alcançada" : "pendente"}
+              {etapaLabel(item, etapasVaga)}: {index <= current ? "alcançada" : "pendente"}
             </span>
           </li>
         ))}
       </ol>
       <span className="whitespace-nowrap text-xs font-semibold text-muted-foreground">
-        {ETAPA_LABELS[etapa]}
+        {etapaLabel(etapa, etapasVaga)}
       </span>
     </div>
   )
@@ -114,7 +114,7 @@ export function EtapaTrilha({
 }: {
   etapa: EtapaProcesso
   status: StatusCandidatura
-  etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number }>
+  etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number; nome?: string; descricao?: string }>
   className?: string
 }) {
   const etapas = etapasDaVaga(etapasVaga)
@@ -166,7 +166,7 @@ export function EtapaTrilha({
                   pending ? "text-subtle-foreground" : "text-foreground",
                 )}
               >
-                {ETAPA_LABELS[item]}
+                {etapaLabel(item, etapasVaga)}
               </p>
               <p
                 className={cn(
@@ -174,7 +174,7 @@ export function EtapaTrilha({
                   pending ? "text-subtle-foreground" : "text-muted-foreground",
                 )}
               >
-                {ETAPA_HINTS[item]}
+                {etapasVaga?.find(etapa => etapa.etapa === item)?.descricao || ETAPA_HINTS[item]}
               </p>
               {active && (
                 <div className="mt-2">
@@ -214,10 +214,10 @@ export function HistoricoTimeline({ historico }: { historico: CandidaturaHistori
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground text-pretty">
                 {mudouEtapa
-                  ? `${ETAPA_LABELS[item.etapaAnterior as EtapaProcesso]} → ${ETAPA_LABELS[item.etapaNova]}`
+                  ? `${etapaLabel(item.etapaAnterior!, undefined, item.etapaAnteriorDescricao)} → ${etapaLabel(item.etapaNova, undefined, item.etapaNovaDescricao)}`
                   : mudouStatus
                     ? `Situação atualizada para ${STATUS_LABELS[item.statusNovo]}`
-                    : `${ETAPA_LABELS[item.etapaNova]} · ${STATUS_LABELS[item.statusNovo]}`}
+                    : `${etapaLabel(item.etapaNova, undefined, item.etapaNovaDescricao)} · ${STATUS_LABELS[item.statusNovo]}`}
               </p>
               {item.observacao && (
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty">
@@ -248,7 +248,7 @@ export function FeedbackCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Badge variant="outline" size="sm">
-            {ETAPA_LABELS[feedback.etapa]}
+            {etapaLabel(feedback.etapa, undefined, feedback.etapaDescricao)}
           </Badge>
           <h4 className="mt-2 text-sm font-bold text-foreground text-pretty">{feedback.titulo}</h4>
         </div>

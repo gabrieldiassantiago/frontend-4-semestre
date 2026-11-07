@@ -81,28 +81,29 @@ export function CompanyDashboardScreen() {
 
   return (
     <PageShell className="max-w-[1380px]">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-col gap-5 border-b border-border/70 pb-8 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <p suppressHydrationWarning className="text-sm font-medium text-muted-foreground">
+          <p suppressHydrationWarning className="text-sm text-muted-foreground">
             {greeting()}, {companyName ?? "equipe"}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground text-balance sm:text-3xl">
-            Visão geral do recrutamento
+          <h1 className="mt-2 text-3xl font-semibold tracking-[-0.045em] text-foreground text-balance sm:text-4xl">
+            Boas conexões começam aqui.
           </h1>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Seu recrutamento em um só lugar. Acompanhe as oportunidades e dê o próximo passo com seus candidatos.</p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Link href={ROUTES.company.processes} className="btn-secondary">
+          <Link href={ROUTES.company.processes} className="btn-secondary rounded-full px-5">
             <Workflow aria-hidden className="size-4" />
             Processos
           </Link>
-          <Link href={ROUTES.company.newJob} className="btn-primary">
+          <Link href={ROUTES.company.newJob} className="btn-primary rounded-full px-5">
             <Plus aria-hidden className="size-4" />
             Nova vaga
           </Link>
         </div>
       </header>
 
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+      <section aria-label="Indicadores do recrutamento" className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-4">
         <KpiCard
           label="Vagas ativas"
           value={activeCount}
@@ -140,17 +141,21 @@ export function CompanyDashboardScreen() {
           note={approvalRate === null ? "Sem processos encerrados" : `${approved} de ${finished} finalizadas`}
           progress={approvalRate}
         />
-      </div>
+      </section>
 
-      <div className="mt-4">
+      <div className="mb-5 mt-10 flex flex-wrap items-end justify-between gap-3">
+        <div><h2 className="text-xl font-semibold tracking-tight">O panorama da sua equipe</h2><p className="mt-1 text-sm text-muted-foreground">Uma visão de como suas oportunidades estão evoluindo.</p></div>
+        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground"><span aria-hidden className="size-1.5 rounded-full bg-success" />Dados dos seus processos</span>
+      </div>
+      <div>
         <DashboardCharts vagas={vagas} candidaturas={candidaturas} />
       </div>
 
-      <div className="mt-4 grid items-start gap-4 lg:grid-cols-3">
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <JobsPerformance vagas={vagas} candidaturas={candidaturas} />
         </div>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           <AttentionPanel vagas={vagas} candidaturas={candidaturas} />
           <RecentApplicationsList candidaturas={recent} />
         </div>

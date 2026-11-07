@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
+import { useQuery } from "@tanstack/react-query"
+import { getEtapasAction, getEtapasSistemaAction } from "@/actions/etapas"
+import { unwrap } from "@/lib/actions/result"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { AlertCircle, CheckCircle2, ExternalLink, X } from "lucide-react"
 import { ROUTES } from "@/lib/config/routes"
@@ -40,7 +43,7 @@ const INITIAL_DRAFT: VagaDraft = {
   longitude: -46.6333,
   beneficios: ESSENTIAL_BENEFITS,
   descricao: "",
-  etapas: ["TRIAGEM", "ENTREVISTA_RH", "PROPOSTA"],
+  etapas: [],
   metaTags: [],
 }
 
@@ -77,7 +80,8 @@ function draftFromVaga(vaga: Vaga): VagaDraft {
     etapas: [...(vaga.etapas ?? [])]
       .sort((a, b) => a.ordem - b.ordem)
       .map((item) => item.etapa)
-      .filter((etapa) => etapa !== "INSCRICAO" && etapa !== "CONTRATACAO"),
+      .slice(1, -1),
+    etapasCatalogo: (vaga.etapas ?? []).map(item => ({ id_etapa: item.etapa, nome: item.nome ?? item.etapa, descricao: item.descricao, company_id: null, isSystem: false, em_uso: true, disponibilidade: true })),
     metaTags: vaga.metaTags ?? [],
   }
 }
@@ -113,6 +117,24 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
   const [doneId, setDoneId] = useState<string | null>(null)
   const [editorKey, setEditorKey] = useState(0)
   const hasNavigated = useRef(false)
+
+  const catalogo = useQuery({
+    queryKey: ["etapas", companyProfileId],
+    enabled: !editing && Boolean(companyProfileId),
+    queryFn: async () => {
+      const [available, system] = await Promise.all([getEtapasAction(), getEtapasSistemaAction()])
+      const padrao = unwrap(system)
+      const obrigatorias = new Set([padrao[0]?.id_etapa, padrao.at(-1)?.id_etapa])
+      return { options: unwrap(available).filter(item => item.disponibilidade && !obrigatorias.has(item.id_etapa)), padrao: padrao.slice(1, -1) }
+    },
+  })
+  const catalogoInicializado = useRef(false)
+  useEffect(() => {
+    if (!catalogo.data) return
+    const inicial = !catalogoInicializado.current
+    catalogoInicializado.current = true
+    setDraft(prev => ({ ...prev, etapasCatalogo: catalogo.data.options, etapas: inicial ? catalogo.data.padrao.filter(item => catalogo.data.options.some(option => option.id_etapa === item.id_etapa)).map(item => item.id_etapa) : prev.etapas }))
+  }, [catalogo.data])
 
   const step = steps[current]
   const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(initialDraft), [draft, initialDraft])
@@ -232,7 +254,12 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
           ...common,
           beneficios: draft.beneficios.join(", "),
           companyProfileId: companyProfileId!,
-          etapas: draft.etapas,
+          etapasId: draft.etapas,
+        }
+        const disponiveis = unwrap(await getEtapasAction())
+        if (draft.etapas.some(id => !disponiveis.some(item => item.id_etapa === id && item.disponibilidade))) {
+          await catalogo.refetch()
+          throw new Error("Uma etapa selecionada não está mais disponível. Volte ao processo e revise as etapas.")
         }
         const created = await createVaga.mutateAsync(dto)
         setDoneId(created.id)
@@ -403,7 +430,7 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
                   {step.id === "descricao" && (
                     <StepDescricao {...stepProps} editorKey={editorKey} onRegenerate={regenerateDescription} />
                   )}
-                  {step.id === "processo" && <StepProcesso {...stepProps} />}
+                  {step.id === "processo" && <>{catalogo.isPending ? <p role="status">Carregando etapas…</p> : catalogo.isError ? <div role="alert"><p>Não foi possível carregar as etapas.</p><button type="button" className="btn-secondary" onClick={() => void catalogo.refetch()}>Tentar novamente</button></div> : <StepProcesso {...stepProps} />}</>}
                   {step.id === "revisao" && (
                     <StepRevisao
                       draft={draft}

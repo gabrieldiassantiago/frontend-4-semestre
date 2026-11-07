@@ -15,13 +15,14 @@ import { StageProgress } from "@/components/company/processes/stage-progress"
 import { SegmentedControl } from "@/components/company/segmented-control"
 import { formatRelativeDate } from "@/lib/format"
 import { useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
+import { isAwaitingReview } from "@/components/company/dashboard/metrics"
 import type { Candidatura } from "@/lib/types/candidatura.types"
 
 type StatusFilter = "todos" | "novos" | "andamento" | "aprovados" | "encerrados"
 
 const MATCHERS: Record<StatusFilter, (item: Candidatura) => boolean> = {
   todos: () => true,
-  novos: (item) => item.status === "EM_ANDAMENTO" && (item.etapaAtual === "INSCRICAO" || item.etapaAtual === "TRIAGEM"),
+  novos: isAwaitingReview,
   andamento: (item) => item.status === "EM_ANDAMENTO",
   aprovados: (item) => item.status === "APROVADA",
   encerrados: (item) => item.status === "REPROVADA" || item.status === "CANCELADA",

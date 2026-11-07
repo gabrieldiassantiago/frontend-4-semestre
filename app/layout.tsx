@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next"
-import { Manrope, Sora } from "next/font/google"
+import { Sora } from "next/font/google"
 import "./globals.css"
 import { ToastViewport } from "@/components/ui/toast-viewport"
 import { QueryProvider } from "@/components/providers/query-provider"
 
-const manrope = Manrope({
+const sora = Sora({
   variable: "--font-sora",
   subsets: ["latin"],
   display: "swap",
@@ -26,7 +26,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${manrope.variable} h-full bg-surface antialiased`}>
+    <html lang="pt-BR" className={`${sora.variable} h-full bg-surface antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <QueryProvider>
           {children}

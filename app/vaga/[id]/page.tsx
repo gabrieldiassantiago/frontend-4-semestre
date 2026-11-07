@@ -116,7 +116,7 @@ export default async function VagaPublicaPage({ params }: PageProps) {
               </section>}
               {steps.length > 0 && <section aria-labelledby="etapas-vaga" className="rounded-xl border border-border bg-card p-6 sm:p-8">
                 <h2 id="etapas-vaga" className="text-lg font-semibold tracking-tight">Etapas do processo seletivo</h2>
-                <ol className="mt-6 space-y-5">{steps.map((step,index) => <li key={step.etapa + index} className="flex gap-4"><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-surface text-xs font-medium text-muted-foreground">{index+1}</span><div className="min-w-0"><h3 className="text-sm font-medium">{ETAPA_LABELS[step.etapa] || step.etapa}</h3>{step.descricao && <p className="mt-1 break-words text-sm leading-6 text-muted-foreground">{step.descricao}</p>}</div></li>)}</ol>
+                <ol className="mt-6 space-y-5">{steps.map((step,index) => <li key={step.etapa + index} className="flex gap-4"><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-surface text-xs font-medium text-muted-foreground">{index+1}</span><div className="min-w-0"><h3 className="text-sm font-medium">{step.nome || ETAPA_LABELS[step.etapa] || "Etapa do processo"}</h3>{step.descricao && <p className="mt-1 break-words text-sm leading-6 text-muted-foreground">{step.descricao}</p>}</div></li>)}</ol>
               </section>}
             </div>
             <aside aria-label="Resumo da vaga e candidatura" className="min-w-0 space-y-4 lg:sticky lg:top-6">

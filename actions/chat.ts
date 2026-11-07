@@ -1,6 +1,6 @@
 "use server"
 
-import { apiFetch } from "@/lib/server/api"
+import { processApiFetch as apiFetch } from "@/lib/server/process-api"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
 import type { Candidatura, CandidaturaDetalhe } from "@/lib/types/candidatura.types"
 import type { Chat, ChatMensagem, ChatPerspectiva } from "@/lib/types/chat.types"

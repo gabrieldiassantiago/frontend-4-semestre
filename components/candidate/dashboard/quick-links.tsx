@@ -10,13 +10,14 @@ const LINKS = [
 
 export function QuickLinks() {
   return (
-    <nav aria-label="Atalhos" className="overflow-hidden rounded-card border border-border bg-card">
+    <nav aria-label="Atalhos" className="overflow-hidden rounded-2xl border border-border/70 bg-card p-2">
+      <h2 className="px-3 pb-2 pt-3 text-sm font-semibold tracking-tight">Tudo ao seu alcance</h2>
       <ul className="divide-y divide-border-subtle">
         {LINKS.map(({ href, label, hint, icon: Icon }) => (
           <li key={href}>
             <Link
               href={href}
-              className="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+              className="group flex items-center gap-3 rounded-lg px-3 py-4 transition-colors hover:bg-primary-subtle/50 focus-visible:bg-primary-subtle"
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-strong-foreground transition-colors group-hover:bg-primary-subtle group-hover:text-primary-subtle-foreground">
                 <Icon aria-hidden className="size-4" />

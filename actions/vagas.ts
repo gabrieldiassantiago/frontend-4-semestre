@@ -1,6 +1,7 @@
 "use server"
 
-import { apiFetch, buildQuery } from "@/lib/server/api"
+import { buildQuery } from "@/lib/server/api"
+import { processApiFetch as apiFetch } from "@/lib/server/process-api"
 import { ok, type ActionResult } from "@/lib/actions/result"
 import type { CreateVagaDto, UpdateVagaDto, Vaga, VagaFilters, VagaProximasParams } from "@/lib/types/vaga.types"
 

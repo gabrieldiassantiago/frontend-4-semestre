@@ -1,103 +1,85 @@
 import Link from "next/link"
-import { BriefcaseBusiness, MapPin, Pencil, Trash2, Users } from "lucide-react"
+import { ArrowUpRight, BriefcaseBusiness, Code2, Database, MapPin, Megaphone, Pencil, PenTool, Trash2, type LucideIcon } from "lucide-react"
 import { ROUTES } from "@/lib/config/routes"
-import { MODALIDADE_LABELS, type Vaga } from "@/lib/types/vaga.types"
+import { formatCurrency, formatRelativeDate } from "@/lib/format"
+import { CATEGORIA_LABELS, MODALIDADE_LABELS, type Vaga, type VagaCategoria } from "@/lib/types/vaga.types"
 import { cn } from "@/lib/utils"
 
 interface VagaRowProps {
   vaga: Vaga
-  /** Exibe as ações de gestão (processo, editar, excluir). */
   detailed?: boolean
   deleting?: boolean
+  updating?: boolean
   onDelete?: () => void
   onToggleActive?: () => void
 }
 
-function StatusDot({ active }: { active: boolean }) {
-  return <span aria-hidden className={cn("size-1.5 rounded-full", active ? "bg-success" : "bg-subtle-foreground")} />
+const CATEGORY_ICONS: Partial<Record<VagaCategoria, LucideIcon>> = {
+  DESENVOLVIMENTO_SOFTWARE: Code2,
+  DESIGN_UX_UI: PenTool,
+  CIENCIA_DE_DADOS_IA: Database,
+  MARKETING_DIGITAL: Megaphone,
 }
 
-export function VagaRow({ vaga, detailed, deleting, onDelete, onToggleActive }: VagaRowProps) {
-  const meta = [
-    vaga.cidade && vaga.estado ? `${vaga.cidade} - ${vaga.estado}` : vaga.cidade || vaga.estado,
-    vaga.modalidade && MODALIDADE_LABELS[vaga.modalidade],
-    vaga.quantidadeVagas ? `${vaga.quantidadeVagas} ${vaga.quantidadeVagas === 1 ? "vaga" : "vagas"}` : null,
-  ].filter(Boolean)
+export function VagaRow({ vaga, detailed, deleting, updating, onDelete, onToggleActive }: VagaRowProps) {
+  const Icon = CATEGORY_ICONS[vaga.categoria] ?? BriefcaseBusiness
+  const location = [vaga.cidade, vaga.estado].filter(Boolean).join(", ")
+  const statusClassName = cn(
+    "inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+    vaga.ativa ? "bg-success-subtle text-success-foreground" : "bg-surface text-muted-foreground",
+  )
 
   return (
-    <div className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-muted/60 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-      <div className="flex min-w-0 items-center gap-3.5">
-        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary-subtle text-primary-subtle-foreground">
-          <BriefcaseBusiness aria-hidden className="size-4" />
+    <article className="group flex h-full min-w-0 flex-col rounded-3xl border border-border/80 bg-card p-5 shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)] transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-[0_16px_40px_-20px_rgba(32,29,29,0.22)] motion-reduce:transform-none sm:p-6">
+      <div className="flex items-center justify-between gap-3">
+        <span className="grid size-12 place-items-center rounded-2xl border border-primary/10 bg-primary-subtle text-primary">
+          <Icon className="size-6" strokeWidth={1.5} aria-hidden />
         </span>
-        <div className="min-w-0">
-          <Link
-            href={ROUTES.company.editJob(vaga.id)}
-            className="block truncate text-sm font-semibold tracking-tight text-foreground hover:text-primary"
-          >
-            {vaga.titulo}
-          </Link>
-          {meta.length > 0 && (
-            <p className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-              <MapPin aria-hidden className="size-3 shrink-0" />
-              <span className="truncate">{meta.join(" · ")}</span>
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex shrink-0 items-center justify-between gap-2 pl-[3.375rem] sm:justify-end sm:pl-0">
         {onToggleActive ? (
-          <button
-            type="button"
-            onClick={onToggleActive}
+          <button type="button" onClick={onToggleActive} disabled={updating || deleting}
             aria-label={vaga.ativa ? `Pausar ${vaga.titulo}` : `Publicar ${vaga.titulo}`}
             title={vaga.ativa ? "Clique para pausar" : "Clique para publicar"}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-medium text-strong-foreground transition-colors hover:border-border-strong hover:bg-muted"
-          >
-            <StatusDot active={vaga.ativa} />
-            {vaga.ativa ? "Publicada" : "Pausada"}
+            className={cn(statusClassName, "hover:ring-1 hover:ring-current disabled:cursor-wait disabled:opacity-50")}>
+            <span aria-hidden className={cn("size-1.5 rounded-full", vaga.ativa ? "bg-success" : "bg-subtle-foreground")} />
+            {updating ? "Atualizando…" : vaga.ativa ? "Publicada" : "Pausada"}
           </button>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <StatusDot active={vaga.ativa} />
-            {vaga.ativa ? "Ativa" : "Pausada"}
-          </span>
-        )}
-
-        {detailed && (
-          <div className="flex items-center gap-0.5">
-            <Link
-              href={`${ROUTES.company.processes}?vaga=${encodeURIComponent(vaga.id)}`}
-              aria-label={`Ver processo de ${vaga.titulo}`}
-              title="Ver processo seletivo"
-              className="grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Users aria-hidden className="size-4" />
-            </Link>
-            <Link
-              href={ROUTES.company.editJob(vaga.id)}
-              aria-label={`Editar ${vaga.titulo}`}
-              title="Editar vaga"
-              className="grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Pencil aria-hidden className="size-4" />
-            </Link>
-            {onDelete && (
-              <button
-                type="button"
-                onClick={onDelete}
-                disabled={deleting}
-                aria-label={`Excluir ${vaga.titulo}`}
-                title="Excluir vaga"
-                className="grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-danger-subtle hover:text-danger-foreground disabled:opacity-40"
-              >
-                <Trash2 aria-hidden className="size-4" />
-              </button>
-            )}
-          </div>
-        )}
+        ) : <span className={statusClassName}>{vaga.ativa ? "Publicada" : "Pausada"}</span>}
       </div>
-    </div>
+
+      <div className="mb-6 mt-6">
+        <p className="text-xs leading-5 text-muted-foreground">{CATEGORIA_LABELS[vaga.categoria] ?? "Oportunidade"}</p>
+        <h2 className="mt-1.5 break-words text-lg font-semibold leading-7 tracking-[-0.025em] text-foreground">
+          <Link href={ROUTES.company.editJob(vaga.id)} className="rounded-sm transition-colors hover:text-primary">{vaga.titulo}</Link>
+        </h2>
+        <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs leading-5 text-muted-foreground">
+          <MapPin className="size-3.5 shrink-0" aria-hidden />
+          {location || "Local não informado"}<span aria-hidden>·</span>{MODALIDADE_LABELS[vaga.modalidade]}
+        </p>
+      </div>
+
+      <dl className="mt-auto grid grid-cols-2 gap-4 border-y border-border-subtle py-4">
+        <div><dt className="text-xs text-muted-foreground">Salário mensal</dt><dd className="mt-1 text-sm font-semibold tracking-tight">{vaga.salario > 0 ? formatCurrency(vaga.salario) : "A combinar"}</dd></div>
+        <div><dt className="text-xs text-muted-foreground">Posições na vaga</dt><dd className="mt-1 text-sm font-semibold">{vaga.quantidadeVagas ?? "—"}</dd></div>
+      </dl>
+
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <p className="min-w-0 text-[11px] leading-5 text-muted-foreground">{vaga.createdAt ? `Criada ${formatRelativeDate(vaga.createdAt)}` : "Oportunidade da sua empresa"}</p>
+        {Boolean(vaga.etapas?.length) && <span className="shrink-0 text-[11px] text-muted-foreground">{vaga.etapas!.length} etapas</span>}
+      </div>
+
+      {detailed && (
+        <div className="mt-5 flex items-center justify-between gap-3">
+          <Link href={`${ROUTES.company.processes}?vaga=${encodeURIComponent(vaga.id)}`} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-foreground px-4 text-xs font-semibold text-background transition-colors hover:bg-primary">
+            Ver candidatos<ArrowUpRight className="size-3.5" aria-hidden />
+          </Link>
+          <div className="flex items-center gap-1">
+            <Link href={ROUTES.company.editJob(vaga.id)} aria-label={`Editar ${vaga.titulo}`} title="Editar vaga" className="grid size-10 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-surface hover:text-foreground">
+              <Pencil className="size-4" aria-hidden />
+            </Link>
+            {onDelete && <button type="button" onClick={onDelete} disabled={deleting || updating} aria-label={`Excluir ${vaga.titulo}`} title="Excluir vaga" className="grid size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-danger-subtle hover:text-danger-foreground disabled:opacity-40"><Trash2 className="size-4" aria-hidden /></button>}
+          </div>
+        </div>
+      )}
+    </article>
   )
 }

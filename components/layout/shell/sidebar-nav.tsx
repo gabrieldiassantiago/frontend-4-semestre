@@ -1,7 +1,7 @@
 "use client"
 
 import { useId } from "react"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import Link from "next/link"
 import { isNavItemActive, type NavGroup, type NavItem } from "@/lib/config/navigation"
 import { cn } from "@/lib/utils"
@@ -30,6 +30,7 @@ export function SidebarNavLink({
   layoutId?: string
 }) {
   const active = isNavItemActive(pathname, item)
+  const reduceMotion = useReducedMotion()
   const Icon = item.icon
   const hasBadge = typeof badge === "number" && badge > 0
 
@@ -40,30 +41,30 @@ export function SidebarNavLink({
       title={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative flex min-h-10 items-center gap-3 rounded-lg text-sm transition-colors",
-        collapsed ? "mx-auto size-10 justify-center" : "px-3",
+        "group relative flex min-h-11 items-center gap-3 rounded-xl text-[13px] transition-colors duration-200",
+        collapsed ? "mx-auto size-11 justify-center" : "px-3",
         active
           ? cn("font-semibold text-primary-subtle-foreground", !layoutId && "bg-primary-subtle")
-          : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
+          : "font-medium text-strong-foreground hover:bg-surface hover:text-foreground",
       )}
     >
       {active && layoutId && (
         <motion.span
           layoutId={layoutId}
           aria-hidden
-          transition={{ type: "spring", stiffness: 380, damping: 32 }}
-          className="absolute inset-0 rounded-lg bg-primary-subtle"
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute inset-0 rounded-xl border border-primary/10 bg-primary-subtle"
         >
           {!collapsed && (
-            <span className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+            <span className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
           )}
         </motion.span>
       )}
-      <span className="relative shrink-0 transition-transform duration-200 group-hover:scale-110">
+      <span className="relative grid size-7 shrink-0 place-items-center">
         <Icon
           aria-hidden
           strokeWidth={active ? 2 : 1.75}
-          className={cn("size-[18px]", active ? "text-primary" : "text-subtle-foreground group-hover:text-foreground")}
+          className={cn("size-[19px] transition-colors", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")}
         />
         {collapsed && hasBadge && (
           <span aria-hidden className="absolute -right-1 -top-1 size-2 rounded-full bg-primary ring-2 ring-card" />
@@ -76,7 +77,7 @@ export function SidebarNavLink({
         </span>
       ) : (
         <>
-          <span className="relative min-w-0 flex-1 truncate transition-transform duration-200 group-hover:translate-x-0.5">{item.label}</span>
+          <span className="relative min-w-0 flex-1 truncate">{item.label}</span>
           {hasBadge && (
             <span
               className={cn(
@@ -118,7 +119,7 @@ export function SidebarNav({
             (collapsed ? (
               index > 0 && <div aria-hidden className="mx-3 mb-1 h-px bg-border" />
             ) : (
-              <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-subtle-foreground">
+              <p className="px-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 {group.label}
               </p>
             ))}

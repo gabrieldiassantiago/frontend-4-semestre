@@ -14,12 +14,14 @@ export type UserMenuLink = {
 export function UserMenu({
   name,
   secondary,
+  triggerLabel,
   avatar,
   links,
   onLogout,
 }: {
   name: string
   secondary?: string
+  triggerLabel?: string
   avatar: React.ReactNode
   links: UserMenuLink[]
   onLogout: () => void
@@ -34,12 +36,12 @@ export function UserMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={`Menu da conta de ${name}`}
-        className="flex items-center gap-2.5 rounded-full p-1 transition-colors hover:bg-muted md:rounded-lg md:py-1 md:pl-1 md:pr-2"
+        className="flex min-h-11 items-center gap-2.5 rounded-xl border border-transparent p-1 transition-colors hover:border-border/70 hover:bg-surface md:py-1 md:pl-1.5 md:pr-2.5"
       >
         {avatar}
         <span className="hidden min-w-0 max-w-40 text-left md:block">
           <span className="block truncate text-sm font-semibold leading-tight text-foreground">{name}</span>
-          {secondary && <span className="block truncate text-xs leading-tight text-muted-foreground">{secondary}</span>}
+          {(triggerLabel || secondary) && <span className="mt-0.5 block truncate text-[11px] leading-tight text-muted-foreground">{triggerLabel || secondary}</span>}
         </span>
         <ChevronDown
           aria-hidden
@@ -49,6 +51,7 @@ export function UserMenu({
 
       <div
         role="menu"
+        aria-hidden={!open}
         aria-label="Conta"
         className={cn(
           "absolute right-0 top-full z-50 mt-2 w-64 origin-top-right rounded-xl border border-border bg-card p-1.5 shadow-overlay transition-[opacity,transform] duration-150",

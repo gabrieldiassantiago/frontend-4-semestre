@@ -8,7 +8,19 @@ export const ETAPAS = [
   "CONTRATACAO",
 ] as const
 
-export type EtapaProcesso = (typeof ETAPAS)[number]
+/** Identificador da etapa retornado pela API (UUID). */
+export type EtapaProcesso = string
+
+export interface EtapaFluxo {
+  etapa: string
+  ordem: number
+  nome?: string
+  descricao?: string
+}
+
+export function etapaLabel(etapa: string, fluxo?: EtapaFluxo[], fallback?: string): string {
+  return fluxo?.find(item => item.etapa === etapa)?.nome || fallback || ETAPA_LABELS[etapa] || "Etapa do processo"
+}
 
 export const STATUS_CANDIDATURA = [
   "EM_ANDAMENTO",
@@ -94,36 +106,29 @@ export const ETAPA_DOT: Record<EtapaProcesso, string> = {
   CONTRATACAO: "bg-success",
 }
 
-export function etapasDaVaga(etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number }>): EtapaProcesso[] {
-  if (!etapasVaga?.length) return [...ETAPAS]
-  const configuradas = [...etapasVaga]
-    .filter((item) => item?.etapa && Number.isFinite(Number(item.ordem)))
-    .sort((a, b) => Number(a.ordem) - Number(b.ordem))
-    .map((item) => item.etapa)
-    .filter((etapa, index, etapas) => etapas.indexOf(etapa) === index)
-
-  if (!configuradas.length) return [...ETAPAS]
-
-  return [
-    "INSCRICAO",
-    ...configuradas.filter(etapa => etapa !== "INSCRICAO" && etapa !== "CONTRATACAO"),
-    "CONTRATACAO",
-  ]
+export function etapasDaVaga(etapasVaga?: EtapaFluxo[]): EtapaProcesso[] {
+  return [...(etapasVaga ?? [])]
+    .sort((a, b) => a.ordem - b.ordem)
+    .map(item => item.etapa)
+    .filter((etapa, index, etapas) => Boolean(etapa) && etapas.indexOf(etapa) === index)
 }
 
-export function etapaIndex(etapa: EtapaProcesso, etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number }>): number {
+export function etapaIndex(etapa: EtapaProcesso, etapasVaga?: EtapaFluxo[]): number {
   return etapasDaVaga(etapasVaga).indexOf(etapa)
 }
 
-export function isEtapaDepoisDe(etapa: EtapaProcesso, referencia: EtapaProcesso): boolean {
-  return etapaIndex(etapa) > etapaIndex(referencia)
+export function isEtapaDepoisDe(etapa: EtapaProcesso, referencia: EtapaProcesso, etapasVaga?: EtapaFluxo[]): boolean {
+  const index = etapaIndex(etapa, etapasVaga)
+  const referenceIndex = etapaIndex(referencia, etapasVaga)
+  return index >= 0 && referenceIndex >= 0 && index > referenceIndex
 }
 
-export function etapasPosteriores(atual: EtapaProcesso, etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number }>): EtapaProcesso[] {
-  return etapasDaVaga(etapasVaga).slice(etapaIndex(atual, etapasVaga) + 1)
+export function etapasPosteriores(atual: EtapaProcesso, etapasVaga?: EtapaFluxo[]): EtapaProcesso[] {
+  const index = etapaIndex(atual, etapasVaga)
+  return index < 0 ? [] : etapasDaVaga(etapasVaga).slice(index + 1)
 }
 
-export function etapasAteAtual(atual: EtapaProcesso, etapasVaga?: Array<{ etapa: EtapaProcesso; ordem: number }>): EtapaProcesso[] {
+export function etapasAteAtual(atual: EtapaProcesso, etapasVaga?: EtapaFluxo[]): EtapaProcesso[] {
   return etapasDaVaga(etapasVaga).slice(0, etapaIndex(atual, etapasVaga) + 1)
 }
 
@@ -147,7 +152,7 @@ export interface Candidatura {
   candidatoImagemUrl?: string
   etapaAtual: EtapaProcesso
   etapaAtualDescricao?: string
-  etapasVaga?: Array<{ etapa: EtapaProcesso; descricao: string; ordem: number }>
+  etapasVaga?: EtapaFluxo[]
   status: StatusCandidatura
   statusDescricao?: string
   cartaApresentacao?: string
@@ -161,6 +166,8 @@ export interface Candidatura {
 
 export interface CandidaturaHistorico {
   id: string
+  etapaAnteriorDescricao?: string
+  etapaNovaDescricao?: string
   etapaAnterior?: EtapaProcesso
   etapaNova: EtapaProcesso
   statusAnterior?: StatusCandidatura
@@ -172,6 +179,7 @@ export interface CandidaturaHistorico {
 }
 
 export interface CandidaturaFeedback {
+  etapaDescricao?: string
   id: string
   etapa: EtapaProcesso
   titulo: string

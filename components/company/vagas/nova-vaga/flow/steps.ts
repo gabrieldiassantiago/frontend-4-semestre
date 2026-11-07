@@ -138,7 +138,7 @@ export function validateStep(id: StepId, draft: VagaDraft): DraftErrors {
     case "descricao":
       return stripHtml(draft.descricao) ? {} : { descricao: "Escreva a descrição da vaga." }
     case "processo":
-      return draft.etapas.length > 0 ? {} : { etapas: "Escolha pelo menos uma etapa." }
+      return draft.etapas.length > 20 ? { etapas: "Selecione no máximo 20 etapas." } : draft.etapas.length > 0 ? {} : { etapas: "Escolha pelo menos uma etapa." }
     default:
       return {}
   }

@@ -1,8 +1,9 @@
 "use client"
+import { etapaLabel } from "@/lib/types/candidatura.types"
 import { ROUTES } from "@/lib/config/routes"
-
 import { useMemo, useState } from "react"
 import Link from "next/link"
+
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -16,12 +17,14 @@ import {
   History,
   LoaderCircle,
   LogOut,
+  Layers3,
   Mail,
   MessageSquare,
   RefreshCw,
   Video,
   X,
 } from "lucide-react"
+
 import { cn } from "@/lib/utils"
 import { useCandidatura, useConfirmarAgendamento, useDesistirCandidatura, useRecusarAgendamento } from "@/lib/queries/use-candidaturas"
 import { useVaga } from "@/lib/queries/use-vagas"
@@ -31,21 +34,46 @@ import { isWebUrl } from "@/lib/utils/profile-validation"
 import { Modal } from "@/components/ui/modal"
 import { ErrorState, Skeleton } from "@/components/ui/states"
 import { CompanyLogo } from "@/components/shared/company-logo"
-import { FeedbackCard, StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
+import { NotaEstrelas, StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
 import { CandidaturaChatButton } from "@/components/shared/chat/candidatura-chat"
-import { ETAPA_HINTS, ETAPA_LABELS, STATUS_LABELS, STATUS_AGENDAMENTO_LABELS, etapasDaVaga, isFinalizada, type CandidaturaAgendamento } from "@/lib/types/candidatura.types"
 
-const cardBase = "rounded-2xl border border-border bg-card shadow-xs"
+import {
+  ETAPA_HINTS,
+  STATUS_LABELS,
+  STATUS_AGENDAMENTO_LABELS,
+  etapasDaVaga,
+  isFinalizada,
+  type CandidaturaAgendamento,
+  type CandidaturaFeedback,
+} from "@/lib/types/candidatura.types"
 
-function SectionHeader({ id, icon: Icon, title, description, aside }: { id?: string; icon: typeof Clock; title: string; description?: string; aside?: React.ReactNode }) {
+const cardBase = "rounded-3xl border border-border/80 bg-card shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)]"
+
+function SectionHeader(
+  {
+    id,
+    icon: Icon,
+    title,
+    description,
+    aside,
+  }: {
+    id?: string
+    icon: typeof Clock
+    title: string
+    description?: string
+    aside?: React.ReactNode
+  },
+) {
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="flex min-w-0 items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary-subtle text-primary">
+        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-surface text-muted-foreground">
           <Icon className="size-4" aria-hidden />
         </span>
         <div className="min-w-0">
-          <h2 id={id} className="text-base font-semibold tracking-tight text-foreground sm:text-lg">{title}</h2>
+          <h2
+            id={id}
+            className="scroll-mt-24 text-sm font-semibold leading-6 tracking-tight text-foreground sm:text-base">{title}</h2>
           {description && <p className="mt-0.5 text-xs leading-5 text-muted-foreground sm:text-sm">{description}</p>}
         </div>
       </div>
@@ -54,9 +82,18 @@ function SectionHeader({ id, icon: Icon, title, description, aside }: { id?: str
   )
 }
 
-function EmptyHint({ icon: Icon, children }: { icon: typeof Clock; children: React.ReactNode }) {
+function EmptyHint(
+  {
+    icon: Icon,
+    children,
+  }: {
+    icon: typeof Clock
+    children: React.ReactNode
+  },
+) {
   return (
-    <div className="mt-5 flex items-start gap-3 rounded-xl border border-dashed border-border bg-surface p-4 text-sm leading-6 text-muted-foreground">
+    <div
+      className="mt-5 flex items-start gap-3 rounded-2xl bg-surface/80 p-5 text-xs leading-6 text-muted-foreground">
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
       <p>{children}</p>
     </div>
@@ -77,18 +114,6 @@ function DetailSkeleton() {
   )
 }
 
-/**
- * Substitui a função `AgendamentosCandidato` do arquivo da tela de detalhe da candidatura.
- *
- * Imports a ADICIONAR no topo do arquivo original:
- *   import { CalendarPlus, ChevronDown } from "lucide-react"   // (ChevronDown já existe)
- *   import { useMemo } from "react"                            // junto do useState
- *
- * Continua usando: cardBase, SectionHeader, EmptyHint, useConfirmarAgendamento,
- * useRecusarAgendamento, getErrorMessage, formatDate, isWebUrl, STATUS_AGENDAMENTO_LABELS,
- * ETAPA_LABELS, CandidaturaAgendamento, e os ícones já importados.
- */
-
 type StatusAgendamento = CandidaturaAgendamento["status"]
 
 const STATUS_STYLES: Record<StatusAgendamento, string> = {
@@ -102,10 +127,24 @@ const STATUS_STYLES: Record<StatusAgendamento, string> = {
 
 const CLOSED: StatusAgendamento[] = ["CANCELADO", "RECUSADO", "REALIZADO", "NAO_COMPARECEU"]
 
-const fmtTime = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" })
-const fmtWeekdayShort = new Intl.DateTimeFormat("pt-BR", { weekday: "short" })
-const fmtMonthShort = new Intl.DateTimeFormat("pt-BR", { month: "short" })
-const fmtLongDate = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" })
+const fmtTime = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+})
+
+const fmtWeekdayShort = new Intl.DateTimeFormat("pt-BR", {
+  weekday: "short",
+})
+
+const fmtMonthShort = new Intl.DateTimeFormat("pt-BR", {
+  month: "short",
+})
+
+const fmtLongDate = new Intl.DateTimeFormat("pt-BR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+})
 
 function hostOf(url: string) {
   try {
@@ -117,17 +156,27 @@ function hostOf(url: string) {
 
 /** "amanhã", "daqui a 3 dias", "daqui a 2 horas"... */
 function relativeLabel(date: Date) {
-  const rtf = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" })
+  const rtf = new Intl.RelativeTimeFormat("pt-BR", {
+    numeric: "auto",
+  })
+
   const minutes = Math.round((date.getTime() - Date.now()) / 60_000)
-  if (Math.abs(minutes) < 60) return rtf.format(minutes, "minute")
+
+  if (Math.abs(minutes) < 60)
+    return rtf.format(minutes, "minute")
+
   const hours = Math.round(minutes / 60)
-  if (Math.abs(hours) < 24) return rtf.format(hours, "hour")
+
+  if (Math.abs(hours) < 24)
+    return rtf.format(hours, "hour")
+
   return rtf.format(Math.round(hours / 24), "day")
 }
 
 function googleCalendarUrl(item: CandidaturaAgendamento, start: Date) {
   const end = new Date(start.getTime() + item.duracaoMinutos * 60_000)
   const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")
+
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: item.titulo,
@@ -135,25 +184,32 @@ function googleCalendarUrl(item: CandidaturaAgendamento, start: Date) {
     details: [item.mensagem, item.link].filter(Boolean).join("\n\n"),
     location: item.link,
   })
+
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
-function DateTile({ start, status }: { start: Date; status: StatusAgendamento }) {
+function DateTile(
+  {
+    start,
+    status,
+  }: {
+    start: Date
+    status: StatusAgendamento
+  },
+) {
   const weekday = fmtWeekdayShort.format(start).replace(".", "")
   const month = fmtMonthShort.format(start).replace(".", "")
-  const tone =
-    status === "CONFIRMADO"
-      ? "bg-primary text-primary-foreground border-primary"
-      : status === "PENDENTE"
-        ? "bg-card text-primary border-primary/30"
-        : "bg-surface text-muted-foreground border-border"
+  const tone = status === "CONFIRMADO" ? "bg-primary text-primary-foreground border-primary" : status === "PENDENTE" ? "bg-card text-primary border-primary/30" : "bg-surface text-muted-foreground border-border"
 
   return (
     <div
       aria-hidden
-      style={{ width: 68, minWidth: 68, flex: "none" }}
-      className={cn("flex flex-col items-center justify-center self-start rounded-xl border py-2.5", tone)}
-    >
+      style={{
+        width: 68,
+        minWidth: 68,
+        flex: "none",
+      }}
+      className={cn("flex flex-col items-center justify-center self-start rounded-xl border py-2.5", tone)}>
       <span className="block text-xs font-medium leading-4 opacity-80">{weekday}</span>
       <span className="block text-[1.65rem] font-semibold leading-8 tabular-nums">{start.getDate()}</span>
       <span className="block text-xs font-medium leading-4 opacity-80">{month}</span>
@@ -161,19 +217,21 @@ function DateTile({ start, status }: { start: Date; status: StatusAgendamento })
   )
 }
 
-function AgendamentoCard({
-  item,
-  busy,
-  disabled,
-  onRespond,
-  responding,
-}: {
-  item: CandidaturaAgendamento
-  busy: boolean
-  disabled: boolean
-  responding: "confirmar" | "recusar" | null
-  onRespond: (item: CandidaturaAgendamento, acao: "confirmar" | "recusar") => void
-}) {
+function AgendamentoCard(
+  {
+    item,
+    busy,
+    disabled,
+    onRespond,
+    responding,
+  }: {
+    item: CandidaturaAgendamento
+    busy: boolean
+    disabled: boolean
+    responding: "confirmar" | "recusar" | null
+    onRespond: (item: CandidaturaAgendamento, acao: "confirmar" | "recusar") => void
+  },
+) {
   const start = new Date(item.inicio)
   const validDate = !Number.isNaN(start.getTime())
   const end = validDate ? new Date(start.getTime() + item.duracaoMinutos * 60_000) : null
@@ -190,137 +248,152 @@ function AgendamentoCard({
         pendente && "border-primary/30 bg-card shadow-xs",
         confirmado && "border-border bg-card",
         closed && "border-border bg-surface/60",
-      )}
-    >
+      )}>
       <div className="flex gap-4 p-4 sm:gap-5 sm:p-5">
         {validDate && <DateTile start={start} status={item.status} />}
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
             <div className="min-w-0 flex-1">
-              <h3 className={cn("break-words text-base font-semibold leading-snug", closed ? "text-muted-foreground" : "text-foreground")}>
+              <h3
+                className={cn(
+                  "break-words text-base font-semibold leading-snug",
+                  closed ? "text-muted-foreground" : "text-foreground",
+                )}>
                 {item.titulo}
               </h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {item.etapaDescricao ?? ETAPA_LABELS[item.etapa]}
+                {etapaLabel(item.etapa, undefined, item.etapaDescricao)}
               </p>
             </div>
-            <span className={cn("shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold", STATUS_STYLES[item.status])}>
+            <span
+              className={cn("shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold", STATUS_STYLES[item.status])}>
               {STATUS_AGENDAMENTO_LABELS[item.status]}
             </span>
           </div>
 
-          {validDate && end && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <p className={cn("inline-flex items-center gap-1.5 text-sm font-semibold tabular-nums", closed ? "text-muted-foreground" : "text-foreground")}>
-                <Clock className="size-4 text-muted-foreground" aria-hidden />
-                {fmtTime.format(start)} – {fmtTime.format(end)}
-                <span className="font-normal text-muted-foreground">
-                  ({item.duracaoMinutos} min{endsNextDay ? ", termina no dia seguinte" : ""})
-                </span>
-              </p>
-              <p className="text-sm text-muted-foreground first-letter:capitalize">
-                {fmtLongDate.format(start)}
-                {!closed && <span className="text-primary"> · {relativeLabel(start)}</span>}
-              </p>
-            </div>
-          )}
+          {validDate && end && (<div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p
+              className={cn(
+                "inline-flex items-center gap-1.5 text-sm font-semibold tabular-nums",
+                closed ? "text-muted-foreground" : "text-foreground",
+              )}>
+              <Clock className="size-4 text-muted-foreground" aria-hidden />
+              {fmtTime.format(start)}– {fmtTime.format(end)}
+              <span className="font-normal text-muted-foreground">({item.duracaoMinutos}min{endsNextDay ? ", termina no dia seguinte" : ""})
+                                                </span>
+            </p>
+            <p className="text-sm text-muted-foreground first-letter:capitalize">
+              {fmtLongDate.format(start)}
+              {!closed && <span className="text-primary">· {relativeLabel(start)}</span>}
+            </p>
+          </div>)}
 
-          {item.mensagem && (
-            <blockquote className="mt-4 whitespace-pre-line break-words border-l-2 border-primary/30 pl-3 text-sm leading-6 text-muted-foreground">
-              {item.mensagem}
-            </blockquote>
-          )}
+          {item.mensagem && (<blockquote
+            className="mt-4 whitespace-pre-line break-words border-l-2 border-primary/30 pl-3 text-sm leading-6 text-muted-foreground">
+            {item.mensagem}
+          </blockquote>)}
 
-          {!closed && host && (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {confirmado ? (
-                <>
-                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="btn-primary">
-                    <Video className="size-4" aria-hidden />
-                    Entrar na reunião
-                  </a>
-                  {validDate && (
-                    <a href={googleCalendarUrl(item, start)} target="_blank" rel="noopener noreferrer" className="btn-ghost">
-                      <CalendarPlus className="size-4" aria-hidden />
-                      Adicionar à agenda
-                    </a>
-                  )}
-                </>
-              ) : (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-surface px-3 text-xs font-medium text-strong-foreground transition-colors hover:bg-muted"
-                >
-                  <Video className="size-3.5 text-muted-foreground" aria-hidden />
-                  <span className="text-muted-foreground">Link da reunião</span>
-                  {host}
-                  <ArrowUpRight className="size-3.5 text-muted-foreground" aria-hidden />
-                </a>
-              )}
-            </div>
-          )}
+          {!closed && host && (<div className="mt-4 flex flex-wrap items-center gap-2">
+            {confirmado ? (<>
+              <a href={item.link} target="_blank" rel="noopener noreferrer" className="btn-primary">
+                <Video className="size-4" aria-hidden />Entrar na reunião
+                                                  </a>
+              {validDate && (<a
+                href={googleCalendarUrl(item, start)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-ghost">
+                <CalendarPlus className="size-4" aria-hidden />Adicionar à agenda
+                                                    </a>)}
+            </>) : (<a
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-surface px-3 text-xs font-medium text-strong-foreground transition-colors hover:bg-muted">
+              <Video className="size-3.5 text-muted-foreground" aria-hidden />
+              <span className="text-muted-foreground">Link da reunião</span>
+              {host}
+              <ArrowUpRight className="size-3.5 text-muted-foreground" aria-hidden />
+            </a>)}
+          </div>)}
         </div>
       </div>
 
-      {pendente && (
-        <div className="flex flex-col gap-3 border-t border-border bg-surface/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="text-sm text-muted-foreground">A empresa aguarda sua resposta.</p>
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <button
-              type="button"
-              onClick={() => onRespond(item, "recusar")}
-              className="btn-secondary text-danger-foreground"
-              disabled={busy || disabled}
-            >
-              {busy && responding === "recusar" && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
-              Recusar
-            </button>
-            <button
-              type="button"
-              onClick={() => onRespond(item, "confirmar")}
-              className="btn-primary"
-              disabled={busy || disabled}
-            >
-              {busy && responding === "confirmar" ? (
-                <LoaderCircle className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Check className="size-4" aria-hidden />
-              )}
-              Confirmar presença
-            </button>
-          </div>
+      {pendente && (<div
+        className="flex flex-col gap-3 border-t border-border bg-surface/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <p className="text-sm text-muted-foreground">A empresa aguarda sua resposta.</p>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <button
+            type="button"
+            onClick={() => onRespond(item, "recusar")}
+            className="btn-secondary text-danger-foreground"
+            disabled={busy || disabled}>
+            {busy && responding === "recusar" && <LoaderCircle className="size-4 animate-spin" aria-hidden />}Recusar
+                                    </button>
+          <button
+            type="button"
+            onClick={() => onRespond(item, "confirmar")}
+            className="btn-primary"
+            disabled={busy || disabled}>
+            {busy && responding === "confirmar" ? (<LoaderCircle className="size-4 animate-spin" aria-hidden />) : (<Check className="size-4" aria-hidden />)}Confirmar presença
+                                    </button>
         </div>
-      )}
+      </div>)}
     </article>
   )
 }
 
-function AgendamentosCandidato({ agendamentos }: { agendamentos: CandidaturaAgendamento[] }) {
+function AgendamentosCandidato(
+  {
+    agendamentos,
+  }: {
+    agendamentos: CandidaturaAgendamento[]
+  },
+) {
   const confirmar = useConfirmarAgendamento()
   const recusar = useRecusarAgendamento()
   const [erro, setErro] = useState<string | null>(null)
-  // Controla qual card está respondendo, para não girar spinner em todos.
-  const [ativo, setAtivo] = useState<{ id: string; acao: "confirmar" | "recusar" } | null>(null)
+
+  const [ativo, setAtivo] = useState<{
+    id: string
+    acao: "confirmar" | "recusar"
+  } | null>(null)
+
   const pending = confirmar.isPending || recusar.isPending
 
-  const { proximos, encerrados } = useMemo(() => {
-    const byDate = (a: CandidaturaAgendamento, b: CandidaturaAgendamento) =>
-      (Date.parse(a.inicio) || 0) - (Date.parse(b.inicio) || 0)
-    const abertos = agendamentos.filter((item) => !CLOSED.includes(item.status)).sort(byDate)
-    const fechados = agendamentos.filter((item) => CLOSED.includes(item.status)).sort((a, b) => byDate(b, a))
-    return { proximos: abertos, encerrados: fechados }
+  const {
+    proximos,
+    encerrados,
+  } = useMemo(() => {
+    const byDate = (a: CandidaturaAgendamento, b: CandidaturaAgendamento) => (Date.parse(a.inicio) || 0) - (Date.parse(b.inicio) || 0)
+    const abertos = agendamentos.filter(item => !CLOSED.includes(item.status)).sort(byDate)
+    const fechados = agendamentos.filter(item => CLOSED.includes(item.status)).sort((a, b) => byDate(b, a))
+
+    return {
+      proximos: abertos,
+      encerrados: fechados,
+    }
   }, [agendamentos])
 
   async function responder(agendamento: CandidaturaAgendamento, acao: "confirmar" | "recusar") {
     setErro(null)
-    setAtivo({ id: agendamento.id, acao })
+
+    setAtivo({
+      id: agendamento.id,
+      acao,
+    })
+
     try {
-      const vars = { candidaturaId: agendamento.candidaturaId, agendamentoId: agendamento.id }
-      if (acao === "confirmar") await confirmar.mutateAsync(vars)
-      else await recusar.mutateAsync(vars)
+      const vars = {
+        candidaturaId: agendamento.candidaturaId,
+        agendamentoId: agendamento.id,
+      }
+
+      if (acao === "confirmar")
+        await confirmar.mutateAsync(vars)
+      else
+        await recusar.mutateAsync(vars)
     } catch (requestError) {
       setErro(getErrorMessage(requestError, "Não foi possível atualizar o agendamento."))
     } finally {
@@ -328,93 +401,84 @@ function AgendamentosCandidato({ agendamentos }: { agendamentos: CandidaturaAgen
     }
   }
 
-  const renderCard = (item: CandidaturaAgendamento) => (
-    <AgendamentoCard
-      key={item.id}
-      item={item}
-      busy={pending && ativo?.id === item.id}
-      disabled={pending}
-      responding={ativo?.id === item.id ? ativo.acao : null}
-      onRespond={(a, acao) => void responder(a, acao)}
-    />
-  )
+  const renderCard = (item: CandidaturaAgendamento) => (<AgendamentoCard
+    key={item.id}
+    item={item}
+    busy={pending && ativo?.id === item.id}
+    disabled={pending}
+    responding={ativo?.id === item.id ? ativo.acao : null}
+    onRespond={(a, acao) => void responder(a, acao)} />)
 
   return (
-    <section aria-labelledby="application-appointments-title" className={cn(cardBase, "p-6 sm:p-7")}>
+    <section aria-labelledby="application-appointments-title" className={cn(cardBase, "p-5 sm:p-7")}>
       <SectionHeader
         id="application-appointments-title"
         icon={CalendarClock}
         title="Entrevistas e agendamentos"
         description="Convites e próximos encontros deste processo."
-        aside={
-          proximos.length > 0 && (
-            <span className="rounded-full bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              {proximos.length} {proximos.length === 1 ? "ativo" : "ativos"}
-            </span>
-          )
-        }
-      />
+        aside={proximos.length > 0 && (<span className="rounded-full bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          {proximos.length} {proximos.length === 1 ? "ativo" : "ativos"}
+        </span>)} />
 
-      {erro && (
-        <p role="alert" className="mt-4 rounded-xl border border-danger/20 bg-danger-subtle px-4 py-3 text-sm text-danger-foreground">
-          {erro}
-        </p>
-      )}
+      {erro && (<p
+        role="alert"
+        className="mt-4 rounded-xl border border-danger/20 bg-danger-subtle px-4 py-3 text-sm text-danger-foreground">
+        {erro}
+      </p>)}
 
-      {agendamentos.length === 0 ? (
-        <EmptyHint icon={CalendarDays}>
-          Ainda não há entrevistas ou reuniões agendadas. Quando a empresa enviar um convite, ele aparece aqui.
-        </EmptyHint>
-      ) : (
-        <div className="mt-5 flex flex-col gap-3">
-          {proximos.map(renderCard)}
+      {agendamentos.length === 0 ? (<EmptyHint icon={CalendarDays}>Ainda não há entrevistas ou reuniões agendadas. Quando a empresa enviar um convite, ele aparece aqui.
+                        </EmptyHint>) : (<div className="mt-5 flex flex-col gap-3">
+        {proximos.map(renderCard)}
 
-          {encerrados.length > 0 && (
-            <details className="group mt-1">
-              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
-                <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
-                Encerrados ({encerrados.length})
-              </summary>
-              <div className="mt-2 flex flex-col gap-3">{encerrados.map(renderCard)}</div>
-            </details>
-          )}
-        </div>
-      )}
+        {encerrados.length > 0 && (<details className="group mt-1">
+          <summary
+            className="flex cursor-pointer list-none items-center gap-2 rounded-lg py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+            <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />Encerrados ({encerrados.length})
+                                      </summary>
+          <div className="mt-2 flex flex-col gap-3">{encerrados.map(renderCard)}</div>
+        </details>)}
+      </div>)}
     </section>
   )
 }
 
-function InscricaoRealizada({
-  createdAt,
-  updatedAt,
-  curriculoUrl,
-  cartaApresentacao,
-  etapaLabel,
-  encerrada,
-  onDesistir,
-}: {
-  createdAt?: string | null
-  updatedAt?: string | null
-  curriculoUrl?: string | null
-  cartaApresentacao?: string | null
-  etapaLabel: string
-  encerrada: boolean
-  onDesistir: () => void
-}) {
+function InscricaoRealizada(
+  {
+    createdAt,
+    updatedAt,
+    curriculoUrl,
+    cartaApresentacao,
+    etapaLabel,
+    encerrada,
+    onDesistir,
+  }: {
+    createdAt?: string | null
+    updatedAt?: string | null
+    curriculoUrl?: string | null
+    cartaApresentacao?: string | null
+    etapaLabel: string
+    encerrada: boolean
+    onDesistir: () => void
+  },
+) {
   const hasCurriculo = !!curriculoUrl && isWebUrl(curriculoUrl)
 
   return (
     <section aria-labelledby="application-documents-title" className={cn(cardBase, "p-6")}>
       <div className="flex items-center justify-between gap-3">
-        <h2 id="application-documents-title" className="text-sm font-medium text-muted-foreground">Sua inscrição</h2>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-foreground">
-          <span className="size-1.5 rounded-full bg-success-foreground" aria-hidden />
-          Enviada
-        </span>
+        <h2 id="application-documents-title" className="scroll-mt-24 text-sm font-medium text-muted-foreground">Sua inscrição</h2>
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-foreground">
+          <span className="size-1.5 rounded-full bg-success-foreground" aria-hidden />Enviada
+                            </span>
       </div>
 
-      <p className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
-        {createdAt ? <time dateTime={createdAt}>{formatDate(createdAt, { day: "numeric", month: "short", year: "numeric" })}</time> : "Recebida"}
+      <p className="mt-4 text-xl font-medium tracking-tight text-foreground">
+        {createdAt ? <time dateTime={createdAt}>{formatDate(createdAt, {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}</time> : "Recebida"}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">Data de envio da candidatura</p>
 
@@ -425,123 +489,154 @@ function InscricaoRealizada({
         </div>
         <div className="flex items-center justify-between gap-4 py-3">
           <dt className="text-muted-foreground">Última atualização</dt>
-          <dd className="font-medium text-foreground">{updatedAt ? formatDate(updatedAt, { day: "2-digit", month: "short" }) : "—"}</dd>
+          <dd className="font-medium text-foreground">{updatedAt ? formatDate(updatedAt, {
+              day: "2-digit",
+              month: "short",
+            }) : "—"}</dd>
         </div>
       </dl>
 
       <h3 className="mt-6 text-sm font-medium text-muted-foreground">Documentos</h3>
       <ul className="mt-3 space-y-2">
         <li>
-          {hasCurriculo ? (
-            <a
-              href={curriculoUrl!}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center gap-3 rounded-xl bg-surface p-3 transition-colors hover:bg-muted"
-            >
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-foreground"><FileText className="size-4" aria-hidden /></span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-foreground">Currículo</span>
-                <span className="block text-xs text-muted-foreground">Abrir arquivo</span>
-              </span>
-              <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" aria-hidden />
-            </a>
-          ) : (
-            <div className="flex items-center gap-3 rounded-xl bg-surface p-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-muted-foreground"><FileText className="size-4" aria-hidden /></span>
-              <p className="text-xs leading-5 text-muted-foreground">Nenhum currículo anexado.</p>
-            </div>
-          )}
+          {hasCurriculo ? (<a
+            href={curriculoUrl!}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-3 rounded-xl bg-surface p-3 transition-colors hover:bg-muted">
+            <span
+              className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-foreground"><FileText className="size-4" aria-hidden /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-foreground">Currículo</span>
+              <span className="block text-xs text-muted-foreground">Abrir arquivo</span>
+            </span>
+            <ArrowUpRight
+              className="size-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground"
+              aria-hidden />
+          </a>) : (<div className="flex items-center gap-3 rounded-xl bg-surface p-3">
+            <span
+              className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-muted-foreground"><FileText className="size-4" aria-hidden /></span>
+            <p className="text-xs leading-5 text-muted-foreground">Nenhum currículo anexado.</p>
+          </div>)}
         </li>
-        {cartaApresentacao && (
-          <li>
-            <details className="group rounded-xl bg-surface">
-              <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl p-3 transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
-                <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-foreground"><Mail className="size-4" aria-hidden /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-foreground">Carta de apresentação</span>
-                  <span className="block text-xs text-muted-foreground group-open:hidden">Ler carta</span>
-                  <span className="hidden text-xs text-muted-foreground group-open:block">Recolher</span>
-                </span>
-                <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
-              </summary>
-              <p className="whitespace-pre-line break-words px-4 pb-4 pt-1 text-sm leading-7 text-muted-foreground">{cartaApresentacao}</p>
-            </details>
-          </li>
-        )}
+        {cartaApresentacao && (<li>
+          <details className="group rounded-xl bg-surface">
+            <summary
+              className="flex cursor-pointer list-none items-center gap-3 rounded-xl p-3 transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
+              <span
+                className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-foreground"><Mail className="size-4" aria-hidden /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium text-foreground">Carta de apresentação</span>
+                <span className="block text-xs text-muted-foreground group-open:hidden">Ler carta</span>
+                <span className="hidden text-xs text-muted-foreground group-open:block">Recolher</span>
+              </span>
+              <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+            </summary>
+            <p className="whitespace-pre-line break-words px-4 pb-4 pt-1 text-sm leading-7 text-muted-foreground">{cartaApresentacao}</p>
+          </details>
+        </li>)}
       </ul>
 
-      {!encerrada && (
-        <button
-          type="button"
-          onClick={onDesistir}
-          className="mt-6 inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-danger-foreground"
-        >
-          <LogOut className="size-4" aria-hidden />
-          Desistir do processo
-        </button>
-      )}
+      {!encerrada && (<button
+        type="button"
+        onClick={onDesistir}
+        className="mt-6 inline-flex min-h-10 items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-danger-foreground">
+        <LogOut className="size-4" aria-hidden />Desistir do processo
+                        </button>)}
     </section>
   )
 }
 
-export function ApplicationDetailScreen({ id }: { id: string }) {
-  const { detalhe, loading, error, refetch } = useCandidatura(id)
-  const { vaga } = useVaga(detalhe?.candidatura.vagaId ?? null)
+function ApplicationFeedback(
+  {
+    feedback,
+  }: {
+    feedback: CandidaturaFeedback
+  },
+) {
+  return (
+    <article className="rounded-2xl border border-border-subtle bg-surface/60 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span
+          className="rounded-full border border-border/70 bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground">{etapaLabel(feedback.etapa, undefined, feedback.etapaDescricao)}</span>
+        {feedback.createdAt && <time dateTime={feedback.createdAt} className="text-[11px] text-muted-foreground">{formatDate(feedback.createdAt, {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}</time>}
+      </div>
+      <h3 className="mt-4 break-words text-sm font-semibold leading-6 tracking-tight">{feedback.titulo}</h3>
+      <p className="mt-2 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{feedback.mensagem}</p>
+      {(feedback.autorNome || typeof feedback.nota === "number") && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3"><p className="text-[11px] text-muted-foreground">{feedback.autorNome || "Equipe de recrutamento"}</p>{typeof feedback.nota === "number" && <NotaEstrelas nota={feedback.nota} />}</div>}
+    </article>
+  )
+}
+
+export function ApplicationDetailScreen(
+  {
+    id,
+  }: {
+    id: string
+  },
+) {
+  const {
+    detalhe,
+    loading,
+    error,
+    refetch,
+  } = useCandidatura(id)
+
+  const {
+    vaga,
+  } = useVaga(detalhe?.candidatura.vagaId ?? null)
+
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [acaoErro, setAcaoErro] = useState<string | null>(null)
   const desistirCandidatura = useDesistirCandidatura()
   const desistindo = desistirCandidatura.isPending
 
-  if (loading) return <DetailSkeleton />
-  if (error || !detalhe)
-    return (
-      <main className="mx-auto max-w-lg px-4 py-20">
-        <ErrorState
-          title="Não encontramos esta candidatura"
-          description={error ?? "A candidatura não está disponível para esta conta."}
-          action={
-            <div className="flex flex-wrap justify-center gap-3">
-              <button type="button" onClick={() => void refetch()} className="btn-secondary">Tentar novamente</button>
-              <Link href={ROUTES.candidate.applications} className="btn-primary">Minhas candidaturas</Link>
-            </div>
-          }
-        />
-      </main>
-    )
+  if (loading)
+    return <DetailSkeleton />
 
-  const { candidatura, historico = [], feedbacks = [], agendamentos = [] } = detalhe
+  if (error || !detalhe) return (
+    <main className="mx-auto max-w-lg px-4 py-20">
+      <ErrorState
+        title="Não encontramos esta candidatura"
+        description={error ?? "A candidatura não está disponível para esta conta."}
+        action={<div className="flex flex-wrap justify-center gap-3">
+          <button type="button" onClick={() => void refetch()} className="btn-secondary">Tentar novamente</button>
+          <Link href={ROUTES.candidate.applications} className="btn-primary">Minhas candidaturas</Link>
+        </div>} />
+    </main>
+  )
+
+  const {
+    candidatura,
+    historico = [],
+    feedbacks = [],
+    agendamentos = [],
+  } = detalhe
+
   const company = candidatura.nomeEmpresa || "Empresa confidencial"
   const encerrada = isFinalizada(candidatura.status)
   const etapas = etapasDaVaga(candidatura.etapasVaga)
   const currentIndex = etapas.indexOf(candidatura.etapaAtual)
-  const currentLabel = ETAPA_LABELS[candidatura.etapaAtual] || candidatura.etapaAtual
+  const currentLabel = etapaLabel(candidatura.etapaAtual, candidatura.etapasVaga, candidatura.etapaAtualDescricao)
   const progress = etapas.length > 0 && currentIndex >= 0 ? Math.round(((currentIndex + 1) / etapas.length) * 100) : 0
-  const statusDot =
-    candidatura.status === "APROVADA"
-      ? "bg-success-foreground"
-      : candidatura.status === "REPROVADA"
-        ? "bg-danger-foreground"
-        : candidatura.status === "CANCELADA"
-          ? "bg-muted-foreground"
-          : "bg-primary"
+  const statusDot = candidatura.status === "APROVADA" ? "bg-success-foreground" : candidatura.status === "REPROVADA" ? "bg-danger-foreground" : candidatura.status === "CANCELADA" ? "bg-muted-foreground" : "bg-primary"
   const StatusIcon = candidatura.status === "APROVADA" ? Check : candidatura.status === "REPROVADA" || candidatura.status === "CANCELADA" ? X : Clock
   const statusTitle = encerrada ? STATUS_LABELS[candidatura.status] : currentLabel
-  const statusDescription = encerrada
-    ? candidatura.motivoEncerramento ||
-    (candidatura.status === "APROVADA"
-      ? "A empresa aprovou sua candidatura neste processo seletivo."
-      : candidatura.status === "REPROVADA"
-        ? "A empresa encerrou sua participação neste processo seletivo."
-        : "Sua participação neste processo seletivo foi cancelada.")
-    : candidatura.etapaAtualDescricao || ETAPA_HINTS[candidatura.etapaAtual] || "Acompanhe as atualizações da empresa nesta página."
+  const statusDescription = encerrada ? candidatura.motivoEncerramento || (candidatura.status === "APROVADA" ? "A empresa aprovou sua candidatura neste processo seletivo." : candidatura.status === "REPROVADA" ? "A empresa encerrou sua participação neste processo seletivo." : "Sua participação neste processo seletivo foi cancelada.") : candidatura.etapasVaga?.find(item => item.etapa === candidatura.etapaAtual)?.descricao || ETAPA_HINTS[candidatura.etapaAtual] || "Acompanhe as atualizações da empresa nesta página."
   const history = [...historico].sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0))
   const feedbackList = [...feedbacks].sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0))
-  const pendingInvites = agendamentos.filter((item) => item.status === "PENDENTE").length
+  const pendingInvites = agendamentos.filter(item => item.status === "PENDENTE").length
 
   async function desistir() {
-    if (desistindo) return
+    if (desistindo)
+      return
+
     setAcaoErro(null)
+
     try {
       await desistirCandidatura.mutateAsync(candidatura.id)
       setConfirmOpen(false)
@@ -550,154 +645,192 @@ export function ApplicationDetailScreen({ id }: { id: string }) {
     }
   }
 
-  console.log(detalhe)
-
-
   return (
-    <main className="application-detail mx-auto w-full max-w-[1280px] px-4 py-7 sm:px-8 lg:py-10">
-      <nav className="mb-5 flex flex-wrap items-center justify-between gap-3" aria-label="Navegação da candidatura">
-        <Link href={ROUTES.candidate.applications} className="group inline-flex min-h-10 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-          <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" aria-hidden />
-          Minhas candidaturas
-        </Link>
-        <button type="button" onClick={() => void refetch()} className="btn-ghost" disabled={desistindo}>
-          <RefreshCw className="size-4" aria-hidden />
-          Atualizar
-        </button>
+    <main className="application-detail mx-auto w-full max-w-[1240px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <nav
+        className="mb-5 flex flex-wrap items-center justify-between gap-3"
+        aria-label="Navegação da candidatura">
+        <Link
+          href={ROUTES.candidate.applications}
+          className="group inline-flex min-h-10 items-center gap-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" aria-hidden />Minhas candidaturas
+                            </Link>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          className="btn-secondary min-h-9 rounded-xl px-3 text-xs"
+          disabled={desistindo}>
+          <RefreshCw className="size-4" aria-hidden />Atualizar
+                            </button>
       </nav>
 
-      <header className={cardBase}>
-        <div className="p-6 sm:p-8">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="rounded-2xl bg-card p-1 shadow-xs ring-1 ring-border">
-                <CompanyLogo url={vaga?.logoUrlEmpresa} name={company} size="lg" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-muted-foreground">{company}</p>
-                <h1 className="mt-1 text-balance break-words text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">{candidatura.vagaTitulo}</h1>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <StatusBadge status={candidatura.status} size="sm" />
-                  {candidatura.createdAt && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground">
-                      <CalendarDays className="size-3.5" aria-hidden />
-                      Inscrito em {formatDate(candidatura.createdAt)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex shrink-0 gap-2 self-start">
-              <CandidaturaChatButton candidaturaId={candidatura.id} contatoNome={company} contatoImagemUrl={candidatura.logoUrlEmpresa} perspectiva="candidato" assunto={candidatura.vagaTitulo} />
-              <Link href={"/vaga/" + candidatura.vagaId} className="btn-secondary shrink-0">
-                Ver vaga
-                <ArrowUpRight className="size-4" aria-hidden />
-              </Link>
-            </div>
+      <header className={cn(cardBase, "overflow-hidden")}>
+        <div className="flex flex-col justify-between gap-6 p-5 sm:p-7 xl:flex-row xl:items-center">
+          <div className="flex min-w-0 items-start gap-4">
+            <CompanyLogo
+              url={candidatura.logoUrlEmpresa || vaga?.logoUrlEmpresa}
+              name={company}
+              size="lg"
+              className="size-14 rounded-2xl sm:size-16" />
+            <div className="min-w-0"><p className="text-xs leading-5 text-muted-foreground">{company}</p><h1
+                className="mt-1.5 break-words text-2xl font-semibold leading-tight tracking-[-0.04em] sm:text-[28px]">{candidatura.vagaTitulo}</h1><p className="mt-2 text-xs leading-5 text-muted-foreground">Acompanhe sua participação no processo seletivo.</p></div>
           </div>
-
-          {etapas.length > 0 && (
-            <div className="mt-7 border-t border-border pt-5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-strong-foreground">
-                  {encerrada ? "Etapa alcançada" : "Progresso"}: <span className="text-foreground">{currentLabel}</span>
-                </span>
-                {currentIndex >= 0 && <span className="text-muted-foreground">Etapa {currentIndex + 1} de {etapas.length}</span>}
-              </div>
-              <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-surface" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} aria-label="Progresso no processo seletivo">
-                <div className={cn("h-full rounded-full transition-[width] duration-500", encerrada && candidatura.status !== "APROVADA" ? "bg-border-strong" : candidatura.status === "APROVADA" ? "bg-success-foreground" : "bg-primary")} style={{ width: `${progress}%` }} />
-              </div>
-            </div>
-          )}
+          <div className="flex shrink-0 flex-wrap items-center gap-2"><CandidaturaChatButton
+              candidaturaId={candidatura.id}
+              contatoNome={company}
+              contatoImagemUrl={candidatura.logoUrlEmpresa || vaga?.logoUrlEmpresa}
+              perspectiva="candidato"
+              assunto={candidatura.vagaTitulo}
+              className="min-h-10 rounded-xl px-4 text-xs" /><Link
+              href={ROUTES.publicJob(candidatura.vagaId)}
+              className="btn-secondary min-h-10 rounded-xl px-4 text-xs">Ver vaga<ArrowUpRight className="size-3.5" aria-hidden /></Link></div>
+        </div>
+        <div
+          className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border-subtle bg-surface/40 px-5 py-4 sm:px-7">
+          <div className="flex items-center gap-2"><span className="text-[11px] text-muted-foreground">Situação</span><StatusBadge status={candidatura.status} size="sm" /></div>
+          {candidatura.createdAt && <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><CalendarDays className="size-3.5" aria-hidden />Inscrição em <time dateTime={candidatura.createdAt}>{formatDate(candidatura.createdAt, {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}</time></p>}
+          {currentIndex >= 0 && <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Layers3 className="size-3.5" aria-hidden />Etapa {currentIndex + 1}de {etapas.length}</p>}
         </div>
       </header>
-
-      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <nav
+        aria-label="Seções da candidatura"
+        className="mt-6 flex gap-6 overflow-x-auto border-b border-border/80 px-1">
+        {[{
+          href: "#application-status-title",
+          label: "Acompanhamento",
+          icon: Layers3,
+        }, {
+          href: "#application-appointments",
+          label: "Agendamentos",
+          icon: CalendarClock,
+          count: agendamentos.length,
+        }, {
+          href: "#application-feedback-title",
+          label: "Feedbacks",
+          icon: MessageSquare,
+          count: feedbacks.length,
+        }, {
+          href: "#application-history-title",
+          label: "Histórico",
+          icon: History,
+        }, {
+          href: "#application-stages-title",
+          label: "Etapas",
+          icon: Layers3,
+        }].map((
+          {
+            href,
+            label,
+            icon: Icon,
+            count,
+          },
+        ) => <a
+          key={href}
+          href={href}
+          className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-t-lg px-1 text-xs font-medium text-muted-foreground transition-colors hover:text-primary"><Icon aria-hidden className="size-3.5" />{label}{count !== undefined && <span className="rounded-md bg-surface px-1.5 py-0.5 text-[10px] tabular-nums">{count}</span>}</a>)}
+      </nav>
+      <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-6">
-          <section aria-labelledby="application-status-title" className={cn(cardBase, "p-6 sm:p-7")}>
-            <div className="flex items-center justify-between gap-4">
-              <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <span className="relative flex size-2" aria-hidden>
-                  {!encerrada && <span className={cn("absolute inline-flex size-full animate-ping rounded-full opacity-60", statusDot)} />}
-                  <span className={cn("relative inline-flex size-2 rounded-full", statusDot)} />
-                </span>
-                {encerrada ? "Resultado do processo" : "Etapa atual"}
-              </p>
-              {candidatura.updatedAt && (
-                <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <StatusIcon className="size-3.5" aria-hidden />
-                  <span>Atualizado em <time dateTime={candidatura.updatedAt}>{formatDate(candidatura.updatedAt, { day: "2-digit", month: "short" })}</time></span>
-                </p>
-              )}
+          <section aria-labelledby="application-status-title" className={cn(cardBase, "scroll-mt-24 p-5 sm:p-7")}>
+            <div className="flex items-start gap-4">
+              <span
+                className={cn(
+                  "grid size-12 shrink-0 place-items-center rounded-2xl",
+                  candidatura.status === "APROVADA" ? "bg-success-subtle text-success-foreground" : candidatura.status === "REPROVADA" || candidatura.status === "CANCELADA" ? "bg-surface text-muted-foreground" : "bg-primary-subtle text-primary",
+                )}><StatusIcon aria-hidden className="size-5" strokeWidth={1.6} /></span>
+              <div className="min-w-0 flex-1"><p className="flex items-center gap-2 text-xs text-muted-foreground"><span aria-hidden className={cn("size-1.5 rounded-full", statusDot)} />{encerrada ? "Resultado do processo" : "Sua etapa atual"}</p><h2
+                  id="application-status-title"
+                  className="mt-2 scroll-mt-24 break-words text-2xl font-semibold leading-tight tracking-[-0.035em] sm:text-[28px]">{statusTitle}</h2><p
+                  className="mt-3 max-w-prose whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{statusDescription}</p></div>
             </div>
-            <h2 id="application-status-title" className="mt-4 text-3xl font-semibold tracking-tight text-foreground text-balance">{statusTitle}</h2>
-            <p className="mt-3 max-w-prose whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{statusDescription}</p>
+            {etapas.length > 0 && <div className="mt-6 border-t border-border-subtle pt-5"><div
+                className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground"><span>{encerrada ? "Etapa alcançada no processo" : "Seu caminho no processo"}</span><span>{currentIndex >= 0 ? `Etapa ${currentIndex + 1} de ${etapas.length}` : "Etapa em atualização"}</span></div><div
+                role="progressbar"
+                aria-label="Etapas alcançadas no processo seletivo"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+                aria-valuetext={`${currentLabel}${currentIndex >= 0 ? `, etapa ${currentIndex + 1} de ${etapas.length}` : ""}`}
+                className="flex gap-1.5">{etapas.map((etapa, index) => <span
+                  key={etapa}
+                  title={etapaLabel(etapa, candidatura.etapasVaga)}
+                  className={cn(
+                    "h-1.5 min-w-0 flex-1 rounded-full",
+                    index <= currentIndex ? candidatura.status === "APROVADA" ? "bg-success" : encerrada ? "bg-border-strong" : "bg-primary" : "bg-border-subtle",
+                  )} />)}</div></div>}
+            {candidatura.updatedAt && <p className="mt-4 text-[10px] text-muted-foreground">Última atualização em <time dateTime={candidatura.updatedAt}>{formatDate(candidatura.updatedAt, {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}</time></p>}
           </section>
-
-          {pendingInvites > 0 && (
-            <a href="#application-appointments" className="group flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning-subtle p-4 text-sm font-medium text-warning-foreground transition-shadow hover:shadow-sm">
-              <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-card">
-                <CalendarClock className="size-4" aria-hidden />
-                <span className="absolute -right-0.5 -top-0.5 size-2.5 animate-pulse rounded-full bg-warning" aria-hidden />
-              </span>
-              {pendingInvites === 1 ? "Você tem um convite aguardando resposta." : "Você tem " + pendingInvites + " convites aguardando resposta."}
-              <ArrowUpRight className="ml-auto size-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
-            </a>
-          )}
-
-          <div id="application-appointments" className="scroll-mt-24">
-            <AgendamentosCandidato agendamentos={agendamentos} />
-          </div>
-
-          <section aria-labelledby="application-feedback-title" className={cn(cardBase, "p-6 sm:p-7")}>
+          {pendingInvites > 0 && <a
+            href="#application-appointments"
+            className="group flex items-center gap-3 rounded-2xl border border-warning/20 bg-warning-subtle p-4 text-xs font-medium text-warning-foreground transition-shadow hover:shadow-sm"><span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-card"><CalendarClock className="size-4" aria-hidden /><span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-warning" aria-hidden /></span>{pendingInvites === 1 ? "Você tem um convite aguardando resposta." : "Você tem " + pendingInvites + " convites aguardando resposta."}<ArrowUpRight
+              className="ml-auto size-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              aria-hidden /></a>}
+          <div id="application-appointments" className="scroll-mt-24"><AgendamentosCandidato agendamentos={agendamentos} /></div>
+          <section aria-labelledby="application-feedback-title" className={cn(cardBase, "p-5 sm:p-7")}>
             <SectionHeader
               id="application-feedback-title"
               icon={MessageSquare}
               title="Retornos da empresa"
               description="Feedbacks enviados pela equipe de recrutamento."
-              aside={<span className="rounded-full bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground">{feedbacks.length}</span>}
-            />
-            {feedbackList.length ? (
-              <div className="mt-5 space-y-4">{feedbackList.map((feedback) => <FeedbackCard key={feedback.id} feedback={feedback} />)}</div>
-            ) : (
-              <EmptyHint icon={MessageSquare}>A empresa ainda não enviou feedbacks. Quando houver um retorno, ele aparecerá aqui.</EmptyHint>
-            )}
+              aside={<span className="rounded-full bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground">{feedbacks.length}</span>} />
+            {feedbackList.length ? <div className="mt-5 space-y-4">{feedbackList.map(feedback => <ApplicationFeedback key={feedback.id} feedback={feedback} />)}</div> : <EmptyHint icon={MessageSquare}>A empresa ainda não enviou feedbacks. Quando houver um retorno, ele aparecerá aqui.</EmptyHint>}
           </section>
+          <section aria-labelledby="application-history-title" className={cn(cardBase, "p-5 sm:p-7")}>
+            <SectionHeader
+              id="application-history-title"
+              icon={History}
+              title="Histórico da candidatura"
+              description="Da atualização mais recente para a mais antiga." />
+            {history.length ? <ol className="mt-6">{history.map((item, index) => {
+                const statusChanged = item.statusAnterior && item.statusAnterior !== item.statusNovo
 
-          <section aria-labelledby="application-history-title" className={cn(cardBase, "p-6 sm:p-7")}>
-            <SectionHeader id="application-history-title" icon={History} title="Histórico da candidatura" description="Da atualização mais recente para a mais antiga." />
-            {history.length ? (
-              <ol className="mt-6">
-                {history.map((item, index) => {
-                  const statusChanged = item.statusAnterior && item.statusAnterior !== item.statusNovo
-                  return (
-                    <li key={item.id} className="relative flex gap-4 pb-6 last:pb-0">
-                      {index < history.length - 1 && <span aria-hidden className="absolute bottom-0 left-[9px] top-6 w-px bg-border" />}
-                      <span aria-hidden className={cn("relative mt-1 size-5 shrink-0 rounded-full border-4", index === 0 ? "border-primary-subtle bg-primary" : "border-surface bg-border-strong")} />
-                      <div className={cn("min-w-0 flex-1 rounded-xl p-3 -mt-2", index === 0 && "bg-surface")}>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-sm font-semibold">{statusChanged ? STATUS_LABELS[item.statusNovo] : ETAPA_LABELS[item.etapaNova] || "Atualização"}</h3>
-                          {!statusChanged && <span className="rounded-full bg-card px-2 py-0.5 text-[11px] text-muted-foreground ring-1 ring-border">{STATUS_LABELS[item.statusNovo]}</span>}
-                          {index === 0 && <span className="text-[11px] font-semibold text-primary">Mais recente</span>}
-                        </div>
-                        {item.observacao && <p className="mt-2 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{item.observacao}</p>}
-                        {item.createdAt && (
-                          <time dateTime={item.createdAt} className="mt-2 block text-xs text-muted-foreground">
-                            {formatDate(item.createdAt, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                          </time>
-                        )}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ol>
-            ) : (
-              <EmptyHint icon={History}>Ainda não há movimentações registradas no histórico.</EmptyHint>
-            )}
+                return (
+                  <li key={item.id} className="relative flex gap-4 pb-6 last:pb-0">{index < history.length - 1 && <span aria-hidden className="absolute bottom-0 left-[9px] top-6 w-px bg-border" />}<span
+                      aria-hidden
+                      className={cn(
+                        "relative mt-1 size-5 shrink-0 rounded-full border-4",
+                        index === 0 ? "border-primary-subtle bg-primary" : "border-surface bg-border-strong",
+                      )} /><div className="min-w-0 flex-1 -mt-1 pb-1"><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">{statusChanged ? STATUS_LABELS[item.statusNovo] : etapaLabel(item.etapaNova, candidatura.etapasVaga, item.etapaNovaDescricao)}</h3>{!statusChanged && <span className="rounded-full bg-card px-2 py-0.5 text-[11px] text-muted-foreground ring-1 ring-border">{STATUS_LABELS[item.statusNovo]}</span>}{index === 0 && <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-[10px] font-medium text-primary">Mais recente</span>}</div>{item.observacao && <p className="mt-2 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{item.observacao}</p>}{item.createdAt && <time dateTime={item.createdAt} className="mt-2 block text-xs text-muted-foreground">{formatDate(item.createdAt, {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}</time>}</div></li>
+                )
+              })}</ol> : <EmptyHint icon={History}>Ainda não há movimentações registradas no histórico.</EmptyHint>}
           </section>
         </div>
+        <aside className="min-w-0 space-y-6">
+          <section aria-labelledby="application-stages-title" className={cn(cardBase, "p-6")}>
+            <h2 id="application-stages-title" className="scroll-mt-24 text-sm font-semibold tracking-tight">Etapas do processo</h2><p className="mt-1 text-xs leading-5 text-muted-foreground">{encerrada ? "A etapa alcançada permanece no histórico." : "Acompanhe seu momento no processo seletivo."}</p>
+            <ol className="mt-6">{etapas.map((etapa, index) => {
+                const active = index === currentIndex
+                const previous = currentIndex >= 0 && index < currentIndex
 
-        <aside className="min-w-0 space-y-6 lg:sticky lg:top-24">
+                return (
+                  <li key={etapa} aria-current={active ? "step" : undefined} className="flex gap-3"><div className="flex flex-col items-center"><span
+                        className={cn(
+                          "grid size-7 shrink-0 place-items-center rounded-full border text-[11px] font-medium transition-colors",
+                          active ? encerrada ? "border-border-strong bg-surface text-foreground" : "border-primary bg-primary text-primary-foreground ring-4 ring-primary-subtle" : previous ? "border-primary/30 bg-primary-subtle text-primary" : "border-border bg-card text-muted-foreground",
+                        )}>{previous ? <Check className="size-3.5" aria-hidden /> : index + 1}</span>{index < etapas.length - 1 && <span className={cn("my-1 w-px flex-1", previous ? "bg-primary/40" : "bg-border")} aria-hidden />}</div><div className="min-w-0 pb-5 pt-1"><p
+                        className={cn(
+                          "text-xs leading-5",
+                          active ? "font-medium text-foreground" : previous ? "font-medium text-strong-foreground" : "text-muted-foreground",
+                        )}>{etapaLabel(etapa, candidatura.etapasVaga)}</p><p
+                        className={cn("mt-0.5 text-[11px]", active && !encerrada ? "font-medium text-primary" : "text-muted-foreground")}>{active ? encerrada ? "Etapa alcançada" : "Você está aqui" : previous ? "Concluída" : encerrada ? "Não alcançada" : "A seguir"}</p></div></li>
+                )
+              })}</ol>
+            {currentIndex < 0 && <p className="mt-3 text-xs text-muted-foreground">Etapa registrada: {currentLabel}.</p>}
+          </section>
           <InscricaoRealizada
             createdAt={candidatura.createdAt}
             updatedAt={candidatura.updatedAt}
@@ -708,71 +841,32 @@ export function ApplicationDetailScreen({ id }: { id: string }) {
             onDesistir={() => {
               setAcaoErro(null)
               setConfirmOpen(true)
-            }}
-          />
-
-          <section aria-labelledby="application-stages-title" className={cn(cardBase, "p-6")}>
-            <h2 id="application-stages-title" className="text-base font-semibold tracking-tight">Etapas do processo</h2>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">{encerrada ? "A etapa alcançada permanece no histórico." : "Acompanhe seu momento no processo seletivo."}</p>
-            <ol className="mt-6">
-              {etapas.map((etapa, index) => {
-                const active = index === currentIndex
-                const previous = currentIndex >= 0 && index < currentIndex
-                return (
-                  <li key={etapa} aria-current={active ? "step" : undefined} className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <span
-                        className={cn(
-                          "grid size-8 shrink-0 place-items-center rounded-full border text-xs font-semibold transition-colors",
-                          active
-                            ? encerrada
-                              ? "border-border-strong bg-surface text-foreground"
-                              : "border-primary bg-primary text-primary-foreground ring-4 ring-primary-subtle"
-                            : previous
-                              ? "border-primary/30 bg-primary-subtle text-primary"
-                              : "border-border bg-card text-muted-foreground",
-                        )}
-                      >
-                        {previous ? <Check className="size-3.5" aria-hidden /> : index + 1}
-                      </span>
-                      {index < etapas.length - 1 && <span className={cn("my-1 w-px flex-1", previous ? "bg-primary/40" : "bg-border")} aria-hidden />}
-                    </div>
-                    <div className="min-w-0 pb-5 pt-1">
-                      <p className={cn("text-sm", active ? "font-semibold text-foreground" : previous ? "font-medium text-strong-foreground" : "text-muted-foreground")}>{ETAPA_LABELS[etapa]}</p>
-                      <p className={cn("mt-0.5 text-[11px]", active && !encerrada ? "font-medium text-primary" : "text-muted-foreground")}>
-                        {active ? (encerrada ? "Etapa alcançada" : "Você está aqui") : previous ? "Concluída" : encerrada ? "Não alcançada" : "A seguir"}
-                      </p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ol>
-            {currentIndex < 0 && <p className="mt-3 text-xs text-muted-foreground">Etapa registrada: {currentLabel}.</p>}
-          </section>
+            }} />
         </aside>
       </div>
 
       <Modal
         open={confirmOpen}
         onClose={() => {
-          if (!desistindo) setConfirmOpen(false)
+          if (!desistindo)
+            setConfirmOpen(false)
         }}
         title="Desistir do processo"
         description="Sua candidatura será cancelada. O histórico continuará disponível."
         size="sm"
-        footer={
-          <>
-            <button type="button" onClick={() => setConfirmOpen(false)} disabled={desistindo} className="btn-secondary">Continuar no processo</button>
-            <button type="button" onClick={() => void desistir()} disabled={desistindo} className="btn-primary bg-danger hover:bg-danger">
-              {desistindo && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
-              {desistindo ? "Cancelando…" : "Confirmar desistência"}
-            </button>
-          </>
-        }
-      >
-        <p className="text-sm leading-7 text-muted-foreground">
-          Você está se candidatando à vaga de <strong className="font-semibold text-foreground">{candidatura.vagaTitulo}</strong> na {company}. A desistência não pode ser desfeita.
-        </p>
+        footer={<>
+          <button type="button" onClick={() => setConfirmOpen(false)} disabled={desistindo} className="btn-secondary">Continuar no processo</button>
+          <button
+            type="button"
+            onClick={() => void desistir()}
+            disabled={desistindo}
+            className="btn-primary bg-danger hover:bg-danger">
+            {desistindo && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
+            {desistindo ? "Cancelando…" : "Confirmar desistência"}
+          </button>
+        </>}>
+        <p className="text-sm leading-7 text-muted-foreground">Você se candidatou à vaga de <strong className="font-semibold text-foreground">{candidatura.vagaTitulo}</strong>{" "}na {company}. A desistência não pode ser desfeita.
+                            </p>
         {acaoErro && <p role="alert" className="mt-4 rounded-lg bg-danger-subtle p-4 text-sm text-danger-foreground">{acaoErro}</p>}
       </Modal>
     </main>

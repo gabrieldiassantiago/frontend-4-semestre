@@ -13,13 +13,11 @@ import {
   CircleAlert,
   FileText,
   LoaderCircle,
-  Sparkles,
   UserRound,
 } from "lucide-react"
 import { Modal } from "@/components/ui/modal"
 import { Field } from "@/components/ui/form-field"
 import { Alert, Skeleton } from "@/components/ui/states"
-import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { Badge } from "@/components/ui/badge"
 import { useCandidateProfile, useUploadCandidateResume } from "@/lib/queries/use-candidate-profile"
 import { useCriarCandidatura } from "@/lib/queries/use-candidaturas"
@@ -33,6 +31,8 @@ import type { Candidatura } from "@/lib/types/candidatura.types"
 import { cn } from "@/lib/utils"
 import sucessoVagaAnimation from "@/public/images/sucesso_vaga.json"
 import Image from "next/image"
+import { CompanyLogo } from "@/components/shared/company-logo"
+import styles from "./apply-modal.module.css"
 
 const STEPS = [
   { id: 1, label: "Perfil", icon: UserRound },
@@ -44,30 +44,21 @@ const CARTA_MAX = 2000
 
 function StepTrack({ current }: { current: number }) {
   return (
-    <ol aria-label={`Etapa ${current} de ${STEPS.length}`} className="grid grid-cols-3 gap-2">
+    <ol aria-label={`Etapa ${current} de ${STEPS.length}`} className="grid grid-cols-3 gap-2 rounded-xl border border-border/60 bg-surface/70 p-2">
       {STEPS.map((step) => {
         const active = step.id === current
         const done = step.id < current
         const StepIcon = done ? Check : step.icon
 
         return (
-          <li key={step.id} aria-current={active ? "step" : undefined} className="flex min-w-0 flex-col gap-2">
-            <span className="relative h-1 overflow-hidden rounded-full bg-border">
-              <span
-                aria-hidden
-                className={cn(
-                  "absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-300 ease-out",
-                  done || active ? "w-full" : "w-0",
-                )}
-              />
-            </span>
+          <li key={step.id} aria-current={active ? "step" : undefined} className={cn("flex min-w-0 items-center justify-center rounded-lg px-1 py-2 transition-colors", active && "bg-card shadow-card")}>
             <span
               className={cn(
-                "flex items-center gap-1.5 truncate text-xs font-medium transition-colors",
-                active ? "text-foreground" : done ? "text-primary" : "text-subtle-foreground",
+                "flex items-center gap-1.5 text-[11px] font-medium transition-colors",
+                active ? "text-primary-subtle-foreground" : done ? "text-primary" : "text-muted-foreground",
               )}
             >
-              <StepIcon className="size-3.5 shrink-0" aria-hidden />
+              <span aria-hidden className={cn("grid size-5 shrink-0 place-items-center rounded-full text-[10px]", active ? "bg-primary text-white" : done ? "bg-primary-subtle text-primary" : "bg-border/50 text-muted-foreground")}>{done ? <StepIcon className="size-3" /> : step.id}</span>
               <span className="truncate">{step.label}</span>
               {done && <span className="sr-only">(concluída)</span>}
             </span>
@@ -189,6 +180,7 @@ export function ApplyModal({
         onClose={onClose}
         title="Candidatura enviada"
         size="sm"
+        className={styles.dialog}
         footer={
           <>
             <button type="button" onClick={onClose} className="btn-secondary">
@@ -202,22 +194,21 @@ export function ApplyModal({
         }
       >
         <div className="flex flex-col items-center py-2 text-center">
-          <div className="flex size-64 items-center justify-center">
-            <Lottie
+          <div className="flex size-32 items-center justify-center">
+            {reduceMotion ? <BadgeCheck aria-hidden className="size-16 text-success" /> : <Lottie
               src={sucessoVagaAnimation}
-              loop={true}
+              loop={false}
               autoplay
               aria-label="Candidatura enviada com sucesso"
-              className="size-64"
-            />
+              className="size-32"
+            />}
           </div>
 
           <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground text-balance">
             Candidatura enviada para {company}
           </h3>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground text-pretty">
-            Você entrou na etapa de inscrição de {vaga.titulo}. Cada avanço no processo gera um
-            e-mail e aparece no acompanhamento, junto com os feedbacks da empresa.
+            Sua candidatura para {vaga.titulo} foi recebida. Acompanhe as próximas etapas e os feedbacks da empresa pelo seu painel.
           </p>
         </div>
       </Modal>
@@ -271,14 +262,18 @@ export function ApplyModal({
       onClose={() => { if (!submitLock.current && !checkingResume) onClose() }}
       title={`Candidatar-se para ${vaga.titulo}`}
       size="md"
+      className={cn(styles.dialog, "sm:max-w-[600px]")}
+      bodyClassName="bg-surface/35"
       footer={footer}
+      footerStart={<span className="text-[11px]">Etapa <span className="font-semibold text-foreground">{step}</span> de 3</span>}
       header={
         <div className="flex flex-col gap-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Nova candidatura</p>
           <div className="flex items-center gap-3">
-            <EntityAvatar name={company} size="md" />
+            <CompanyLogo name={company} url={vaga.logoUrlEmpresa} size="md" />
             <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-muted-foreground">Candidatura · {company}</p>
-              <h2 className="truncate text-base font-semibold tracking-tight text-foreground">
+              <p className="text-xs font-medium text-muted-foreground">{company}</p>
+              <h2 className="mt-0.5 text-base font-semibold leading-snug tracking-tight text-foreground">
                 {vaga.titulo}
               </h2>
             </div>
@@ -287,7 +282,7 @@ export function ApplyModal({
         </div>
       }
     >
-      <div className="relative min-h-[320px]">
+      <div className="relative">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={step} ref={stepContent} tabIndex={-1} className="outline-none"
             initial={{ opacity: 0, x: reduceMotion ? 0 : 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: reduceMotion ? 0 : -12 }}
@@ -297,12 +292,11 @@ export function ApplyModal({
             {step === 1 && (
               <div className="flex flex-col gap-5">
                 <div>
-                  <h3 className="text-base font-bold tracking-tight text-foreground text-balance">
+                  <h3 className="text-sm font-semibold tracking-tight text-foreground text-balance">
                     Confira o que a empresa vai ver
                   </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground text-pretty">
-                    A {company} recebe o seu perfil junto com a candidatura. Vale um último olhar antes de
-                    enviar.
+                    Seu perfil será compartilhado com a {company}. Confira suas informações antes de continuar.
                   </p>
                 </div>
 
@@ -315,10 +309,10 @@ export function ApplyModal({
                   <>
                     <div
                       className={cn(
-                        "rounded-card border p-4",
+                        "rounded-xl border p-3.5",
                         completion.ready
-                          ? "border-success-border bg-success-subtle"
-                          : "border-border bg-muted",
+                          ? "border-success/15 bg-success-subtle/50"
+                          : "border-border/70 bg-card",
                       )}
                     >
                       <div className="flex items-center justify-between gap-3 text-xs font-bold">
@@ -356,7 +350,7 @@ export function ApplyModal({
                     </div>
 
                     {profile && (
-                      <div className="rounded-card border border-border p-4">
+                      <div className="rounded-xl border border-border/70 bg-card p-4">
                         <div className="flex items-center gap-3">
                           <Image src={profile.profileImageUrl ?? "/images/avatar-placeholder.png"} alt="" width={48} height={48} className="rounded-full" />
                           <div className="min-w-0">
@@ -382,11 +376,10 @@ export function ApplyModal({
                     )}
 
                     {completion.missing.length > 0 && (
-                      <div className="rounded-card border border-border p-4">
-                        <h4 className="flex items-center gap-2 text-sm font-bold text-foreground">
-                          <Sparkles className="size-4 text-primary" aria-hidden />
-                          Deixe seu perfil mais forte
-                        </h4>
+                      <details className="rounded-xl border border-border/70 bg-card p-4">
+                        <summary className="cursor-pointer text-xs font-semibold text-strong-foreground">
+                          Oportunidades para melhorar seu perfil ({completion.missing.length})
+                        </summary>
                         <ul className="mt-3 flex flex-col gap-2">
                           {completion.missing.slice(0, 4).map((item) => (
                             <li
@@ -414,7 +407,7 @@ export function ApplyModal({
                           Completar perfil agora
                           <ArrowRight className="size-4" aria-hidden />
                         </Link>
-                      </div>
+                      </details>
                     )}
                   </>
                 )}
@@ -425,25 +418,24 @@ export function ApplyModal({
             {step === 2 && (
               <div className="flex flex-col gap-5">
                 <div>
-                  <h3 className="text-base font-bold tracking-tight text-foreground text-balance">
+                  <h3 className="text-sm font-semibold tracking-tight text-foreground text-balance">
                     Conte por que essa vaga é para você
                   </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground text-pretty">
-                    Os dois campos são opcionais, mas uma carta curta e específica é o que mais diferencia
-                    candidaturas na triagem.
+                    A carta e o currículo são opcionais. Use este espaço para apresentar seu interesse na oportunidade.
                   </p>
                 </div>
 
                 <Field
-                  label="Carta de apresentação"
+                  label="Carta de apresentação (opcional)"
                   hint={`${carta.length}/${CARTA_MAX} caracteres`}
                 >
                   <textarea
-                    rows={7}
+                    rows={5}
                     value={carta}
                     maxLength={CARTA_MAX}
                     onChange={(event) => setCarta(event.target.value)}
-                    className="field-input resize-none"
+                    className="field-input resize-y bg-card"
                     placeholder={`Ex.: Tenho interesse na vaga de ${vaga.titulo} porque...`}
                   />
                 </Field>
@@ -456,7 +448,7 @@ export function ApplyModal({
             {step === 3 && (
               <div className="flex flex-col gap-5">
                 <div>
-                  <h3 className="text-base font-bold tracking-tight text-foreground text-balance">
+                  <h3 className="text-sm font-semibold tracking-tight text-foreground text-balance">
                     Tudo certo para enviar?
                   </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground text-pretty">
@@ -464,7 +456,7 @@ export function ApplyModal({
                   </p>
                 </div>
 
-                <dl className="divide-y divide-border-subtle rounded-card border border-border">
+                <dl className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-card">
                   <div className="flex items-start justify-between gap-4 px-4 py-3">
                     <dt className="text-sm text-muted-foreground">Vaga</dt>
                     <dd className="min-w-0 text-right text-sm font-semibold text-foreground text-pretty">

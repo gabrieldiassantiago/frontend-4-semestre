@@ -1,5 +1,8 @@
 "use client"
 
+import { etapaLabel } from "@/lib/types/candidatura.types"
+
+
 import { useState } from "react"
 import Link from "next/link"
 import {
@@ -28,7 +31,7 @@ import { useCandidaturaEmpresa } from "@/lib/queries/use-candidaturas"
 import { useCandidateProfileByUser } from "@/lib/queries/use-candidate-profile"
 import { API_BASE_URL } from "@/lib/http/config"
 import type { CandidateProfile } from "@/lib/types/candidate.types"
-import { ETAPA_SHORT_LABELS, etapasDaVaga, type Candidatura } from "@/lib/types/candidatura.types"
+import { etapasDaVaga, type Candidatura } from "@/lib/types/candidatura.types"
 import { formatDate, formatRelativeDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -337,7 +340,7 @@ function StageStepper({ candidatura }: { candidatura: Candidatura }) {
                 ) : (
                   <span className="tabular-nums">{index + 1}</span>
                 )}
-                {ETAPA_SHORT_LABELS[etapa]}
+                {etapaLabel(etapa, candidatura.etapasVaga)}
                 {active && <span className="sr-only">(etapa atual)</span>}
               </span>
             </li>

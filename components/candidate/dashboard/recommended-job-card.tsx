@@ -13,7 +13,7 @@ export function RecommendedJobCard({ vaga }: { vaga: Vaga }) {
   return (
     <Link
       href={ROUTES.candidate.job(vaga.id)}
-      className="group flex h-full flex-col rounded-card border border-border bg-card p-5 transition-[border-color,box-shadow] hover:border-border-strong hover:shadow-raised"
+      className="group flex h-full min-w-0 flex-col rounded-xl border border-border/70 bg-card p-4 transition-[border-color,box-shadow] hover:border-primary/30 hover:shadow-raised"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -26,7 +26,7 @@ export function RecommendedJobCard({ vaga }: { vaga: Vaga }) {
         />
       </div>
 
-      <h3 className="mt-4 line-clamp-2 text-base font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
+      <h3 className="mt-4 line-clamp-2 text-sm font-semibold leading-relaxed tracking-tight text-foreground transition-colors group-hover:text-primary">
         {vaga.titulo}
       </h3>
 
@@ -40,7 +40,7 @@ export function RecommendedJobCard({ vaga }: { vaga: Vaga }) {
       </div>
 
       <div aria-hidden className="min-h-5 flex-1" />
-      <dl className="flex flex-col gap-2 border-t border-border-subtle pt-4 text-sm text-muted-foreground">
+      <dl className="flex flex-col gap-2 border-t border-border-subtle pt-4 text-xs text-muted-foreground">
         {location && (
           <div className="flex items-center gap-2">
             <dt className="sr-only">Local</dt>

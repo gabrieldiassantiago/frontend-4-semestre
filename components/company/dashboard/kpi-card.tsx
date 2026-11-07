@@ -39,25 +39,25 @@ export function KpiCard({
   return (
     <Link
       href={href}
-      className="group flex min-w-0 flex-col rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/30 sm:p-5"
+      className="group flex min-w-0 flex-col rounded-3xl border border-border/80 bg-card p-5 shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-[0_12px_32px_-16px_rgba(32,29,29,0.2)] motion-reduce:transform-none sm:p-6"
     >
       <div className="flex items-center gap-2.5 sm:gap-3">
-        <span className={cn("grid size-8 shrink-0 place-items-center rounded-xl sm:size-9", colors.icon)}>
-          <Icon aria-hidden className="size-[18px]" />
+        <span className="hidden size-10 shrink-0 place-items-center rounded-full bg-surface text-strong-foreground sm:grid">
+          <Icon aria-hidden className="size-[18px]" strokeWidth={1.6} />
         </span>
-        <p className="min-w-0 flex-1 truncate text-xs font-medium text-muted-foreground sm:text-sm">{label}</p>
+        <p className="min-w-0 flex-1 text-xs font-medium leading-5 text-muted-foreground sm:text-sm">{label}</p>
         <ArrowUpRight
           aria-hidden
-          className="size-4 shrink-0 text-subtle-foreground opacity-0 transition-opacity group-hover:opacity-100"
+          className="size-4 shrink-0 text-subtle-foreground transition-[color,transform] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground motion-reduce:transform-none"
         />
       </div>
 
-      <div className="mt-4 flex items-end justify-between gap-3 sm:mt-5">
+      <div className="mt-6 flex flex-1 items-end justify-between gap-3 sm:mt-7">
         <div className="min-w-0">
-          <p className="text-2xl font-semibold tracking-tight tabular-nums text-foreground sm:text-3xl">{value}</p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+          <p className="text-4xl font-medium tracking-[-0.06em] tabular-nums text-foreground sm:text-[42px]">{value}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs leading-5 text-muted-foreground">
             {delta !== undefined && <DeltaPill delta={delta} />}
-            <span className="truncate">{note}</span>
+            <span>{note}</span>
           </div>
         </div>
 
@@ -78,7 +78,7 @@ export function KpiCard({
       </div>
 
       {progress !== undefined && (
-        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-muted" aria-hidden>
+        <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-surface" aria-hidden>
           <div className={cn("h-full rounded-full", colors.bar)} style={{ width: `${progress ?? 0}%` }} />
         </div>
       )}

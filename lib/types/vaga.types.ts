@@ -99,10 +99,13 @@ export interface CreateVagaDto {
   modalidade: VagaModalidade
   metaTags?: string[]
 
-  etapas?: EtapaProcesso[]
+  etapasId?: string[]
 }
 
+/** Etapa normalizada da resposta da API: etapa corresponde a etapaId. */
 export interface EtapaVaga {
+  etapaId?: string
+  nome?: string
   etapa: EtapaProcesso
   descricao: string
   ordem: number

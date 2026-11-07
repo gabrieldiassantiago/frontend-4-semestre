@@ -1,4 +1,5 @@
 import "server-only"
+import { normalizarProcesso } from "@/lib/utils/processo"
 import type { Vaga } from "@/lib/types/vaga.types"
 import type { LandingJob } from "@/lib/data/landing"
 import { formatCurrency, formatRelativeDate } from "@/lib/format"
@@ -14,7 +15,7 @@ export async function getVagaPublic(id: string): Promise<Vaga | null> {
 
     if (!res.ok) return null
 
-    const vaga = (await res.json()) as Vaga
+    const vaga = normalizarProcesso((await res.json()) as Vaga)
     return vaga?.id ? vaga : null
   } catch {
     return null

@@ -1,0 +1,38 @@
+/* One content frame for every route inside the candidate shell. */
+.workspace {
+  --candidate-page-width: 1280px;
+  --candidate-page-gutter: 16px;
+  --candidate-page-top: 24px;
+}
+
+.workspace :global(#conteudo) > main {
+  width: 100%;
+  max-width: var(--candidate-page-width);
+  margin-inline: auto;
+  padding: var(--candidate-page-top) var(--candidate-page-gutter);
+}
+
+.workspace :global(.shell-topbar-inner) {
+  width: 100%;
+  max-width: var(--candidate-page-width);
+  margin-inline: auto;
+  padding-inline: var(--candidate-page-gutter);
+}
+
+/* Keep the conversation viewport inside the same page frame. */
+.workspace :global(.chat-workspace) {
+  height: calc(100dvh - 8rem - env(safe-area-inset-bottom) - 2 * var(--candidate-page-top));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+@media (min-width: 640px) {
+  .workspace { --candidate-page-gutter: 24px; }
+}
+
+@media (min-width: 1024px) {
+  .workspace { --candidate-page-gutter: 32px; }
+  .workspace :global(.chat-workspace) {
+    height: calc(100dvh - 4rem - 2 * var(--candidate-page-top));
+  }
+}

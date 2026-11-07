@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { ChevronRight, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { SelectaLogo } from "@/components/ui/selecta-logo"
 import { findActiveNavItem, type AreaNavigation } from "@/lib/config/navigation"
 import { useSidebarCollapsed } from "@/lib/hooks/use-sidebar-collapsed"
@@ -56,6 +56,9 @@ export function AppShell({
   const closeDrawer = useCallback(() => setDrawerOpen(false), [])
 
   const activeItem = findActiveNavItem(pathname, navigation)
+  const ActiveIcon = activeItem?.icon
+  const isNestedPage = Boolean(activeItem && pathname.startsWith(`${activeItem.href}/`))
+  const nestedLabel = pathname.endsWith("/editar") ? "Editar" : pathname.endsWith("/nova") ? "Nova vaga" : "Detalhes"
   const desktopState = { collapsed, close: () => {} }
   const drawerState = { collapsed: false, close: closeDrawer }
 
@@ -75,11 +78,12 @@ export function AppShell({
           collapsed ? "w-[76px]" : "w-64",
         )}
       >
-        <div className={cn("flex h-16 shrink-0 items-center", collapsed ? "justify-center" : "px-6")}>
+        <div className={cn("flex h-16 shrink-0 items-center border-b border-border-subtle", collapsed ? "justify-center" : "px-6")}>
           <Link href={navigation.home} aria-label="Selecta, ir para o início" className="flex items-center">
             <SelectaLogo solo={collapsed} className={collapsed ? "h-8" : "h-7"} />
           </Link>
         </div>
+        {!collapsed && <p className="px-7 pt-4 text-[11px] text-muted-foreground">{areaLabel}</p>}
 
         {slots.sidebarTop?.(desktopState)}
 
@@ -96,6 +100,7 @@ export function AppShell({
             type="button"
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+            aria-expanded={!collapsed}
             title={collapsed ? "Expandir menu" : "Recolher menu"}
             className={cn(
               "flex min-h-10 items-center gap-3 rounded-lg text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
@@ -115,8 +120,8 @@ export function AppShell({
       </aside>
 
       <div className={cn("flex min-h-dvh min-w-0 flex-col transition-[padding] duration-200", collapsed ? "lg:pl-[76px]" : "lg:pl-64")}>
-        <header className="sticky top-0 z-20 border-b border-border-subtle bg-background/80 backdrop-blur-xl">
-          <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-20 border-b border-border/70 bg-card/95 backdrop-blur-xl">
+          <div className="shell-topbar-inner flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
@@ -126,16 +131,23 @@ export function AppShell({
             >
               <Menu className="size-5" aria-hidden />
             </button>
-            <Link href={navigation.home} aria-label="Selecta, ir para o início" className="shrink-0 lg:hidden">
-              <SelectaLogo solo className="h-8 sm:hidden" />
-              <SelectaLogo className="hidden h-7 sm:block" />
-            </Link>
-
-            <div className="hidden min-w-0 shrink-0 lg:block">
-              <p className="truncate text-sm font-semibold leading-tight text-foreground">{activeItem?.label}</p>
+            <div className="flex min-w-0 items-center gap-3 lg:max-w-[40%]">
+              {ActiveIcon && <span aria-hidden className="hidden size-9 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary-subtle/70 text-primary lg:grid"><ActiveIcon className="size-[18px]" strokeWidth={1.8} /></span>}
+              <div className="min-w-0">
+              <nav aria-label="Localização na navegação">
+                <ol className="flex min-w-0 items-center gap-2 text-xs">
+                  <li className="hidden shrink-0 sm:block"><Link href={navigation.home} className="text-muted-foreground transition-colors hover:text-primary">Início</Link></li>
+                  <li aria-hidden className="hidden sm:block"><ChevronRight className="size-3 text-subtle-foreground" /></li>
+                  <li className="min-w-0 truncate">
+                    {isNestedPage && activeItem ? <Link href={activeItem.href} className="text-muted-foreground hover:text-primary">{activeItem.label}</Link> : <span aria-current="page" className="font-semibold text-foreground">{activeItem?.label ?? areaLabel}</span>}
+                  </li>
+                  {isNestedPage && <><li aria-hidden><ChevronRight className="size-3 text-subtle-foreground" /></li><li aria-current="page" className="shrink-0 font-semibold text-foreground">{nestedLabel}</li></>}
+                </ol>
+              </nav>
               {slots.topbarSubtitle && (
                 <p className="mt-0.5 truncate text-xs leading-tight text-muted-foreground">{slots.topbarSubtitle}</p>
               )}
+              </div>
             </div>
 
             <div className="flex min-w-0 flex-1 justify-center">{slots.topbarCenter}</div>

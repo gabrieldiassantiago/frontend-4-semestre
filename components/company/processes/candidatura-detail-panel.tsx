@@ -1,5 +1,8 @@
 "use client"
 
+import { etapaLabel } from "@/lib/types/candidatura.types"
+
+
 import { useEffect, useMemo, useState } from "react"
 import {
   ArrowRight,
@@ -39,7 +42,6 @@ import {
 import { getErrorMessage } from "@/lib/errors"
 import { formatDate } from "@/lib/format"
 import {
-  ETAPA_SHORT_LABELS,
   etapasDaVaga,
   etapasAteAtual,
   etapasPosteriores,
@@ -129,7 +131,7 @@ export function CandidaturaDetailPanel({
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <StatusBadge status={candidatura.status} size="sm" />
               <Badge variant="outline" size="sm">
-                {ETAPA_SHORT_LABELS[candidatura.etapaAtual]}
+                {etapaLabel(candidatura.etapaAtual, candidatura.etapasVaga, candidatura.etapaAtualDescricao)}
               </Badge>
             </div>
           </div>
@@ -256,7 +258,7 @@ export function CandidaturaDetailPanel({
         open={perguntarAgendamento}
         onClose={() => setPerguntarAgendamento(false)}
         title="Agendar conversa com o candidato?"
-        description={`${candidatura.candidatoNome ?? "O candidato"} avançou para ${ETAPA_SHORT_LABELS[candidatura.etapaAtual]}.`}
+        description={`${candidatura.candidatoNome ?? "O candidato"} avançou para ${etapaLabel(candidatura.etapaAtual, candidatura.etapasVaga, candidatura.etapaAtualDescricao)}.`}
         size="sm"
         footer={
           <>
@@ -328,7 +330,7 @@ function EtapasEmpresa({
             </span>
             <div className="flex min-w-0 flex-1 items-baseline justify-between gap-2 pt-0.5">
               <p className={cn("truncate text-sm", index > current ? "text-subtle-foreground" : "font-semibold text-foreground")}>
-                {ETAPA_SHORT_LABELS[item]}
+                {etapaLabel(item, etapasVaga)}
                 {active && <span className="sr-only"> (etapa atual)</span>}
               </p>
               {reachedAt && index <= current && (
@@ -429,7 +431,7 @@ function AgendamentosManager({
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Etapa">
               <select className="field-input" value={form.etapa} onChange={(event) => setForm({ ...form, etapa: event.target.value as EtapaProcesso })}>
-                {etapasDisponiveis.map((item) => <option key={item} value={item}>{ETAPA_SHORT_LABELS[item]}</option>)}
+                {etapasDisponiveis.map((item) => <option key={item} value={item}>{etapaLabel(item, etapasVaga)}</option>)}
               </select>
             </Field>
             <Field label="Duração">
@@ -488,7 +490,7 @@ function AgendamentosManager({
                   <div className="min-w-0">
                     <h4 className="font-semibold text-foreground">{agendamento.titulo}</h4>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {ETAPA_SHORT_LABELS[agendamento.etapa]}
+                      {etapaLabel(agendamento.etapa, etapasVaga, agendamento.etapaDescricao)}
                       {" · "}
                       {formatDate(agendamento.inicio, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       {" · "}{agendamento.duracaoMinutos} min
@@ -549,7 +551,7 @@ function AcoesProcesso({
   const saving = avancarEtapa.isPending || decidirCandidatura.isPending
   const [erro, setErro] = useState<string | null>(null)
 
-  const posteriores = useMemo(() => etapasPosteriores(etapaAtual, etapasVaga), [etapaAtual, etapasVaga])
+  const posteriores = useMemo(() => etapasPosteriores(etapaAtual, etapasVaga).slice(0, 1), [etapaAtual, etapasVaga])
 
   function reset() {
     setAcao("nenhuma")
@@ -592,12 +594,12 @@ function AcoesProcesso({
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground">Etapa atual</p>
-            <p className="truncate text-sm font-semibold text-foreground">{ETAPA_SHORT_LABELS[etapaAtual]}</p>
+            <p className="truncate text-sm font-semibold text-foreground">{etapaLabel(etapaAtual, etapasVaga)}</p>
           </div>
           {proxima && (
             <div className="min-w-0 text-right">
               <p className="text-xs font-medium text-muted-foreground">Próxima</p>
-              <p className="truncate text-sm font-semibold text-primary-subtle-foreground">{ETAPA_SHORT_LABELS[proxima]}</p>
+              <p className="truncate text-sm font-semibold text-primary-subtle-foreground">{etapaLabel(proxima, etapasVaga)}</p>
             </div>
           )}
         </div>
@@ -611,7 +613,7 @@ function AcoesProcesso({
             className="btn-primary w-full"
           >
             <ArrowRight className="size-4" aria-hidden />
-            Avançar para {ETAPA_SHORT_LABELS[proxima]}
+            Avançar para {etapaLabel(proxima, etapasVaga)}
           </button>
         )}
         <div className="flex gap-2">
@@ -648,9 +650,9 @@ function AcoesProcesso({
       <h4 className="text-sm font-bold text-foreground">{titulo}</h4>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground text-pretty">
         {acao === "avancar"
-          ? "Só é possível mover para uma etapa posterior à atual. O candidato vê a mudança no acompanhamento."
+          ? "O avanço segue a próxima etapa configurada para a vaga. O candidato vê a mudança no acompanhamento."
           : acao === "aprovar"
-            ? "A candidatura vai para Contratação e o processo é encerrado como aprovado."
+            ? "O processo será encerrado como aprovado."
             : "O processo é encerrado. O motivo fica visível no histórico do candidato."}
       </p>
 
@@ -665,7 +667,7 @@ function AcoesProcesso({
               <option value="">Selecione</option>
               {posteriores.map((item) => (
                 <option key={item} value={item}>
-                  {ETAPA_SHORT_LABELS[item]}
+                  {etapaLabel(item, etapasVaga)}
                 </option>
               ))}
             </select>
@@ -797,7 +799,7 @@ function FeedbacksManager({
               >
                 {etapasDisponiveis.map((item) => (
                   <option key={item} value={item}>
-                    {ETAPA_SHORT_LABELS[item]}
+                    {etapaLabel(item, etapasVaga)}
                   </option>
                 ))}
               </select>

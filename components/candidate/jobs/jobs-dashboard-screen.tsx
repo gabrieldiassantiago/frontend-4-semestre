@@ -37,7 +37,7 @@ import { JobsSidebarWidgets } from "./jobs-sidebar-widgets"
 import { JobAlertsModal } from "./job-alerts-modal"
 import { calculateDistanceKm } from "@/lib/utils/distance"
 import { EMPTY_FILTERS, countActiveFilters, type JobFiltersState } from "./job-filters-panel"
-import { motion } from "framer-motion"
+import { MotionConfig, motion, useReducedMotion } from "framer-motion"
 
 function JobCardSkeleton() {
   return (
@@ -90,6 +90,7 @@ function sortVagas(vagas: Vaga[], sort: JobFiltersState["sort"], isProximity = f
 }
 
 export function JobsDashboardScreen() {
+  const reduceMotion = useReducedMotion()
   const [search, setSearch] = useState<JobSearchState>(EMPTY_SEARCH)
   const [filters, setFilters] = useState<JobFiltersState>(EMPTY_FILTERS)
   const [savedIds, setSavedIds] = useState<string[]>([])
@@ -314,7 +315,7 @@ export function JobsDashboardScreen() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    window.scrollTo({ top: 0, behavior: reduceMotion ? "instant" : "smooth" })
   }
 
   const selected = displayedResults.find((vaga) => vaga.id === selectedId) ?? displayedResults[0] ?? null
@@ -376,9 +377,14 @@ export function JobsDashboardScreen() {
   ]
 
   return (
-    <PageShell className="max-w-[1560px] px-4 py-2 sm:px-6">
+    <MotionConfig reducedMotion="user">
+    <PageShell className="max-w-[1280px] px-4 py-5 sm:px-6 sm:py-6 lg:py-6">
       {/* 1. Barra de Busca Superior */}
       <header className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Encontre sua próxima oportunidade</h1>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Explore vagas e descubra o que combina com você.</p>
+        </div>
         <JobSearchBar
           value={search}
           onSubmit={setSearch}
@@ -392,7 +398,7 @@ export function JobsDashboardScreen() {
       </header>
 
       {/* 2. Pílulas de Filtros Rápidos (Chips) */}
-      <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+      <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
         {QUICK_CHIPS.map((chip) => {
           const active = activeChip === chip.id
           const ChipIcon = chip.icon
@@ -403,9 +409,9 @@ export function JobsDashboardScreen() {
               aria-pressed={active}
               onClick={() => handleChipClick(chip.id)}
               className={cn(
-                "inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200 active:scale-95",
+                "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-4 py-2 text-xs font-medium transition-colors duration-200",
                 active
-                  ? "bg-primary text-white shadow-xs"
+                  ? "border-primary bg-primary text-white"
                   : "border border-border/90 bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
@@ -437,7 +443,7 @@ export function JobsDashboardScreen() {
       </div>
 
       {/* 3. Linha de Contagem e Ordenação */}
-      <div className="mt-5 flex items-center justify-between gap-4">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-4">
         <p aria-live="polite" className="flex items-center gap-2 text-sm font-bold text-foreground">
           {isRefreshing ? (
             <>
@@ -459,6 +465,7 @@ export function JobsDashboardScreen() {
             Ordenar por:
           </span>
           <select
+            aria-label="Ordenar vagas"
             value={filters.sort}
             onChange={(e) =>
               setFilters((prev) => ({
@@ -524,16 +531,17 @@ export function JobsDashboardScreen() {
             <ul
               aria-busy={isRefreshing}
               className={cn(
-                "grid list-none gap-4 transition-opacity duration-200",
+                "grid list-none gap-3 transition-opacity duration-200",
                 isRefreshing && "pointer-events-none opacity-60",
               )}
             >
               {displayedResults.map((vaga, index) => (
                 <motion.li
                   key={vaga.id}
-                  initial={{ opacity: 0, y: 14 }}
+                  initial={reduceMotion ? false : { opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.28, delay: Math.min(index, 6) * 0.04 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.3, delay: reduceMotion ? 0 : Math.min(index, 4) * 0.035, ease: [0.22, 1, 0.36, 1] }}
+                  className="min-w-0"
                 >
                   <JobCard
                     vaga={vaga}
@@ -695,5 +703,6 @@ export function JobsDashboardScreen() {
       {/* 4. Modal de Alertas por E-mail */}
       <JobAlertsModal open={alertsOpen} onClose={() => setAlertsOpen(false)} />
     </PageShell>
+    </MotionConfig>
   )
 }

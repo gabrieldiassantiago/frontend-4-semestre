@@ -48,10 +48,10 @@ export function AttentionPanel({ vagas, candidaturas }: { vagas: Vaga[]; candida
   }
 
   return (
-    <section aria-labelledby="attention-title" className="flex min-w-0 flex-col rounded-2xl border border-border bg-card">
-      <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
+    <section aria-labelledby="attention-title" className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)]">
+      <div className="flex items-center justify-between gap-3 px-6 pb-4 pt-6">
         <h2 id="attention-title" className="text-base font-semibold tracking-tight text-foreground">
-          Precisa da sua atenção
+          Para cuidar hoje
         </h2>
         {tasks.length > 0 && (
           <span className="grid h-6 min-w-6 place-items-center rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground">
@@ -72,7 +72,7 @@ export function AttentionPanel({ vagas, candidaturas }: { vagas: Vaga[]; candida
         <ul className="divide-y divide-border-subtle">
           {tasks.map((task) => (
             <li key={task.id}>
-              <Link href={task.href} className="group flex items-start gap-3 px-5 py-4 transition-colors hover:bg-muted">
+              <Link href={task.href} className="group flex items-start gap-3.5 px-6 py-5 transition-colors hover:bg-surface">
                 <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl", task.tone)}>
                   <task.icon aria-hidden className="size-[18px]" />
                 </span>

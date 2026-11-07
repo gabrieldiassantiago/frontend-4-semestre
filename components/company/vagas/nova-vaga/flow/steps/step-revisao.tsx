@@ -123,7 +123,7 @@ export function StepRevisao({
         <div className="sm:col-span-2">
           <ReviewSection stepId="processo" onEdit={onEdit}>
             <ol className="flex flex-wrap items-center gap-1.5 text-xs font-medium">
-              {["Inscrição", ...draft.etapas.map(getEtapaLabel)].map((label, index) => (
+              {["Inscrição", ...draft.etapas.map(etapa => getEtapaLabel(etapa, draft.etapasCatalogo)), "Encerrada"].map((label, index) => (
                 <li key={label} className="flex items-center gap-1.5">
                   {index > 0 && <span aria-hidden className="text-subtle-foreground">→</span>}
                   <span className="rounded-md bg-primary-subtle px-2 py-1 text-primary-subtle-foreground">

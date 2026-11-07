@@ -30,9 +30,7 @@ export function GlobalJobSearch() {
   return (
     <motion.form
       role="search"
-      animate={{ maxWidth: focused ? 560 : 440 }}
-      transition={{ type: "spring", stiffness: 260, damping: 28 }}
-      className="relative hidden w-full md:block"
+      className="relative hidden w-full max-w-sm md:block"
       onSubmit={(event) => {
         event.preventDefault()
         const term = query.trim()
@@ -57,9 +55,9 @@ export function GlobalJobSearch() {
         onChange={(event) => setQuery(event.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder="Buscar vagas, empresas ou palavras-chave"
+        placeholder="Buscar vagas ou empresas"
         autoComplete="off"
-        className="h-11 w-full rounded-full border border-transparent bg-muted pl-11 pr-20 text-sm text-foreground shadow-card transition-all placeholder:text-subtle-foreground hover:bg-surface focus:border-primary/40 focus:bg-card focus:shadow-raised focus:outline-none focus:ring-4 focus:ring-primary/10"
+        className="h-10 w-full rounded-lg border border-border/60 bg-surface/70 pl-11 pr-20 text-xs text-foreground transition-colors placeholder:text-muted-foreground hover:border-border-strong focus:border-primary/40 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/10"
       />
       <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
         <AnimatePresence mode="wait" initial={false}>

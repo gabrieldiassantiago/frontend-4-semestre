@@ -1,106 +1,42 @@
 import Link from "next/link"
-import { ArrowRight, CheckCircle2, Circle, Sparkles } from "lucide-react"
+import { ArrowRight, CheckCircle2, Circle, UserRound } from "lucide-react"
 import { ROUTES } from "@/lib/config/routes"
 import type { ProfileCompletion } from "@/lib/candidate-completion"
+import { EntityAvatar } from "@/components/ui/entity-avatar"
+import { ProgressRing } from "@/components/candidate/profile/progress-ring"
+import { OverviewGreeting } from "./overview-greeting"
 
-const VISIBLE_MISSING = 3
-const RING_RADIUS = 28
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
-
-export function ProfileCompletionCard({ completion }: { completion: ProfileCompletion }) {
+export function ProfileCompletionCard({ completion, firstName, imageUrl }: {
+  completion: ProfileCompletion
+  firstName?: string
+  imageUrl?: string | null
+}) {
   const { value, missing, complete } = completion
-  const offset = RING_CIRCUMFERENCE * (1 - value / 100)
-
   return (
-    <section
-      aria-labelledby="profile-completion-title"
-      className="rounded-2xl border border-border bg-card p-5 shadow-2xs sm:p-6"
-    >
-      <div className="flex items-center gap-4">
-        <div className="relative size-16 shrink-0">
-          <svg viewBox="0 0 64 64" className="size-16 -rotate-90" aria-hidden>
-            <circle
-              cx="32"
-              cy="32"
-              r={RING_RADIUS}
-              fill="none"
-              strokeWidth="6"
-              className="stroke-border/60"
-            />
-            <circle
-              cx="32"
-              cy="32"
-              r={RING_RADIUS}
-              fill="none"
-              strokeWidth="6"
-              strokeLinecap="round"
-              strokeDasharray={RING_CIRCUMFERENCE}
-              strokeDashoffset={offset}
-              className={complete ? "stroke-success" : "stroke-primary"}
-            />
-          </svg>
-          <span className="absolute inset-0 grid place-items-center text-sm font-extrabold tabular-nums text-foreground">
-            {value}%
-          </span>
-        </div>
-
-        <div className="min-w-0">
-          <h2
-            id="profile-completion-title"
-            className="text-base font-extrabold tracking-tight text-foreground"
-          >
-            {complete ? "Perfil completo" : "Fortaleça seu perfil"}
-          </h2>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            {complete
-              ? "Seu currículo está 100% pronto para se destacar nas buscas."
-              : "Perfis completos têm até 3x mais chances de avançar para entrevistas."}
-          </p>
-        </div>
+    <section aria-labelledby="profile-completion-title" className="rounded-2xl border border-border/60 bg-card p-5">
+      <div className="flex items-center justify-between">
+        <h2 id="profile-completion-title" className="text-sm font-semibold tracking-tight">Seu perfil</h2>
+        <Link href={ROUTES.candidate.profile} aria-label="Editar meu perfil" className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-primary-subtle hover:text-primary"><UserRound aria-hidden className="size-4" /></Link>
       </div>
-
-      {complete ? (
-        <p className="mt-5 flex items-center gap-2 rounded-xl border border-success/30 bg-success-subtle/70 px-3.5 py-2.5 text-xs font-bold text-success-foreground">
-          <Sparkles aria-hidden className="size-4 shrink-0 text-success" />
-          Tudo pronto para impressionar recrutadores
-        </p>
-      ) : (
-        <>
-          <ul className="mt-5 flex flex-col gap-2.5 border-t border-border/60 pt-4">
-            {missing.slice(0, VISIBLE_MISSING).map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center gap-2.5 text-xs font-semibold text-foreground"
-              >
-                <Circle aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="truncate">{item.label}</span>
-                {item.required && (
-                  <span className="ml-auto shrink-0 rounded-full bg-warning-subtle px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warning-foreground">
-                    Obrigatório
-                  </span>
-                )}
-              </li>
-            ))}
-            {missing.length > VISIBLE_MISSING && (
-              <li className="flex items-center gap-2.5 text-xs font-medium text-muted-foreground">
-                <CheckCircle2 aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
-                {`+${missing.length - VISIBLE_MISSING} itens complementares`}
-              </li>
-            )}
+      <div className="relative mx-auto mt-4 w-fit">
+        <ProgressRing value={value} size={112} stroke={4} label="Preenchimento do perfil" className="[&>span]:hidden" />
+        <div className="absolute inset-0 grid place-items-center">
+          {imageUrl ? <img src={imageUrl} alt="Sua foto de perfil" className="size-20 rounded-full object-cover" /> : <EntityAvatar name={firstName || "Candidato"} size="lg" className="size-20 rounded-full text-xl" />}
+        </div>
+        <span className="absolute -right-1 top-1 rounded-full bg-primary px-2 py-1 text-[10px] font-semibold text-white ring-4 ring-card">{value}%</span>
+      </div>
+      <p className="mt-4 text-center text-base font-semibold tracking-tight"><OverviewGreeting firstName={firstName} /></p>
+      <p className="mt-1 text-center text-xs leading-relaxed text-muted-foreground">{complete ? "Tudo pronto para sua próxima oportunidade." : "Cada detalhe conta a sua história."}</p>
+      <div className="mt-5 rounded-xl bg-primary-subtle/50 p-4">
+        <p className="text-xs font-semibold text-strong-foreground">{complete ? "Perfil completo" : "Seus próximos passos"}</p>
+        {complete ? <p className="mt-3 flex items-center gap-2 text-xs text-success-foreground"><CheckCircle2 aria-hidden className="size-4" />Todas as informações preenchidas</p> : (
+          <ul className="mt-3 space-y-3">
+            {missing.slice(0, 3).map((item) => <li key={item.id} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground"><Circle aria-hidden className="mt-0.5 size-3 shrink-0 text-primary/60" /><span>{item.label}</span></li>)}
+            {missing.length > 3 && <li className="text-[11px] text-muted-foreground">+{missing.length - 3} itens para enriquecer seu perfil</li>}
           </ul>
-
-          <Link
-            href={ROUTES.candidate.completeProfile}
-            className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-2xs transition-all hover:bg-primary-hover active:scale-[0.98]"
-          >
-            Completar agora
-            <ArrowRight
-              aria-hidden
-              className="size-4 transition-transform group-hover:translate-x-0.5"
-            />
-          </Link>
-        </>
-      )}
+        )}
+        <Link href={ROUTES.candidate.profile} className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-card px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary-subtle">{complete ? "Ver meu perfil" : "Atualizar meu perfil"}<ArrowRight aria-hidden className="size-3.5" /></Link>
+      </div>
     </section>
   )
 }

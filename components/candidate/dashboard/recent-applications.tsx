@@ -17,7 +17,7 @@ export function RecentApplications({ candidaturas }: { candidaturas: Candidatura
           <li key={candidatura.id}>
             <Link
               href={ROUTES.candidate.application(candidatura.id)}
-              className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none sm:gap-4 sm:px-5"
+              className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted focus-visible:bg-primary-subtle sm:gap-4 sm:px-5"
             >
               <CompanyLogo name={company} url={candidatura.logoUrlEmpresa} size="sm" />
               <span className="min-w-0 flex-1">

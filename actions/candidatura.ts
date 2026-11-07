@@ -1,6 +1,7 @@
 "use server"
 
-import { apiFetch, buildQuery } from "@/lib/server/api"
+import { buildQuery } from "@/lib/server/api"
+import { processApiFetch as apiFetch } from "@/lib/server/process-api"
 import type { ActionResult } from "@/lib/actions/result"
 import type {
   AvancarEtapaDto,
@@ -15,6 +16,8 @@ import type {
   DecidirCandidaturaDto,
   EtapaProcesso,
 } from "@/lib/types/candidatura.types"
+
+import { payloadEtapa } from "@/lib/utils/processo"
 
 const id = (value: string) => encodeURIComponent(value)
 
@@ -34,7 +37,7 @@ export async function getCandidaturaDetalheAction(candidaturaId: string): Promis
 }
 
 export async function getMeusFeedbacksAction(candidaturaId: string, etapa?: EtapaProcesso): Promise<ActionResult<CandidaturaFeedback[]>> {
-  return apiFetch<CandidaturaFeedback[]>(`/candidaturas/${id(candidaturaId)}/feedbacks${buildQuery({ etapa })}`)
+  return apiFetch<CandidaturaFeedback[]>(`/candidaturas/${id(candidaturaId)}/feedbacks${buildQuery({ etapaId: etapa })}`)
 }
 
 /** Não apaga nada: a candidatura vira CANCELADA. */
@@ -56,7 +59,7 @@ export async function getCandidaturasEmpresaAction(filters?: CandidaturaFilters)
   const query = buildQuery({
     vagaId: filters?.vagaId,
     status: filters?.status,
-    etapa: filters?.etapa,
+    etapaId: filters?.etapa,
     candidatoNome: filters?.candidatoNome,
   })
   return apiFetch<Candidatura[]>(`/empresa/candidaturas${query}`)
@@ -67,16 +70,16 @@ export async function getCandidaturaEmpresaDetalheAction(candidaturaId: string):
 }
 
 export async function avancarEtapaAction(candidaturaId: string, dto: AvancarEtapaDto): Promise<ActionResult<Candidatura>> {
-  return apiFetch<Candidatura>(`/empresa/candidaturas/${id(candidaturaId)}/etapa`, { method: "PATCH", body: dto })
+  return apiFetch<Candidatura>(`/empresa/candidaturas/${id(candidaturaId)}/etapa`, { method: "PATCH", body: payloadEtapa(dto) })
 }
 
-/** APROVADA move a etapa para CONTRATACAO no backend. */
+/** APROVADA encerra o processo na etapa final no backend. */
 export async function decidirCandidaturaAction(candidaturaId: string, dto: DecidirCandidaturaDto): Promise<ActionResult<Candidatura>> {
   return apiFetch<Candidatura>(`/empresa/candidaturas/${id(candidaturaId)}/status`, { method: "PATCH", body: dto })
 }
 
 export async function criarAgendamentoAction(candidaturaId: string, dto: CreateAgendamentoDto): Promise<ActionResult<CandidaturaAgendamento>> {
-  return apiFetch<CandidaturaAgendamento>(`/empresa/candidaturas/${id(candidaturaId)}/agendamentos`, { method: "POST", body: dto })
+  return apiFetch<CandidaturaAgendamento>(`/empresa/candidaturas/${id(candidaturaId)}/agendamentos`, { method: "POST", body: payloadEtapa(dto) })
 }
 
 export async function atualizarAgendamentoAction(
@@ -84,7 +87,7 @@ export async function atualizarAgendamentoAction(
   agendamentoId: string,
   dto: CreateAgendamentoDto,
 ): Promise<ActionResult<CandidaturaAgendamento>> {
-  return apiFetch<CandidaturaAgendamento>(`/empresa/candidaturas/${id(candidaturaId)}/agendamentos/${id(agendamentoId)}`, { method: "PUT", body: dto })
+  return apiFetch<CandidaturaAgendamento>(`/empresa/candidaturas/${id(candidaturaId)}/agendamentos/${id(agendamentoId)}`, { method: "PUT", body: payloadEtapa(dto) })
 }
 
 export async function cancelarAgendamentoAction(candidaturaId: string, agendamentoId: string, motivo?: string): Promise<ActionResult<void>> {
@@ -92,11 +95,11 @@ export async function cancelarAgendamentoAction(candidaturaId: string, agendamen
 }
 
 export async function criarFeedbackAction(candidaturaId: string, dto: CreateFeedbackDto): Promise<ActionResult<CandidaturaFeedback>> {
-  return apiFetch<CandidaturaFeedback>(`/empresa/candidaturas/${id(candidaturaId)}/feedbacks`, { method: "POST", body: dto })
+  return apiFetch<CandidaturaFeedback>(`/empresa/candidaturas/${id(candidaturaId)}/feedbacks`, { method: "POST", body: payloadEtapa(dto) })
 }
 
 export async function getFeedbacksEmpresaAction(candidaturaId: string, etapa?: EtapaProcesso): Promise<ActionResult<CandidaturaFeedback[]>> {
-  return apiFetch<CandidaturaFeedback[]>(`/empresa/candidaturas/${id(candidaturaId)}/feedbacks${buildQuery({ etapa })}`)
+  return apiFetch<CandidaturaFeedback[]>(`/empresa/candidaturas/${id(candidaturaId)}/feedbacks${buildQuery({ etapaId: etapa })}`)
 }
 
 export async function atualizarFeedbackAction(
@@ -106,7 +109,7 @@ export async function atualizarFeedbackAction(
 ): Promise<ActionResult<CandidaturaFeedback>> {
   return apiFetch<CandidaturaFeedback>(`/empresa/candidaturas/${id(candidaturaId)}/feedbacks/${id(feedbackId)}`, {
     method: "PUT",
-    body: dto,
+    body: payloadEtapa(dto),
   })
 }
 

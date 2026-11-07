@@ -1,4 +1,5 @@
-import { ETAPA_SHORT_LABELS, etapasDaVaga, type Candidatura } from "@/lib/types/candidatura.types"
+import { etapaLabel } from "@/lib/types/candidatura.types"
+import { etapasDaVaga, type Candidatura } from "@/lib/types/candidatura.types"
 import { cn } from "@/lib/utils"
 
 /** Barra de etapas compacta com rótulo curto, para tabelas e cards da empresa. */
@@ -11,7 +12,7 @@ export function StageProgress({ item, className }: { item: Candidatura; classNam
   return (
     <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
       <span className="truncate text-xs font-semibold text-strong-foreground">
-        {ETAPA_SHORT_LABELS[item.etapaAtual]}
+        {etapaLabel(item.etapaAtual, item.etapasVaga, item.etapaAtualDescricao)}
         <span className="ml-1 font-normal text-subtle-foreground">
           {current + 1}/{flow.length}
         </span>

@@ -6,11 +6,6 @@ import { isNaoLida, type Notificacao } from "@/lib/types/notificacao.types"
 import { cn } from "@/lib/utils"
 import { formatNotificacaoTempo, getTipoMeta } from "./notification-meta"
 
-/**
- * Linha de notificação usada no popover da topbar (`compact`) e na tela completa.
- * O título é um link esticado sobre a linha; o botão de "marcar como lida"
- * fica acima dele para não aninhar elementos interativos.
- */
 export function NotificationItem({
   notificacao,
   compact = false,

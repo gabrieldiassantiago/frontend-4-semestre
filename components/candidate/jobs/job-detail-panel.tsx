@@ -1,4 +1,7 @@
 "use client"
+
+import { etapaLabel } from "@/lib/types/candidatura.types"
+
 import { ROUTES } from "@/lib/config/routes"
 
 import Link from "next/link"
@@ -30,7 +33,7 @@ import { formatDistance } from "@/lib/utils/distance"
 import { cn } from "@/lib/utils"
 import type { Vaga } from "@/lib/types/vaga.types"
 import { StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
-import { ETAPA_LABELS, type Candidatura } from "@/lib/types/candidatura.types"
+import { type Candidatura } from "@/lib/types/candidatura.types"
 import {
   CATEGORY_METADATA,
 } from "@/lib/constants/vaga-categories"
@@ -150,7 +153,7 @@ export function JobDetailPanel({
             <div className="flex items-center gap-3 rounded-xl border border-success-border bg-success-subtle px-4 py-3">
               <CheckCircle2 className="size-4 shrink-0 text-success-foreground" aria-hidden />
               <p className="min-w-0 flex-1 text-xs font-semibold text-success-foreground text-pretty">
-                Candidatura enviada · Etapa: {ETAPA_LABELS[candidatura.etapaAtual]}
+                Candidatura enviada · Etapa: {etapaLabel(candidatura.etapaAtual, candidatura.etapasVaga, candidatura.etapaAtualDescricao)}
               </p>
               <StatusBadge status={candidatura.status} size="sm" />
             </div>
@@ -207,6 +210,16 @@ export function JobDetailPanel({
             <VagaDescription description={vaga.descricao} className="mt-3" />
           </section>
 
+          {Boolean(vaga.etapas?.length) && (
+            <section className="border-t border-border-subtle pt-4" aria-label="Etapas do processo seletivo">
+              <h3 className="text-sm font-bold text-foreground">Etapas do processo seletivo</h3>
+              <ol className="mt-3 space-y-3">
+                {[...(vaga.etapas ?? [])].sort((a, b) => a.ordem - b.ordem).map((etapa, index) => (
+                  <li key={etapa.etapa} className="text-sm"><p className="font-medium">{index + 1}. {etapaLabel(etapa.etapa, vaga.etapas)}</p>{etapa.descricao && <p className="mt-1 text-xs text-muted-foreground">{etapa.descricao}</p>}</li>
+                ))}
+              </ol>
+            </section>
+          )}
           {/* Benefícios */}
           {vaga.beneficios && (
             <section

@@ -4,7 +4,10 @@ import type {
 } from "@/lib/types/vaga.types"
 import type { EtapaProcesso } from "@/lib/types/candidatura.types"
 
+import type { TipoEtapa } from "@/lib/types/etapa.types"
+
 export interface VagaDraft {
+  etapasCatalogo?: TipoEtapa[]
   titulo: string
   categoria: VagaCategoria
   modalidade: VagaModalidade

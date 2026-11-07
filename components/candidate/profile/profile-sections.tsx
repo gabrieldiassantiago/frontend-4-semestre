@@ -48,7 +48,7 @@ export function ProfileFields({
 
       />
 
-      <div className="mt-7 grid gap-5 sm:grid-cols-2">
+      <div className="mt-5 grid gap-x-5 gap-y-4 sm:grid-cols-2">
         <Field
           label="Nome"
           hint="Gerenciado pela sua conta."
@@ -92,7 +92,7 @@ export function ProfileFields({
 
         <Field label="Sobre você" wide error={errors.summary} hint={`${(form.summary || "").trim().length} caracteres. Trajetória, interesses e o que você busca.`}>
           <textarea
-            rows={5}
+            rows={4}
             value={form.summary || ""}
             onChange={(event) =>
               setForm((current) => ({

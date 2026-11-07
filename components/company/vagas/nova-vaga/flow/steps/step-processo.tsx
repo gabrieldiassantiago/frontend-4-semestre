@@ -1,30 +1,45 @@
 "use client"
 
+import { createEtapaAction } from "@/actions/etapas"
+import { unwrap } from "@/lib/actions/result"
 import { useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { ArrowDown, ArrowUp, Flag, Plus, X } from "lucide-react"
-import type { EtapaProcesso } from "@/lib/types/candidatura.types"
+import { useQueryClient } from "@tanstack/react-query"
+import type { TipoEtapa } from "@/lib/types/etapa.types"
 import { FieldError, QuestionHeader } from "../primitives"
 import { isEnterSubmit } from "../steps"
 import type { StepProps } from "../types"
 
-export const ETAPAS_DISPONIVEIS: Array<{ value: EtapaProcesso; label: string; hint: string }> = [
-  { value: "TRIAGEM", label: "Triagem", hint: "Análise do currículo e do perfil" },
-  { value: "ENTREVISTA_RH", label: "Entrevista com RH", hint: "Conversa inicial sobre a vaga" },
-  { value: "TESTE_TECNICO", label: "Teste técnico", hint: "Avaliação prática de habilidades" },
-  { value: "ENTREVISTA_TECNICA", label: "Entrevista técnica", hint: "Conversa com o time da área" },
-  { value: "PROPOSTA", label: "Proposta", hint: "Condições para a contratação" },
-]
-
-export function getEtapaLabel(etapa: EtapaProcesso) {
-  return ETAPAS_DISPONIVEIS.find((item) => item.value === etapa)?.label ?? etapa
+export function getEtapaLabel(etapa: string, catalogo?: TipoEtapa[]) {
+  return catalogo?.find(item => item.id_etapa === etapa)?.nome ?? "Etapa do processo"
 }
 
 export function StepProcesso({ draft, update, errors }: StepProps) {
+  const queryClient = useQueryClient()
   const reduceMotion = useReducedMotion()
   const [tagInput, setTagInput] = useState("")
   const { etapas, metaTags } = draft
-  const disponiveis = ETAPAS_DISPONIVEIS.filter((item) => !etapas.includes(item.value))
+  const [nome, setNome] = useState("")
+  const [descricao, setDescricao] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+  const options = (draft.etapasCatalogo ?? []).map(item => ({ value: item.id_etapa, label: item.nome, hint: item.descricao }))
+  const disponiveis = options.filter(item => !etapas.includes(item.value))
+  async function criar() {
+    if (!nome.trim() || saving || etapas.length >= 20) return
+    setSaving(true)
+    setErro(null)
+    try {
+      const etapa = unwrap(await createEtapaAction({ nomeEtapa: nome.trim(), descricao: descricao.trim() }))
+      update({ etapasCatalogo: [...(draft.etapasCatalogo ?? []), etapa], etapas: [...etapas, etapa.id_etapa] })
+      queryClient.setQueryData<{ options: TipoEtapa[]; padrao: TipoEtapa[] }>(["etapas", etapa.company_id], prev => prev ? { ...prev, options: [...prev.options.filter(item => item.id_etapa !== etapa.id_etapa), etapa] } : prev)
+      setNome("")
+      setDescricao("")
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : "Não foi possível criar a etapa.")
+    } finally { setSaving(false) }
+  }
 
   const move = (index: number, direction: -1 | 1) => {
     const target = index + direction
@@ -60,7 +75,7 @@ export function StepProcesso({ draft, update, errors }: StepProps) {
 
         <AnimatePresence initial={false}>
           {etapas.map((etapa, index) => {
-            const item = ETAPAS_DISPONIVEIS.find((option) => option.value === etapa)
+            const item = options.find((option) => option.value === etapa)
             return (
               <motion.li
                 key={etapa}
@@ -75,7 +90,7 @@ export function StepProcesso({ draft, update, errors }: StepProps) {
                   {index + 1}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-foreground">{item?.label ?? etapa}</span>
+                  <span className="block text-sm font-semibold text-foreground">{item?.label ?? "Etapa indisponível — remova e selecione novamente"}</span>
                   {item?.hint && (
                     <span className="block truncate text-xs text-muted-foreground">{item.hint}</span>
                   )}
@@ -83,7 +98,7 @@ export function StepProcesso({ draft, update, errors }: StepProps) {
                 <span className="flex shrink-0 items-center">
                   <button
                     type="button"
-                    disabled={index === 0}
+                    disabled={saving || index === 0}
                     onClick={() => move(index, -1)}
                     aria-label={`Mover ${item?.label} para cima`}
                     className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-25"
@@ -92,7 +107,7 @@ export function StepProcesso({ draft, update, errors }: StepProps) {
                   </button>
                   <button
                     type="button"
-                    disabled={index === etapas.length - 1}
+                    disabled={saving || index === etapas.length - 1}
                     onClick={() => move(index, 1)}
                     aria-label={`Mover ${item?.label} para baixo`}
                     className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-25"
@@ -101,6 +116,7 @@ export function StepProcesso({ draft, update, errors }: StepProps) {
                   </button>
                   <button
                     type="button"
+                    disabled={saving}
                     onClick={() => update({ etapas: etapas.filter((value) => value !== etapa) })}
                     aria-label={`Remover ${item?.label}`}
                     className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-danger-subtle hover:text-danger-foreground"
@@ -112,6 +128,7 @@ export function StepProcesso({ draft, update, errors }: StepProps) {
             )
           })}
         </AnimatePresence>
+        <li className="rounded-2xl bg-surface px-4 py-3 text-sm font-semibold">Encerrada <span className="font-normal text-muted-foreground">· Automática ao finalizar o processo</span></li>
       </ol>
       <FieldError message={errors.etapas} />
 
@@ -125,6 +142,7 @@ export function StepProcesso({ draft, update, errors }: StepProps) {
               <button
                 key={item.value}
                 type="button"
+                disabled={etapas.length >= 20 || saving}
                 onClick={() => update({ etapas: [...etapas, item.value] })}
                 className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border-strong px-3.5 py-2 text-sm font-medium text-strong-foreground transition-all hover:border-primary hover:bg-primary-subtle hover:text-primary-subtle-foreground active:scale-95"
               >
@@ -136,6 +154,14 @@ export function StepProcesso({ draft, update, errors }: StepProps) {
         </div>
       )}
 
+      <section className="mt-6 space-y-3 rounded-xl border border-border p-4" aria-label="Criar etapa personalizada">
+        <h3 className="text-sm font-semibold">Criar etapa personalizada</h3>
+        <p className="text-xs text-muted-foreground">A etapa ficará disponível para sua empresa e será adicionada a esta vaga. Até 20 etapas intermediárias.</p>
+        <label className="block text-sm">Nome da etapa<input className="field-input mt-1" value={nome} maxLength={100} disabled={saving} onChange={event => setNome(event.target.value)} /></label>
+        <label className="block text-sm">Descrição para o candidato<textarea className="field-input mt-1" value={descricao} maxLength={255} disabled={saving} onChange={event => setDescricao(event.target.value)} /></label>
+        {erro && <p role="alert" className="text-sm text-danger-foreground">{erro}</p>}
+        <button type="button" className="btn-secondary" disabled={saving || !nome.trim() || etapas.length >= 20} onClick={() => void criar()}>{saving ? "Criando…" : "Criar e adicionar etapa"}</button>
+      </section>
       <div className="mt-10 border-t border-border pt-8">
         <label htmlFor="vaga-meta-tags" className="text-sm font-semibold text-strong-foreground">
           Competências e palavras-chave

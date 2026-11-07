@@ -1,0 +1,15 @@
+.dialog { --radius: 10px; }
+.dialog > header { background: var(--card); border-bottom: 1px solid var(--border); }
+.dialog > footer { background: var(--card); border-top: 1px solid var(--border); }
+.dialog :global(.field-input) { border-radius: 10px; font-size: 14px; line-height: 1.7; }
+.dialog fieldset { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: var(--card); }
+.dialog fieldset legend { padding-inline: 6px; font-size: 12px; }
+.dialog fieldset > p { font-size: 12px; line-height: 1.6; }
+.dialog input[type="file"] { border-radius: 8px; }
+.dialog input[type="file"]::file-selector-button { border-radius: 8px; background: var(--primary-subtle); color: var(--primary-subtle-foreground); }
+.dialog :global(.btn-primary),
+.dialog :global(.btn-secondary),
+.dialog :global(.btn-ghost) { font-size: 12px; min-height: 44px; }
+.dialog :global(.btn-primary):hover,
+.dialog :global(.btn-secondary):hover,
+.dialog :global(.btn-ghost):hover { transform: none; box-shadow: none; }

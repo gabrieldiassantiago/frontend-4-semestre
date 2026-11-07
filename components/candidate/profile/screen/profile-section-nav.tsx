@@ -39,14 +39,14 @@ export function ProfileSectionNav({
   onSelect: (section: ProfileSectionId) => void
 }) {
   return (
-    <nav aria-label="Seções do perfil">
-      <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] xl:mx-0 xl:flex-col xl:gap-0.5 xl:overflow-visible xl:rounded-card xl:border xl:border-border xl:bg-card xl:p-2 xl:pb-2">
+    <nav aria-label="Seções do perfil"><p className="mb-3 hidden px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground lg:block">Editar perfil</p>
+      <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-card lg:border lg:border-border lg:bg-card lg:p-2 lg:pb-2">
         {PROFILE_SECTIONS.map((item) => {
           const current = active === item.id
           const state = sectionState(completion, item.steps)
 
           return (
-            <li key={item.id} className={cn("shrink-0", item.id === "preview" && "xl:mt-1.5 xl:border-t xl:border-border-subtle xl:pt-1.5")}>
+            <li key={item.id} className={cn("shrink-0", item.id === "preview" && "lg:mt-1.5 lg:border-t lg:border-border-subtle lg:pt-1.5")}>
               <button
                 type="button"
                 disabled={disabled}
@@ -54,10 +54,10 @@ export function ProfileSectionNav({
                 aria-current={current ? "page" : undefined}
                 aria-label={item.label + STATE_LABEL[state]}
                 className={cn(
-                  "flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-full border px-4 text-sm font-semibold transition-colors xl:w-full xl:rounded-lg xl:border-transparent xl:px-3",
+                  "flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-lg border px-3 text-xs font-medium transition-colors lg:w-full lg:rounded-lg lg:border-transparent lg:px-3",
                   current
-                    ? "border-primary bg-primary-subtle text-primary-subtle-foreground xl:border-transparent"
-                    : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground xl:bg-transparent",
+                    ? "border-primary bg-primary-subtle text-primary-subtle-foreground lg:border-transparent"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground lg:bg-transparent",
                 )}
               >
                 <item.icon className="size-[18px] shrink-0" aria-hidden />

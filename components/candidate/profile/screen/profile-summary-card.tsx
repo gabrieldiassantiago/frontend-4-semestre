@@ -1,22 +1,12 @@
 import Link from "next/link"
-import { AlertCircle, ArrowRight, BadgeCheck, MapPin, Wand2 } from "lucide-react"
+import { ArrowRight, BadgeCheck, Circle, MapPin } from "lucide-react"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { ROUTES } from "@/lib/config/routes"
 import type { ProfileCompletion } from "@/lib/candidate-completion"
 import type { CandidateProfile, UpdateCandidateProfileDto } from "@/lib/types/candidate.types"
-import { cn } from "@/lib/utils"
-import { ProgressRing } from "../progress-ring"
 import { sectionForStep, type ProfileSectionId } from "./profile-sections.config"
 
-const VISIBLE_PENDING = 4
-
-export function ProfileSummaryCard({
-  profile,
-  form,
-  completion,
-  disabled,
-  onGoTo,
-}: {
+export function ProfileSummaryCard({ profile, form, completion, disabled, onGoTo }: {
   profile: CandidateProfile
   form: UpdateCandidateProfileDto
   completion: ProfileCompletion
@@ -25,100 +15,57 @@ export function ProfileSummaryCard({
 }) {
   const local = [form.city, form.state].filter(Boolean).join(", ")
   const pending = [...completion.missingRequired, ...completion.missing.filter((item) => !item.required)]
-
   return (
-    <div className="overflow-hidden rounded-card border border-border bg-card shadow-card">
-      <div className="flex items-center gap-3 p-5">
-        {profile.profileImageUrl ? (
-          <img src={profile.profileImageUrl} alt="Sua foto de perfil" className="size-14 shrink-0 rounded-full object-cover" />
-        ) : (
-          <EntityAvatar name={profile.userName} size="lg" className="rounded-full" />
-        )}
-        <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-foreground">{profile.userName || "Minha conta"}</p>
-          <p className={cn("truncate text-xs", form.headline ? "text-primary" : "italic text-subtle-foreground")}>
-            {form.headline || "Sem título profissional"}
-          </p>
-          {local && (
-            <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
-              <MapPin className="size-3 shrink-0" aria-hidden />
-              {local}
-            </p>
+    <section aria-label="Resumo do perfil" className="overflow-hidden rounded-2xl border border-border/80 bg-card">
+      <div className="grid gap-5 p-5 sm:p-6 md:grid-cols-[minmax(0,1fr)_minmax(240px,0.65fr)] md:items-center md:gap-8">
+        <div className="flex min-w-0 items-center gap-4">
+          {profile.profileImageUrl ? (
+            <img src={profile.profileImageUrl} alt="Sua foto de perfil" className="size-16 shrink-0 rounded-2xl object-cover ring-4 ring-primary-subtle" />
+          ) : (
+            <EntityAvatar name={profile.userName} size="lg" className="size-16 rounded-2xl ring-4 ring-primary-subtle" />
           )}
-        </div>
-      </div>
-
-      <div className="border-t border-border px-5 py-4">
-        <div className="flex items-center gap-4">
-          <ProgressRing
-            value={completion.value}
-            size={56}
-            stroke={5}
-            tone={completion.ready ? "success" : "primary"}
-            label="Preenchimento do perfil"
-          />
           <div className="min-w-0">
-            <p className={cn("flex items-center gap-1 text-sm font-bold", completion.ready ? "text-success-foreground" : "text-foreground")}>
-              {completion.ready && <BadgeCheck className="size-4 text-success" aria-hidden />}
-              {completion.complete ? "Perfil completo" : completion.ready ? "Pronto para se candidatar" : "Perfil incompleto"}
-            </p>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-              {completion.ready
-                ? completion.complete
-                  ? "Todas as informações preenchidas."
-                  : "Itens opcionais ajudam você a se destacar."
-                : `${completion.missingRequired.length} ${completion.missingRequired.length === 1 ? "item obrigatório pendente" : "itens obrigatórios pendentes"}.`}
-            </p>
+            <p className="text-base font-semibold tracking-tight text-foreground sm:text-lg">{profile.userName || "Minha conta"}</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{form.headline || "Adicione seu título profissional"}</p>
+            {local && <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="size-3.5 shrink-0" aria-hidden />{local}</p>}
           </div>
         </div>
-
-        {pending.length > 0 && (
-          <ul className="mt-4 flex flex-col" aria-label="Itens pendentes">
-            {pending.slice(0, VISIBLE_PENDING).map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => onGoTo(sectionForStep(item.step))}
-                  className="group -mx-2 flex min-h-10 w-[calc(100%+1rem)] items-center gap-2.5 rounded-lg px-2 text-left text-xs font-semibold text-strong-foreground transition-colors hover:bg-muted"
-                >
-                  <AlertCircle
-                    className={cn("size-3.5 shrink-0", item.required ? "text-warning" : "text-subtle-foreground")}
-                    aria-hidden
-                  />
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {!item.required && <span className="text-[11px] font-medium text-subtle-foreground">Opcional</span>}
-                  <ArrowRight
-                    className="size-3.5 shrink-0 text-subtle-foreground transition-transform group-hover:translate-x-0.5"
-                    aria-hidden
-                  />
-                </button>
-              </li>
-            ))}
-            {pending.length > VISIBLE_PENDING && (
-              <li className="pt-1 text-xs text-subtle-foreground">
-                +{pending.length - VISIBLE_PENDING} {pending.length - VISIBLE_PENDING === 1 ? "item" : "itens"}
-              </li>
-            )}
-          </ul>
-        )}
-
-        {!completion.ready && (
-         <Link
-  href={ROUTES.candidate.completeProfile}
-  className="btn-primary group mt-2 w-full"
->
-  <Wand2 className="size-4" aria-hidden />
-  Completar com o passo a passo
-  <ArrowRight
-    className="size-4 items-center flex gap- shrink-0 transition-transform group-hover:translate-x-1"
-    strokeWidth={2.5}
-    aria-hidden
-  />
-</Link>
-
-        )}
+        <div className="min-w-0 rounded-xl bg-primary-subtle/60 px-4 py-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-strong-foreground">
+              {completion.ready && <BadgeCheck className="size-4 text-success" aria-hidden />}
+              {completion.complete ? "Perfil completo" : "Preenchimento do perfil"}
+            </p>
+            <span className="text-sm font-semibold tabular-nums text-primary-subtle-foreground">{completion.value}%</span>
+          </div>
+          <div role="progressbar" aria-label="Preenchimento do perfil" aria-valuenow={completion.value} aria-valuemin={0} aria-valuemax={100} className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-primary/10">
+            <div className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${completion.value}%` }} />
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+            {completion.complete ? "Todas as informações preenchidas." : completion.ready ? "Pronto para se candidatar. Você ainda pode enriquecer seu perfil." : `${completion.missingRequired.length} ${completion.missingRequired.length === 1 ? "item obrigatório para completar" : "itens obrigatórios para completar"}.`}
+          </p>
+        </div>
       </div>
-    </div>
+      {pending.length > 0 && (
+        <details className="border-t border-border/60">
+          <summary className="cursor-pointer px-5 py-3 text-xs font-medium text-primary-subtle-foreground transition-colors hover:bg-primary-subtle/30 sm:px-6">O que falta preencher <span className="ml-1 text-muted-foreground">({pending.length})</span></summary>
+          <div className="px-5 pb-4 sm:px-6">
+            <ul className="grid gap-x-6 sm:grid-cols-2" aria-label="Itens pendentes">
+              {pending.map((item) => (
+                <li key={item.id}>
+                  <button type="button" disabled={disabled} onClick={() => onGoTo(sectionForStep(item.step))} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left text-xs text-strong-foreground transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50">
+                    <Circle aria-hidden className="size-3 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 flex-1">{item.label}</span>
+                    <span className="text-[10px] text-muted-foreground">{item.required ? "Obrigatório" : "Opcional"}</span>
+                    <ArrowRight aria-hidden className="size-3.5 shrink-0 text-primary" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {!completion.ready && <Link href={ROUTES.candidate.completeProfile} className="mt-2 inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-primary">Preencher com o passo a passo<ArrowRight aria-hidden className="size-3.5" /></Link>}
+          </div>
+        </details>
+      )}
+    </section>
   )
 }

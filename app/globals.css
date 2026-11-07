@@ -354,25 +354,25 @@
 
 /* Empresa: superfícies sólidas, controles consistentes e conteúdo mais amplo. */
 .company-workspace {
-  --radius: .5rem;
-  --radius-lg: .75rem;
-  --radius-xl: 1rem;
-  --surface: #f6f7f9;
-  --muted: #f3f4f6;
-  --border-subtle: #e9ebef;
+  --radius: .875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  --surface: #f8f8f7;
+  --muted: #f3f3f1;
+  --border-subtle: #efefed;
 }
 .company-workspace .field-input {
   min-height: 46px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--card);
-  border-color: var(--border-strong);
+  border-color: var(--border);
   font-size: 14px;
 }
 .company-workspace textarea.field-input { line-height: 1.75; }
 .company-workspace .btn-primary:hover:not(:disabled),
 .company-workspace .btn-secondary:hover:not(:disabled),
 .company-workspace .btn-ghost:hover:not(:disabled) { transform: none; box-shadow: none; }
-.company-panel { min-width: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+.company-panel { min-width: 0; border: 1px solid var(--border); border-radius: 24px; background: var(--card); box-shadow: 0 2px 8px -4px rgba(32,29,29,.06); }
 .company-panel-heading { border-bottom: 1px solid var(--border); padding: 20px 24px; }
 .company-panel-heading h2 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
 .company-panel-heading p { margin-top: 5px; font-size: 12px; line-height: 1.6; color: var(--muted-foreground); }

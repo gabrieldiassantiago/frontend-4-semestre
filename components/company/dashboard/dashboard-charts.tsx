@@ -7,8 +7,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { useReducedMotion } from "framer-motion"
 import { ROUTES } from "@/lib/config/routes"
 import {
-  ETAPAS,
-  ETAPA_SHORT_LABELS,
+  etapaLabel,
   STATUS_LABELS,
   etapasDaVaga,
   type Candidatura,
@@ -30,7 +29,7 @@ type Metric = keyof typeof METRICS
 
 export default function DashboardCharts({ vagas, candidaturas }: { vagas: Vaga[]; candidaturas: Candidatura[] }) {
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="grid gap-6 lg:grid-cols-3">
       <ActivityChart vagas={vagas} candidaturas={candidaturas} className="lg:col-span-2" />
       <FunnelCard candidaturas={candidaturas} />
     </div>
@@ -39,7 +38,7 @@ export default function DashboardCharts({ vagas, candidaturas }: { vagas: Vaga[]
 
 function Panel({ className, children, ...props }: React.ComponentProps<"section">) {
   return (
-    <section className={cn("flex min-w-0 flex-col rounded-2xl border border-border bg-card p-5 sm:p-6", className)} {...props}>
+    <section className={cn("flex min-w-0 flex-col rounded-3xl border border-border/80 bg-card p-5 shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)] sm:p-7", className)} {...props}>
       {children}
     </section>
   )
@@ -62,7 +61,7 @@ function ActivityChart({ vagas, candidaturas, className }: { vagas: Vaga[]; cand
           <h2 id="activity-title" className="text-base font-semibold tracking-tight text-foreground">
             Ritmo do recrutamento
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Contagem semanal pela data de criação.</p>
+          <p className="mt-1 text-sm text-muted-foreground">As conexões que sua empresa está construindo.</p>
         </div>
         <SegmentedControl
           label="Período do gráfico"
@@ -83,8 +82,8 @@ function ActivityChart({ vagas, candidaturas, className }: { vagas: Vaga[]; cand
               aria-pressed={selected}
               onClick={() => setMetric(key)}
               className={cn(
-                "rounded-xl border px-3.5 py-2.5 text-left transition-colors",
-                selected ? "border-primary/40 bg-primary-subtle" : "border-border hover:bg-muted",
+                "rounded-2xl border px-4 py-3 text-left transition-colors",
+                selected ? "border-foreground bg-surface" : "border-border hover:bg-muted",
               )}
             >
               <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -98,7 +97,7 @@ function ActivityChart({ vagas, candidaturas, className }: { vagas: Vaga[]; cand
       </div>
 
       {total ? (
-        <div className="mt-5 min-h-64 w-full flex-1">
+        <div className="mt-6 h-64 w-full sm:h-72">
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <AreaChart data={timeline} margin={{ top: 8, right: 8, left: -24, bottom: 0 }} accessibilityLayer>
               <defs>
@@ -200,7 +199,7 @@ function FunnelCard({ candidaturas }: { candidaturas: Candidatura[] }) {
     const flow = etapasDaVaga(item.etapasVaga)
     return { flow, current: flow.indexOf(item.etapaAtual) }
   })
-  const stages = ETAPAS.filter((etapa) => flows.some(({ flow }) => flow.includes(etapa))).map((etapa) => {
+  const stages = [...new Set(flows.flatMap(({ flow }) => flow))].map((etapa) => {
     const reached = flows.filter(({ flow, current }) => {
       const position = flow.indexOf(etapa)
       return position !== -1 && position <= current
@@ -229,7 +228,7 @@ function FunnelCard({ candidaturas }: { candidaturas: Candidatura[] }) {
             {stages.map((stage) => (
               <li key={stage.etapa}>
                 <div className="flex items-baseline justify-between gap-2 text-sm">
-                  <span className="truncate font-medium text-strong-foreground">{ETAPA_SHORT_LABELS[stage.etapa]}</span>
+                  <span className="truncate font-medium text-strong-foreground">{etapaLabel(stage.etapa, candidaturas.flatMap(item => item.etapasVaga ?? []))}</span>
                   <span className="shrink-0 tabular-nums text-muted-foreground">
                     <strong className="font-semibold text-foreground">{stage.reached}</strong>
                     <span className="ml-1.5 text-xs">{stage.percent}%</span>

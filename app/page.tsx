@@ -1,8 +1,3 @@
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
-
-import { HOME_BY_ROLE } from "@/lib/config/routes"
-import { isSessionExpired, readSessionClaims } from "@/lib/session"
 import { getLatestVagasPublic } from "@/lib/services/vagas.public"
 import { SAMPLE_JOBS } from "@/lib/data/landing"
 
@@ -20,11 +15,6 @@ export const metadata = {
 }
 
 export default async function Home() {
-  // Quem já está logado vai direto para a própria área.
-  const token = (await cookies()).get("token")?.value
-  const claims = token ? readSessionClaims(token) : null
-  if (claims && !isSessionExpired(claims) && claims.role) redirect(HOME_BY_ROLE[claims.role])
-
   const live = await getLatestVagasPublic()
   const jobs = live.length >= 3 ? live : SAMPLE_JOBS
 

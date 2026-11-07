@@ -33,6 +33,7 @@ function percentOf(value: number, total: number) {
 }
 
 export function OverviewStatGrid({ total, inProgress, approved, closed }: OverviewStatGridProps) {
+  const reduce = useReducedMotion()
   const stats: { label: string; value: number; hint: string; icon: LucideIcon; tone: string }[] = [
     {
       label: "Candidaturas",
@@ -65,27 +66,27 @@ export function OverviewStatGrid({ total, inProgress, approved, closed }: Overvi
   ]
 
   return (
-    <dl className="grid grid-cols-2 gap-3.5 lg:grid-cols-4 lg:gap-4">
+    <dl className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       {stats.map(({ label, value, hint, icon: Icon, tone }, index) => (
         <motion.div
           key={label}
-          initial={{ opacity: 0, y: 10 }}
+          initial={reduce ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
-          className="group flex flex-col justify-between gap-4 rounded-2xl border border-border/70 bg-card p-4 shadow-2xs transition-all hover:border-border hover:shadow-card sm:p-5"
+          className={`flex flex-col justify-between gap-2 rounded-xl border p-3.5 ${index === 1 ? "border-primary/15 bg-primary-subtle/60" : "border-border/60 bg-card"}`}
         >
           <div className="flex items-center justify-between gap-2">
-            <dt className="text-xs font-medium text-muted-foreground sm:text-sm">{label}</dt>
-            <span className={`grid size-8 shrink-0 place-items-center rounded-xl transition-transform duration-300 group-hover:scale-105 ${tone}`}>
-              <Icon aria-hidden className="size-4" />
+            <dt className="text-[11px] font-medium text-muted-foreground">{label}</dt>
+            <span className={`grid size-7 shrink-0 place-items-center rounded-lg ${tone}`}>
+              <Icon aria-hidden className="size-3.5" />
             </span>
           </div>
 
-          <div className="flex items-baseline justify-between gap-2">
-            <dd className="text-2xl font-semibold tracking-tight tabular-nums text-foreground sm:text-3xl">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <dd className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">
               <CountUp value={value} />
             </dd>
-            <p className="truncate text-[11px] text-muted-foreground">{hint}</p>
+            <p className="text-[10px] text-muted-foreground">{hint}</p>
           </div>
         </motion.div>
       ))}

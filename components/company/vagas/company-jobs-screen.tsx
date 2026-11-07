@@ -72,8 +72,9 @@ export function CompanyJobsScreen() {
     <PageShell className="max-w-[1380px]">
       <PageHeader
         eyebrow="Recrutamento"
-        title="Vagas"
-        description="Publique oportunidades e gerencie suas vagas ativas ou pausadas."
+        title="Suas vagas, novas possibilidades."
+        description="Cada oportunidade é o começo de uma nova história. Cuide das suas vagas por aqui."
+        actions={<Link href={ROUTES.company.newJob} className="btn-primary rounded-full px-5"><Plus aria-hidden className="size-4" />Criar uma vaga</Link>}
       />
 
       {(error || actionError) && (
@@ -83,8 +84,8 @@ export function CompanyJobsScreen() {
         </div>
       )}
 
-      <div className="mt-8 overflow-hidden rounded-card border border-border bg-card">
-        <div className="flex flex-col gap-3 border-b border-border p-3 sm:p-4 md:flex-row md:items-center md:justify-between">
+      <div className="mt-8">
+        <div className="mb-6 flex flex-col gap-4 border-b border-border pb-5 md:flex-row md:items-center md:justify-between">
           <div role="tablist" aria-label="Filtrar por status" className="no-scrollbar flex gap-1 overflow-x-auto">
             {STATUS_FILTERS.map((filter) => {
               const selected = status === filter.id
@@ -96,15 +97,15 @@ export function CompanyJobsScreen() {
                   aria-selected={selected}
                   onClick={() => setStatus(filter.id)}
                   className={cn(
-                    "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors",
-                    selected ? "bg-primary-subtle text-primary-subtle-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors",
+                    selected ? "bg-foreground text-background" : "text-muted-foreground hover:bg-card hover:text-foreground",
                   )}
                 >
                   {filter.label}
                   <span
                     className={cn(
                       "rounded-full px-1.5 text-xs tabular-nums",
-                      selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                      selected ? "bg-background/15 text-background" : "bg-card text-muted-foreground",
                     )}
                   >
                     {counts[filter.id]}
@@ -118,7 +119,7 @@ export function CompanyJobsScreen() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por título, cidade ou estado"
+            placeholder="Buscar uma oportunidade"
             aria-label="Buscar vaga"
             wrapperClassName="w-full md:max-w-sm"
           />
@@ -160,20 +161,21 @@ export function CompanyJobsScreen() {
           />
         ) : (
           <>
-            <ul className="divide-y divide-border-subtle">
+            <ul className="grid items-stretch gap-5 md:grid-cols-2 2xl:grid-cols-3">
               {filtered.map((vaga) => (
                 <li key={vaga.id}>
                   <VagaRow
                     vaga={vaga}
                     detailed
                     deleting={deletingId === vaga.id}
+                    updating={toggleVaga.isPending && toggleVaga.variables?.id === vaga.id}
                     onDelete={() => void handleDelete(vaga)}
                     onToggleActive={() => void handleToggleActive(vaga)}
                   />
                 </li>
               ))}
             </ul>
-            <p className="border-t border-border bg-surface px-4 py-3 text-xs text-muted-foreground sm:px-5">
+            <p className="mt-6 text-xs text-muted-foreground">
               <span className="font-semibold tabular-nums text-foreground">{filtered.length}</span>{" "}
               {filtered.length === 1 ? "vaga listada" : "vagas listadas"}
             </p>

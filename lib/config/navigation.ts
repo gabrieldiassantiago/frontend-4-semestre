@@ -45,7 +45,7 @@ export type AreaNavigation = {
 
 const candidateItems = {
   overview: { href: ROUTES.candidate.overview, label: "Visão geral", shortLabel: "Início", icon: LayoutGrid },
-  jobs: { href: ROUTES.candidate.jobs, label: "Vagas", icon: Briefcase, aliases: ["/dashboard"] },
+  jobs: { href: ROUTES.candidate.jobs, label: "Buscar vagas", shortLabel: "Vagas", icon: Briefcase, aliases: ["/dashboard"] },
   applications: { href: ROUTES.candidate.applications, label: "Candidaturas", shortLabel: "Inscrições", icon: FileText },
   messages: { href: ROUTES.candidate.messages, label: "Mensagens", shortLabel: "Mensagens", icon: MessageSquare },
   notifications: { href: ROUTES.candidate.notifications, label: "Notificações", icon: Bell },
@@ -58,6 +58,7 @@ export const CANDIDATE_NAVIGATION: AreaNavigation = {
   home: ROUTES.candidate.overview,
   groups: [
     {
+      label: "Minha carreira",
       items: [
         candidateItems.overview,
         candidateItems.jobs,

@@ -1,16 +1,17 @@
+import { etapaLabel } from "@/lib/types/candidatura.types"
 import Link from "next/link"
 import { Users } from "lucide-react"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { SectionLink } from "@/components/ui/page"
 import { ROUTES } from "@/lib/config/routes"
 import { formatRelativeDate } from "@/lib/format"
-import { ETAPA_SHORT_LABELS, STATUS_LABELS, type Candidatura } from "@/lib/types/candidatura.types"
+import { STATUS_LABELS, type Candidatura } from "@/lib/types/candidatura.types"
 import { cn } from "@/lib/utils"
 
 export function RecentApplicationsList({ candidaturas }: { candidaturas: Candidatura[] }) {
   return (
-    <section aria-labelledby="recent-title" className="flex min-w-0 flex-col rounded-2xl border border-border bg-card">
-      <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
+    <section aria-labelledby="recent-title" className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)]">
+      <div className="flex items-center justify-between gap-3 px-6 pb-4 pt-6">
         <h2 id="recent-title" className="text-base font-semibold tracking-tight text-foreground">
           Candidaturas recentes
         </h2>
@@ -35,7 +36,7 @@ export function RecentApplicationsList({ candidaturas }: { candidaturas: Candida
               <li key={item.id}>
                 <Link
                   href={ROUTES.company.candidate(item.id)}
-                  className="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-muted"
+                  className="group flex items-center gap-3 px-6 py-4 transition-colors hover:bg-surface"
                 >
                   <EntityAvatar name={item.candidatoNome} src={item.candidatoImagemUrl} size="sm" className="rounded-full" />
                   <span className="min-w-0 flex-1">
@@ -49,13 +50,13 @@ export function RecentApplicationsList({ candidaturas }: { candidaturas: Candida
                   </span>
                   <span
                     className={cn(
-                      "shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold",
+                      "max-w-28 shrink-0 truncate rounded-full px-2.5 py-1 text-[11px] font-medium",
                       !closed && "bg-primary-subtle text-primary-subtle-foreground",
                       item.status === "APROVADA" && "bg-success-subtle text-success-foreground",
                       (item.status === "REPROVADA" || item.status === "CANCELADA") && "bg-muted text-muted-foreground",
                     )}
                   >
-                    {closed ? STATUS_LABELS[item.status] : ETAPA_SHORT_LABELS[item.etapaAtual]}
+                    {closed ? STATUS_LABELS[item.status] : etapaLabel(item.etapaAtual, item.etapasVaga, item.etapaAtualDescricao)}
                   </span>
                 </Link>
               </li>
