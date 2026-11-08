@@ -11,8 +11,6 @@ export const REFRESH_COOKIE = "refresh_token"
 export const DEFAULT_SESSION_SECONDS = 86400
 export const REFRESH_SESSION_SECONDS = 7 * 24 * 60 * 60 // 7 dias (igual ao backend)
 
-const SERVER_API_URL = API_BASE_URL || process.env.API_URL || "http://localhost:8080"
-
 interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   body?: unknown
   nullOn?: number[]
@@ -61,7 +59,7 @@ async function tryRefreshToken(): Promise<string | null> {
   if (!refreshToken) return null
 
   try {
-    const response = await fetch(`${SERVER_API_URL}/auth/refresh-token`, {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -88,7 +86,7 @@ async function tryRefreshToken(): Promise<string | null> {
 }
 
 export async function fetchPrivateResume(userId: string, file: string) {
-  const url = SERVER_API_URL + "/candidate-profile/" + userId + "/resume/" + file
+  const url = API_BASE_URL + "/candidate-profile/" + userId + "/resume/" + file
   const request = (token: string) => fetch(url, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/pdf" },
     cache: "no-store",
@@ -121,7 +119,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
   let response: Response
   try {
-    response = await fetch(`${SERVER_API_URL}${path}`, { ...init, headers, body: payload, cache: "no-store" })
+    response = await fetch(`${API_BASE_URL}${path}`,{ ...init, headers, body: payload, cache: "no-store" })
   } catch {
     return fail("Não foi possível conectar ao servidor.", 503)
   }
