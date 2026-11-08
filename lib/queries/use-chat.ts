@@ -66,8 +66,6 @@ export function useMensagens(candidaturaId: string, enabled = true) {
   }
 }
 
-// ── Mutações ───────────────────────────────────────────────────────────────
-
 export function useEnviarMensagem(candidaturaId: string) {
   const queryClient = useQueryClient()
   const key = queryKeys.chat.mensagens(candidaturaId)
@@ -100,17 +98,6 @@ export function useMarcarLidas(candidaturaId: string) {
   })
 }
 
-// ── Tempo real (STOMP) ─────────────────────────────────────────────────────
-
-/**
- * Conecta ao endpoint STOMP `/ws` do Spring. O handshake é autenticado pelo
- * cookie httpOnly `token` (ver `bearerTokenResolver` no SecurityConfig), então
- * nenhum header precisa ser enviado aqui.
- *
- * - `/user/queue/mensagens`: nova mensagem do outro participante. O payload não
- *   traz `candidaturaId`, então todas as consultas de chat são revalidadas.
- * - `/user/queue/leituras`: o outro participante leu minhas mensagens.
- */
 export function useChatSocket(enabled = true): ChatConexao {
   const queryClient = useQueryClient()
   const [conexao, setConexao] = useState<ChatConexao>("conectando")
@@ -130,11 +117,8 @@ export function useChatSocket(enabled = true): ChatConexao {
         return
       }
 
-      const separator = WS_URL.includes("?") ? "&" : "?"
-      const brokerURL = `${WS_URL}${separator}token=${encodeURIComponent(token)}`
-
       client = new Client({
-        brokerURL,
+        brokerURL: WS_URL,
         connectHeaders: {
           Authorization: `Bearer ${token}`,
         },
