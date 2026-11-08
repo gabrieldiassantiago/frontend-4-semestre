@@ -1,7 +1,7 @@
 import { PageShell } from "@/components/ui/page"
 import { Skeleton, CardSkeleton, StatCardsSkeleton, BarChartSkeleton, VagasListSkeleton, CandidatesListSkeleton, VagaSelectionSkeleton } from "@/components/ui/states"
 
-type Variant = "dashboard" | "jobs" | "opportunities" | "candidates" | "processes" | "profile" | "form" | "applications" | "detail"
+type Variant = "company-dashboard" | "settings" | "dashboard" | "jobs" | "opportunities" | "candidates" | "processes" | "profile" | "form" | "applications" | "detail"
 
 /** Usado pelo Suspense de rota e pelas requisições que terminam no cliente. */
 export function RouteSkeleton({ variant = "jobs" }: { variant?: Variant }) {
@@ -12,9 +12,31 @@ export function RouteSkeleton({ variant = "jobs" }: { variant?: Variant }) {
           <div className="w-full max-w-md space-y-3">
             <Skeleton className="h-3 w-24" /><Skeleton className="h-8 w-2/3" /><Skeleton className="h-4 w-full" />
           </div>
-          <Skeleton className="h-10 w-32 rounded-full" />
+          {variant !== "settings" && <Skeleton className="h-10 w-32 rounded-full" />}
         </div>
-        {variant === "dashboard" ? <>
+        {variant === "settings" ? (
+          <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8">
+            <Skeleton className="h-10 w-full lg:h-36" />
+            <div className="space-y-6">
+              {[4, 4, 1].map((rows, section) => (
+                <div key={section} className="rounded-card border border-border bg-card p-6">
+                  <Skeleton className="mb-2 h-5 w-48" /><Skeleton className="mb-6 h-4 w-3/4" />
+                  {Array.from({ length: rows }, (_, row) => (
+                    <div key={row} className="flex items-center justify-between border-t border-border-subtle py-4">
+                      <Skeleton className="h-4 w-1/3" /><Skeleton className="h-6 w-11 rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : variant === "company-dashboard" ? (
+          <div className="grid gap-4 xl:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-36 rounded-xl" />)}</div>
+            <BarChartSkeleton bars={8} />
+            <VagasListSkeleton rows={4} /><CardSkeleton rows={3} />
+          </div>
+        ) : variant === "dashboard" ? <>
           <StatCardsSkeleton />
           <div className="grid gap-5 lg:grid-cols-2"><BarChartSkeleton /><BarChartSkeleton /></div>
           <BarChartSkeleton bars={12} />

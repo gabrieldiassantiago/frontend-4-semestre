@@ -20,6 +20,7 @@ const MODALIDADES = Object.entries(MODALIDADE_LABELS) as [VagaModalidade, string
 const EMPTY_FORM: FormState = {
   titulo: "",
   salario: "",
+  salarioACombinar: false,
   descricao: "",
   beneficios: "",
   cidade: "",
@@ -35,6 +36,7 @@ const EMPTY_FORM: FormState = {
 interface FormState {
   titulo: string
   salario: string
+  salarioACombinar: boolean
   quantidadeVagas: string
   descricao: string
   beneficios: string
@@ -68,6 +70,7 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
       setForm({
         titulo: vagaToEdit.titulo,
         salario: String(vagaToEdit.salario),
+        salarioACombinar: vagaToEdit.salarioACombinar ?? vagaToEdit.salario === 0,
         quantidadeVagas: vagaToEdit.quantidadeVagas ? String(vagaToEdit.quantidadeVagas) : "1",
         descricao: vagaToEdit.descricao,
         beneficios: vagaToEdit.beneficios ?? "",
@@ -98,8 +101,8 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
     setError(null)
 
     if (!form.titulo.trim()) { setError("O título é obrigatório."); return }
-    const salarioNum = parseFloat(form.salario)
-    if (isNaN(salarioNum) || salarioNum <= 0) { setError("Informe um salário válido."); return }
+    const salarioNum = form.salarioACombinar ? 0 : parseFloat(form.salario)
+    if (!form.salarioACombinar && (isNaN(salarioNum) || salarioNum <= 0)) { setError("Informe um salário válido."); return }
     const vagasNum = parseInt(form.quantidadeVagas, 10)
     if (isNaN(vagasNum) || vagasNum < 1) { setError("A vaga deve ter pelo menos 1 posição disponível."); return }
     if (!form.descricao.trim()) { setError("A descrição é obrigatória."); return }
@@ -112,6 +115,7 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
         const dto: UpdateVagaDto = {
           titulo: form.titulo,
           salario: salarioNum,
+          salarioACombinar: form.salarioACombinar,
           quantidadeVagas: vagasNum,
           descricao: form.descricao,
           beneficios: form.beneficios || undefined,
@@ -128,6 +132,7 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
         const dto: CreateVagaDto = {
           titulo: form.titulo,
           salario: salarioNum,
+          salarioACombinar: form.salarioACombinar,
           quantidadeVagas: vagasNum,
           descricao: form.descricao,
           beneficios: form.beneficios || undefined,
@@ -194,6 +199,10 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
           </div>
 
           <div className="space-y-1.5">
+            <label className="mb-3 flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.salarioACombinar} onChange={event => set("salarioACombinar", event.target.checked)} className="size-4 accent-primary" />
+              Salário a combinar
+            </label>
             <label htmlFor="vf-salario" className="block text-sm font-semibold text-strong-foreground">
               Salário (R$) <span className="text-primary">*</span>
             </label>
@@ -201,6 +210,7 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
               <DollarSign className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle-foreground" />
               <input
                 id="vf-salario"
+                disabled={form.salarioACombinar}
                 type="number"
                 min={0}
                 step={0.01}

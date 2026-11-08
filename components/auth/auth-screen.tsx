@@ -19,6 +19,10 @@ import { Alert } from "@/components/ui/states"
 import { CompanyRegistrationForm } from "./company-registration-form"
 import { GoogleIcon, LinkedInIcon } from "./social-icons"
 import { TestimonialCarousel } from "./testimonial-carousel"
+import { RegistrationOptions } from "./registration-options"
+import { RegistrationProgress } from "./registration-progress"
+import { RegistrationStep } from "./registration-step"
+import { CityAutocomplete } from "@/components/candidate/profile/city-autocomplete"
 
 export type Role = "candidato" | "recrutador"
 type Mode = "register" | "login"
@@ -27,6 +31,8 @@ const SUBTITLES: Record<Role, string> = {
   candidato: "Seu próximo passo começa aqui. Crie sua conta e monte seu perfil.",
   recrutador: "Encontre os melhores talentos e monte o seu time com agilidade.",
 }
+
+const GOALS = ["Estágio", "Primeiro emprego", "Nova posição", "Transição de carreira"]
 
 const OAUTH_ERRORS: Record<string, string> = {
   account_type: "Esta conta pertence a uma empresa e não pode entrar como candidato.",
@@ -68,7 +74,10 @@ export function AuthScreen({
   const apiRole: Exclude<UserRole, "ADMIN"> =
     role === "candidato" ? "CANDIDATE" : "COMPANY"
 
-  const isWideForm = role === "recrutador" && mode === "register"
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [goal, setGoal] = useState("")
+  const [area, setArea] = useState("")
+  const [location, setLocation] = useState<{ city?: string; state?: string }>({})
 
   const update =
     (key: keyof typeof form) =>
@@ -81,6 +90,7 @@ export function AuthScreen({
   const switchMode = (next: Mode) => {
     setError(null)
     setSuccess(null)
+    if (next !== mode) setStep(1)
     setMode(next)
   }
 
@@ -134,9 +144,13 @@ export function AuthScreen({
     event.preventDefault()
     setError(null)
     setSuccess(null)
+    if (step < 3) {
+      setStep(step === 1 ? 2 : 3)
+      return
+    }
 
     if (
-      !form.name ||
+      !form.name.trim() ||
       !form.email ||
       !form.password ||
       !form.confirmPassword
@@ -150,9 +164,11 @@ export function AuthScreen({
       return
     }
 
+    const headline = [goal, area.trim()].filter(Boolean).join(" · ") || undefined
     try {
       await register.mutateAsync({
-        name: form.name,
+        name: form.name.trim(),
+        profile: headline || location.city ? { headline, ...location } : undefined,
         email: form.email,
         password: form.password,
         role: apiRole,
@@ -216,10 +232,7 @@ export function AuthScreen({
 
         {/* Container Central do Formulário */}
         <div
-          className={cn(
-            "mx-auto my-auto flex w-full flex-col items-center py-8 transition-all duration-300",
-            isWideForm ? "max-w-xl" : "max-w-[420px]"
-          )}
+          className="mx-auto flex w-full max-w-[460px] flex-1 flex-col items-center py-8"
         >
           <header className="mb-6 flex w-full flex-col items-center text-center">
             <Link href="/" className="mb-6 transition-opacity hover:opacity-90">
@@ -287,14 +300,10 @@ export function AuthScreen({
             )}
           </AnimatePresence>
 
-          <AnimatePresence mode="wait">
-            {mode === "login" ? (
-              <motion.form
+          {mode === "register" && <RegistrationProgress step={step} company={role === "recrutador"} />}
+          {mode === "login" ? (
+              <form
                 key="login"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
                 onSubmit={handleLogin}
                 className="w-full space-y-4"
               >
@@ -383,30 +392,32 @@ export function AuthScreen({
                     "Entrar na conta"
                   )}
                 </button>
-              </motion.form>
+              </form>
             ) : role === "recrutador" ? (
-              <motion.div
-                key="company-register"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
+              <CompanyRegistrationForm step={step} setStep={setStep} onBackToLogin={() => switchMode("login")} />
+            ) : (
+              <form
+                key="register"
+                onSubmit={handleRegister}
                 className="w-full"
               >
-                <CompanyRegistrationForm
-                  onBackToLogin={() => switchMode("login")}
-                />
-              </motion.div>
-            ) : (
-              <motion.form
-                key="register"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                onSubmit={handleRegister}
-                className="w-full space-y-4"
-              >
+                <RegistrationStep step={step}>
+                <p className="text-xs font-semibold text-primary">Etapa {step} de 3</p>
+                <h2 data-step-heading tabIndex={-1} className="text-2xl font-semibold tracking-tight text-ink outline-none">
+                  {step === 1 ? "Que oportunidade você procura?" : step === 2 ? "Em qual cidade você mora?" : "Vamos criar seu acesso?"}
+                </h2>
+                {step === 1 && <>
+                  <p className="text-sm text-muted-foreground">O que faria sentido para você neste momento? Você pode mudar isso depois no seu perfil.</p>
+                  <RegistrationOptions label="Objetivo profissional" options={GOALS} value={goal} onChange={option => setGoal(goal === option ? "" : option)} />
+                  <Field label="Área de interesse (opcional)">
+                    <input id="candidate-interest" className="field-input" maxLength={150} value={area} onChange={e => setArea(e.target.value)} placeholder="Ex.: Design de produto" />
+                  </Field>
+                </>}
+                {step === 2 && <>
+                  <p className="text-sm text-muted-foreground">A cidade e o estado aparecem no seu perfil. Você pode preencher depois.</p>
+                  <CityAutocomplete {...location} onChange={setLocation} />
+                </>}
+                {step === 3 && <>
                 <Field label="Nome completo">
                   <input
                     type="text"
@@ -436,6 +447,7 @@ export function AuthScreen({
                     <PasswordInput
                       value={form.password}
                       onChange={update("password")}
+                      minLength={8}
                       autoComplete="new-password"
                       required
                     />
@@ -445,6 +457,7 @@ export function AuthScreen({
                     <PasswordInput
                       value={form.confirmPassword}
                       onChange={update("confirmPassword")}
+                      minLength={8}
                       autoComplete="new-password"
                       required
                     />
@@ -462,11 +475,17 @@ export function AuthScreen({
                   </button>
                   .
                 </div>
-
+                </>}
+                <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
+                  <button type="button" disabled={loading} className="btn-secondary" onClick={() => {
+                    setError(null)
+                    if (step === 1) switchMode("login")
+                    else setStep(step === 3 ? 2 : 1)
+                  }}>Voltar</button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary flex w-full items-center justify-center gap-2 py-2.5 font-semibold shadow-sm transition-all active:scale-[0.99] disabled:opacity-60"
+                  className="btn-primary"
                 >
                   {loading ? (
                     <>
@@ -474,12 +493,13 @@ export function AuthScreen({
                       <span>Cadastrando...</span>
                     </>
                   ) : (
-                    "Criar minha conta"
+                    step === 3 ? "Criar minha conta" : "Continuar"
                   )}
                 </button>
-              </motion.form>
+                </div>
+                </RegistrationStep>
+              </form>
             )}
-          </AnimatePresence>
         </div>
 
         {/* Rodapé discreto para ancorar a coluna */}

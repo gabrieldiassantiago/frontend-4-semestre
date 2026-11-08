@@ -52,6 +52,22 @@ export function StepSalario({ draft, update, errors, onEnter }: StepProps & { on
     <div>
       <QuestionHeader stepId="salario" />
 
+      <label className="mb-5 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+        <span>
+          <span className="block text-sm font-semibold text-foreground">Salário a combinar</span>
+          <span className="mt-1 block text-xs leading-5 text-muted-foreground">O valor será definido com o candidato durante o processo.</span>
+        </span>
+        <input type="checkbox" checked={draft.salarioACombinar}
+          onChange={event => update({ salarioACombinar: event.target.checked })}
+          className="size-5 shrink-0 accent-primary" />
+      </label>
+
+      {draft.salarioACombinar ? (
+        <p role="status" className="rounded-xl bg-primary-subtle px-4 py-5 text-sm text-primary-deep">
+          Os candidatos verão “Salário a combinar” nesta vaga.
+        </p>
+      ) : (
+        <>
       <div className="rounded-panel border border-border bg-card p-5 sm:p-7">
         <div className="flex items-center justify-center gap-3 sm:gap-5">
           <button
@@ -165,6 +181,8 @@ export function StepSalario({ draft, update, errors, onEnter }: StepProps & { on
           })}
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }

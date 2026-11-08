@@ -56,7 +56,6 @@ export function CandidateProfileScreen() {
   const initialized = useRef<string | null>(null)
   const sectionRef = useRef<HTMLHeadingElement>(null)
 
-  // Inicializa por perfil, preservando o rascunho durante uploads e atualizações de coleções.
   useEffect(() => {
     if (profile && initialized.current !== profile.id) {
       initialized.current = profile.id

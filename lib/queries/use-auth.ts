@@ -27,7 +27,6 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (payload: LoginPayload) => unwrap(await loginAction(payload)),
     onSuccess: () => {
-      // Dados de outra sessão não podem vazar para a conta que acabou de entrar.
       queryClient.clear()
       toastSuccess("Você entrou na sua conta!")
     },

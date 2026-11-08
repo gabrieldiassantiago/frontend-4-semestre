@@ -87,6 +87,22 @@ async function tryRefreshToken(): Promise<string | null> {
   }
 }
 
+export async function fetchPrivateResume(userId: string, file: string) {
+  const url = SERVER_API_URL + "/candidate-profile/" + userId + "/resume/" + file
+  const request = (token: string) => fetch(url, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/pdf" },
+    cache: "no-store",
+    redirect: "error",
+  })
+  const token = await getServerToken()
+  if (token) {
+    const response = await request(token)
+    if (response.status !== 401) return response
+  }
+  const renewed = await tryRefreshToken()
+  return renewed ? request(renewed) : new Response(null, { status: 401 })
+}
+
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<ActionResult<T>> {
   const { body, nullOn = [], headers: extraHeaders, _isRetry = false, ...init } = options
   const token = await getServerToken()

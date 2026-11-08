@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 
 export function RecentApplicationsList({ candidaturas }: { candidaturas: Candidatura[] }) {
   return (
-    <section aria-labelledby="recent-title" className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)]">
+    <section aria-labelledby="recent-title" className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between gap-3 px-6 pb-4 pt-6">
         <h2 id="recent-title" className="text-base font-semibold tracking-tight text-foreground">
           Candidaturas recentes

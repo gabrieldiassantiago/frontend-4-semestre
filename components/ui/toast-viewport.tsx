@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
-import { Check, X } from "lucide-react"
-import { dismissToast, getServerToasts, getToasts, subscribeToasts, type SuccessToast } from "@/lib/toast"
+import { Check, CircleAlert, X } from "lucide-react"
+import { dismissToast, getServerToasts, getToasts, subscribeToasts, type ToastNotice } from "@/lib/toast"
 
-function ToastCard({ toast }: { toast: SuccessToast }) {
+function ToastCard({ toast }: { toast: ToastNotice }) {
+  const failed = toast.tone === "error"
+  const Icon = failed ? CircleAlert : Check
   const reduceMotion = useReducedMotion()
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
@@ -19,8 +21,8 @@ function ToastCard({ toast }: { toast: SuccessToast }) {
   return (
     <motion.div layout={!reduceMotion} initial={{ opacity: 0, y: reduceMotion ? 0 : -16, scale: reduceMotion ? 1 : 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: reduceMotion ? 0 : -8, scale: reduceMotion ? 1 : 0.98 }} transition={{ duration: reduceMotion ? 0 : 0.22 }}
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false) }}
-      className="pointer-events-auto flex w-full items-center gap-3 rounded-2xl border border-success-border bg-background p-2 pl-4 shadow-raised">
-      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-success-subtle text-success-foreground"><Check className="size-5" aria-hidden /></span>
+      className={`pointer-events-auto flex w-full items-center gap-3 rounded-2xl border bg-background p-2 pl-4 shadow-raised ${failed ? "border-danger-border" : "border-success-border"}`}>
+      <span className={`grid size-9 shrink-0 place-items-center rounded-full ${failed ? "bg-danger-subtle text-danger-foreground" : "bg-success-subtle text-success-foreground"}`}><Icon className="size-5" aria-hidden /></span>
       <p className="min-w-0 flex-1 break-words text-sm font-medium leading-5 text-foreground">{toast.message}</p>
       <button type="button" onClick={() => dismissToast(toast.id)} aria-label={`Fechar aviso: ${toast.message}`} className="grid size-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary"><X className="size-4" aria-hidden /></button>
     </motion.div>

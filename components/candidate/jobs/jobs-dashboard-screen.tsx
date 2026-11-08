@@ -80,8 +80,12 @@ function getVisiblePages(currentPage: number, totalPages: number): (number | "..
 /** Ordena conforme o filtro escolhido */
 function sortVagas(vagas: Vaga[], sort: JobFiltersState["sort"], isProximity = false) {
   return [...vagas].sort((a, b) => {
-    if (sort === "salary-desc") return b.salario - a.salario
-    if (sort === "salary-asc") return a.salario - b.salario
+    if (sort === "salary-desc" || sort === "salary-asc") {
+      const aHasSalary = a.salario > 0
+      const bHasSalary = b.salario > 0
+      if (aHasSalary !== bHasSalary) return aHasSalary ? -1 : 1
+      return sort === "salary-desc" ? b.salario - a.salario : a.salario - b.salario
+    }
     if (isProximity && a.distanciaKm != null && b.distanciaKm != null) {
       return a.distanciaKm - b.distanciaKm
     }

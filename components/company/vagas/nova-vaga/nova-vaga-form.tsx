@@ -14,6 +14,8 @@ import { useCompanyIdentity } from "@/lib/queries/use-company-profile"
 import { ShareVagaButton } from "@/components/shared/vaga/share-vaga-button"
 import type { CreateVagaDto, UpdateVagaDto, Vaga } from "@/lib/types/vaga.types"
 import { cn } from "@/lib/utils"
+import { toastSuccess } from "@/lib/toast"
+import { CreatingVagaScreen } from "./creating-vaga-screen"
 
 import { EDIT_STEPS, FLOW_STEPS, buildDescriptionTemplate, stripHtml, validateStep } from "./flow/steps"
 import type { DraftErrors, StepId, VagaDraft } from "./flow/types"
@@ -37,6 +39,7 @@ const INITIAL_DRAFT: VagaDraft = {
   modalidade: "HIBRIDO",
   quantidadeVagas: 1,
   salario: 8500,
+  salarioACombinar: false,
   cidade: "São Paulo",
   estado: "SP",
   latitude: -23.5505,
@@ -46,6 +49,8 @@ const INITIAL_DRAFT: VagaDraft = {
   etapas: [],
   metaTags: [],
 }
+
+const MIN_CREATION_DURATION_MS = 5000
 
 const EASE = [0.22, 1, 0.36, 1] as const
 
@@ -71,6 +76,7 @@ function draftFromVaga(vaga: Vaga): VagaDraft {
     modalidade: vaga.modalidade,
     quantidadeVagas: vaga.quantidadeVagas ?? 1,
     salario: vaga.salario,
+    salarioACombinar: vaga.salarioACombinar ?? vaga.salario === 0,
     cidade: vaga.cidade,
     estado: vaga.estado,
     latitude: vaga.latitude ?? INITIAL_DRAFT.latitude,
@@ -101,7 +107,7 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
   const reduceMotion = useReducedMotion()
   const company = useCompanyIdentity()
   const { profile, error: profileError, isLoading: loadingCompany } = company
-  const createVaga = useCreateVaga()
+  const createVaga = useCreateVaga({ silent: true })
   const updateVaga = useUpdateVaga()
   const companyProfileId = company.companyProfileId
   const companyName = company.companyName || vaga?.nomeEmpresa || "Sua empresa"
@@ -117,6 +123,7 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
   const [doneId, setDoneId] = useState<string | null>(null)
   const [editorKey, setEditorKey] = useState(0)
   const hasNavigated = useRef(false)
+  const submissionLock = useRef(false)
 
   const catalogo = useQuery({
     queryKey: ["etapas", companyProfileId],
@@ -143,7 +150,7 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
     setDraft((prev) => ({ ...prev, ...patch }))
     // Corrigir um campo limpa o aviso dele, sem esperar o próximo "Continuar".
     setErrors((prev) => {
-      const touched = Object.keys(patch).filter((key) => key in prev)
+      const touched = [...Object.keys(patch), ...(patch.salarioACombinar !== undefined ? ["salario"] : [])].filter((key) => key in prev)
       if (!touched.length) return prev
       const next = { ...prev }
       for (const key of touched) delete next[key as keyof DraftErrors]
@@ -208,6 +215,7 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
   }
 
   async function handleSubmit() {
+    if (submissionLock.current) return
     if (!editing && !companyProfileId) {
       setFormError(
         company.isOwner
@@ -227,12 +235,15 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
       }
     }
 
+    submissionLock.current = true
+    const startedAt = performance.now()
     setSubmitting(true)
     setFormError(null)
 
     const common = {
       titulo: draft.titulo.trim(),
-      salario: Number(draft.salario),
+      salario: draft.salarioACombinar ? 0 : Number(draft.salario),
+      salarioACombinar: draft.salarioACombinar,
       quantidadeVagas: Math.max(1, Math.floor(Number(draft.quantidadeVagas) || 1)),
       descricao: draft.descricao.trim(),
       latitude: Number(draft.latitude),
@@ -262,11 +273,15 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
           throw new Error("Uma etapa selecionada não está mais disponível. Volte ao processo e revise as etapas.")
         }
         const created = await createVaga.mutateAsync(dto)
+        const remaining = MIN_CREATION_DURATION_MS - (performance.now() - startedAt)
+        if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining))
+        toastSuccess("Vaga publicada com sucesso!")
         setDoneId(created.id)
       }
     } catch (error) {
       setFormError(error instanceof Error ? error.message : editing ? "Erro ao salvar a vaga." : "Erro ao publicar a vaga.")
     } finally {
+      submissionLock.current = false
       setSubmitting(false)
     }
   }
@@ -275,6 +290,8 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
     formError ?? (!editing && profileError ? "Não foi possível identificar sua empresa. Faça login novamente." : null)
 
   if (loadingCompany && !editing) return <RouteSkeleton variant="form" />
+
+  if (submitting && !editing) return <CreatingVagaScreen />
 
   if (doneId) {
     return <DoneScreen id={doneId} titulo={draft.titulo} mode={mode} reduceMotion={Boolean(reduceMotion)} />

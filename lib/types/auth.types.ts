@@ -5,7 +5,7 @@ export interface RegisterPayload {
   email: string
   password: string
   role: UserRole
-  cpf: string
+  profile?: { headline?: string; city?: string; state?: string }
 }
 
 export interface CompanyRegistrationPayload {

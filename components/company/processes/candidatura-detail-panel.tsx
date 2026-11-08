@@ -1,5 +1,7 @@
 "use client"
 
+import { resumeHref } from "@/lib/utils/resume"
+
 import { etapaLabel } from "@/lib/types/candidatura.types"
 
 
@@ -111,6 +113,7 @@ export function CandidaturaDetailPanel({
   }
 
   const { candidatura, historico, feedbacks, agendamentos = [] } = detalhe
+  const resume = resumeHref(candidatura.curriculoUrl)
   const finalizada = isFinalizada(candidatura.status)
 
   const tabCounts: Partial<Record<Aba, number>> = {
@@ -201,7 +204,7 @@ export function CandidaturaDetailPanel({
               />
             )}
 
-            {showDocuments && (candidatura.cartaApresentacao || candidatura.curriculoUrl) && (
+            {showDocuments && (candidatura.cartaApresentacao || resume) && (
               <section className="flex flex-col gap-3">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Documentos</h4>
                 {candidatura.cartaApresentacao && (
@@ -209,8 +212,8 @@ export function CandidaturaDetailPanel({
                     {candidatura.cartaApresentacao}
                   </p>
                 )}
-                {candidatura.curriculoUrl && (
-                  <a href={candidatura.curriculoUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary w-full">
+                {resume && (
+                  <a href={resume} target="_blank" rel="noopener noreferrer" className="btn-secondary w-full">
                     <FileText className="size-4" aria-hidden />
                     Abrir currículo
                   </a>

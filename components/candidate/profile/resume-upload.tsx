@@ -5,9 +5,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { CheckCircle2, ExternalLink, FileText, LoaderCircle, Upload } from "lucide-react"
 import { Alert } from "@/components/ui/states"
 import { useUploadCandidateResume } from "@/lib/queries/use-candidate-profile"
-import { API_BASE_URL } from "@/lib/http/config"
 import { getErrorMessage } from "@/lib/errors"
-import { validateResume } from "@/lib/utils/resume"
+import { resumeHref, validateResume } from "@/lib/utils/resume"
 import { cn } from "@/lib/utils"
 import type { CandidateProfile } from "@/lib/types/candidate.types"
 
@@ -15,16 +14,6 @@ interface ResumeUploadProps {
   profile: CandidateProfile | null
   onProfileChange: (profile: CandidateProfile) => void
   onUploadingChange?: (uploading: boolean) => void
-}
-
-function resumeLink(value?: string) {
-  if (!value) return null
-  try {
-    const url = new URL(value, `${API_BASE_URL}/`)
-    return ["https:", "http:"].includes(url.protocol) ? url.href : null
-  } catch {
-    return null
-  }
 }
 
 export function ResumeUpload({ profile, onProfileChange, onUploadingChange }: ResumeUploadProps) {
@@ -74,7 +63,7 @@ export function ResumeUpload({ profile, onProfileChange, onUploadingChange }: Re
     }
   }
 
-  const source = previewUrl || resumeLink(profile?.resumeUrl)
+  const source = previewUrl || resumeHref(profile?.resumeUrl)
 
   return (
     <div className="min-w-0 space-y-5">

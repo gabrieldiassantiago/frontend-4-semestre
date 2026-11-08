@@ -1,4 +1,3 @@
-/** Converte o HTML do editor em texto estruturado, sem inserir HTML na página. */
 export function normalizeVagaDescription(source: string) {
   if (!/<\/?[a-z][^>]*>/i.test(source)) return source
   const compact = (text: string) => text.replace(/\s+/g, " ").trim()

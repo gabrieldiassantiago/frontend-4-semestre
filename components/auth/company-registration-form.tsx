@@ -8,13 +8,16 @@ import { rememberRegistration } from "@/lib/auth-flow"
 import { useRegisterCompany } from "@/lib/queries/use-auth"
 import { getErrorMessage } from "@/lib/errors"
 import { PasswordInput } from "@/components/ui/password-input"
-import { cn } from "@/lib/utils"
+import { RegistrationOptions } from "./registration-options"
+import { RegistrationStep } from "./registration-step"
 import { AddressAutocomplete } from "@/components/company/vagas/address-autocomplete"
 import { hasCompanyLocation } from "@/lib/utils/company-location"
 
 type Step = 1 | 2 | 3
 
 interface CompanyRegistrationFormProps {
+  step: Step
+  setStep: React.Dispatch<React.SetStateAction<Step>>
   onBackToLogin: () => void
 }
 
@@ -48,12 +51,6 @@ const INITIAL_FORM: CompanyFormData = {
   description: "",
 }
 
-const STEPS = [
-  { number: 1 as const, label: "Responsável" },
-  { number: 2 as const, label: "Empresa" },
-  { number: 3 as const, label: "Perfil" },
-]
-
 const INDUSTRIES = [
   "Tecnologia e software",
   "Serviços financeiros",
@@ -66,9 +63,8 @@ const INDUSTRIES = [
   "Outro",
 ]
 
-export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFormProps) {
+export function CompanyRegistrationForm({ onBackToLogin, step, setStep }: CompanyRegistrationFormProps) {
   const router = useRouter()
-  const [step, setStep] = useState<Step>(1)
   const [form, setForm] = useState<CompanyFormData>(INITIAL_FORM)
   const registerCompany = useRegisterCompany()
   const loading = registerCompany.isPending
@@ -163,67 +159,23 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
   return (
     <form
       onSubmit={submit}
-      className="mx-auto w-full max-w-lg space-y-6 rounded-2xl bg-background p-4 sm:max-w-xl sm:space-y-7 sm:p-6 md:p-8"
+      className="w-full"
     >
-      <ol className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="Etapas do cadastro">
-        {STEPS.map((item) => {
-          const completed = item.number < step
-          const active = item.number === step
-          return (
-            <li key={item.number} className="space-y-2">
-              <div
-                className={cn(
-                  "h-1.5 rounded-full transition-colors duration-300",
-                  item.number <= step ? "bg-primary" : "bg-border",
-                )}
-              />
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span
-                  className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold transition-colors sm:h-7 sm:w-7",
-                    active && "border-primary bg-primary-subtle text-primary-subtle-foreground",
-                    completed && "border-success bg-success text-white",
-                    !active && !completed && "border-border text-subtle-foreground",
-                  )}
-                >
-                  {completed ? <Check className="h-3.5 w-3.5" /> : item.number}
-                </span>
-                <span
-                  className={cn(
-                    "truncate text-[11px] font-semibold sm:text-xs",
-                    active ? "text-foreground" : "text-muted-foreground",
-                  )}
-                >
-                  {item.label}
-                </span>
-              </div>
-            </li>
-          )
-        })}
-      </ol>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: 16 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -16 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="space-y-5"
-        >
+      <RegistrationStep step={step}>
+      <div className="space-y-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
               Etapa {step} de 3
             </p>
-            <h2 className="mt-1 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            <h2 data-step-heading tabIndex={-1} className="mt-1 text-xl font-bold tracking-tight text-foreground outline-none sm:text-2xl">
               {step === 1 && "Quem será responsável pela conta?"}
-              {step === 2 && "Conte sobre a sua empresa"}
-              {step === 3 && "Complete o perfil empresarial"}
+              {step === 2 && "Qual é a sua empresa?"}
+              {step === 3 && "Onde fica a empresa?"}
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-              {step === 1 && "Esses dados serão usados para acessar e administrar a conta."}
-              {step === 2 && "As informações legais ajudam a manter a plataforma confiável."}
-              {step === 3 && "Você poderá editar essas informações depois no perfil da empresa."}
+              {step === 1 && "Use o e-mail de quem vai administrar as vagas."}
+              {step === 2 && "Informe o nome, o CNPJ e o setor de atuação."}
+              {step === 3 && "Busque o endereço e selecione um dos resultados."}
             </p>
           </div>
 
@@ -287,7 +239,7 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
                   />
                 </div>
               </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-4">
                 <Field label="CNPJ" htmlFor="company-cnpj">
                   <input
                     id="company-cnpj"
@@ -298,21 +250,11 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
                     onChange={(e) => updateField("cnpj", formatCnpj(e.target.value))}
                   />
                 </Field>
-                <Field label="Segmento" htmlFor="company-industry">
-                  <select
-                    id="company-industry"
-                    className="auth-input"
-                    value={form.industry}
-                    onChange={(e) => updateField("industry", e.target.value)}
-                  >
-                    <option value="">Selecione</option>
-                    {INDUSTRIES.map((industry) => (
-                      <option key={industry} value={industry}>
-                        {industry}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
+                <fieldset>
+                  <legend className="mb-2 text-sm font-medium">Qual é o setor de atuação?</legend>
+                  <RegistrationOptions label="Setor de atuação" options={INDUSTRIES} value={form.industry}
+                    onChange={value => updateField("industry", value)} />
+                </fieldset>
               </div>
               <Field label="Site da empresa (opcional)" htmlFor="company-website">
                 <input
@@ -373,8 +315,7 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
               </div>
             </div>
           )}
-        </motion.div>
-      </AnimatePresence>
+      </div>
 
       <AnimatePresence>
         {error && (
@@ -420,6 +361,7 @@ export function CompanyRegistrationForm({ onBackToLogin }: CompanyRegistrationFo
           </button>
         )}
       </div>
+      </RegistrationStep>
     </form>
   )
 }

@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -59,17 +58,16 @@ export function SettingsPanel({
   )
 }
 
-/** Interruptor acessível (role="switch") com estado próprio. */
+/** Interruptor acessível (role="switch") controlado. */
 export function SettingsSwitch({
-  checked: defaultChecked,
+  checked,
   label,
   onChange,
 }: {
   checked: boolean
   label: string
-  onChange?: (checked: boolean) => void
+  onChange: (checked: boolean) => void
 }) {
-  const [checked, setChecked] = useState(defaultChecked)
 
   return (
     <button
@@ -77,11 +75,7 @@ export function SettingsSwitch({
       role="switch"
       aria-checked={checked}
       aria-label={label}
-      onClick={() => {
-        const next = !checked
-        setChecked(next)
-        onChange?.(next)
-      }}
+      onClick={() => onChange(!checked)}
       className={cn(
         "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card",
         checked ? "bg-primary" : "bg-border-strong",

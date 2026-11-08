@@ -93,8 +93,8 @@ export function StepRevisao({
 
         <ReviewSection stepId="salario" onEdit={onEdit}>
           <p className="text-base font-semibold tabular-nums">
-            {formatCurrency(draft.salario)}
-            <span className="ml-1 text-xs font-medium text-muted-foreground">/ mês</span>
+            {draft.salarioACombinar ? "A combinar" : formatCurrency(draft.salario)}
+            {!draft.salarioACombinar && <span className="ml-1 text-xs font-medium text-muted-foreground">/ mês</span>}
           </p>
         </ReviewSection>
 

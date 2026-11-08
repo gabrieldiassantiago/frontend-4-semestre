@@ -77,8 +77,8 @@ export function LivePreview({
           </div>
 
           <p className="mt-4 text-2xl font-bold tracking-tight text-foreground">
-            <Animated value={draft.salario > 0 ? formatCurrency(draft.salario) : "R$ —"} />
-            <span className="ml-1 text-xs font-medium text-muted-foreground">/ mês</span>
+            <Animated value={draft.salarioACombinar ? "A combinar" : draft.salario > 0 ? formatCurrency(draft.salario) : "R$ —"} />
+            {!draft.salarioACombinar && <span className="ml-1 text-xs font-medium text-muted-foreground">/ mês</span>}
           </p>
 
           <dl className="mt-4 space-y-2.5 border-t border-border-subtle pt-4 text-xs">

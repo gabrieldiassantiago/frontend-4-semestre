@@ -21,7 +21,7 @@ export function AttentionPanel({ vagas, candidaturas }: { vagas: Vaga[]; candida
       icon: Inbox,
       tone: "bg-primary-subtle text-primary",
       title: `${awaiting} ${awaiting === 1 ? "candidatura aguarda" : "candidaturas aguardam"} triagem`,
-      description: "Avalie os perfis e avance quem combina com a vaga.",
+      description: "Abrir fila de triagem.",
       href: ROUTES.company.processes,
     })
   }
@@ -48,10 +48,10 @@ export function AttentionPanel({ vagas, candidaturas }: { vagas: Vaga[]; candida
   }
 
   return (
-    <section aria-labelledby="attention-title" className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)]">
+    <section aria-labelledby="attention-title" className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between gap-3 px-6 pb-4 pt-6">
         <h2 id="attention-title" className="text-base font-semibold tracking-tight text-foreground">
-          Para cuidar hoje
+          Pendências de recrutamento
         </h2>
         {tasks.length > 0 && (
           <span className="grid h-6 min-w-6 place-items-center rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground">

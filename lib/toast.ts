@@ -1,10 +1,11 @@
-export interface SuccessToast {
+export interface ToastNotice {
   id: number
+  tone: "success" | "error"
   message: string
 }
 
-const empty: SuccessToast[] = []
-let current: SuccessToast[] = empty
+const empty: ToastNotice[] = []
+let current: ToastNotice[] = empty
 let sequence = 0
 const listeners = new Set<() => void>()
 
@@ -21,9 +22,16 @@ export function dismissToast(id: number) {
   listeners.forEach((listener) => listener())
 }
 
-/** Chame somente depois de a ação ter sido confirmada. */
-export function toastSuccess(message: string) {
+function showToast(message: string, tone: ToastNotice["tone"]) {
   if (typeof window === "undefined") return
-  current = [...current.filter((item) => item.message !== message), { id: ++sequence, message }].slice(-3)
+  current = [...current.filter((item) => item.message !== message), { id: ++sequence, message, tone }].slice(-3)
   listeners.forEach((listener) => listener())
+}
+
+export function toastSuccess(message: string) {
+  showToast(message, "success")
+}
+
+export function toastError(message: string) {
+  showToast(message, "error")
 }

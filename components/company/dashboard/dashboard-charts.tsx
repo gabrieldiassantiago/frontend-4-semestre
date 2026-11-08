@@ -1,9 +1,9 @@
 "use client"
 
-import { useId, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { useReducedMotion } from "framer-motion"
 import { ROUTES } from "@/lib/config/routes"
 import {
@@ -22,31 +22,21 @@ const axis = { fill: "var(--muted-foreground)", fontSize: 11 }
 
 const METRICS = {
   candidaturas: { label: "Candidaturas", color: "var(--primary)" },
-  vagas: { label: "Vagas publicadas", color: "var(--info)" },
+  vagas: { label: "Vagas publicadas", color: "var(--mint-strong)" },
 } as const
 
 type Metric = keyof typeof METRICS
 
-export default function DashboardCharts({ vagas, candidaturas }: { vagas: Vaga[]; candidaturas: Candidatura[] }) {
-  return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <ActivityChart vagas={vagas} candidaturas={candidaturas} className="lg:col-span-2" />
-      <FunnelCard candidaturas={candidaturas} />
-    </div>
-  )
-}
-
 function Panel({ className, children, ...props }: React.ComponentProps<"section">) {
   return (
-    <section className={cn("flex min-w-0 flex-col rounded-3xl border border-border/80 bg-card p-5 shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)] sm:p-7", className)} {...props}>
+    <section className={cn("flex min-w-0 flex-col rounded-2xl border border-border bg-card p-5 sm:p-5", className)} {...props}>
       {children}
     </section>
   )
 }
 
-function ActivityChart({ vagas, candidaturas, className }: { vagas: Vaga[]; candidaturas: Candidatura[]; className?: string }) {
+export function ActivityChart({ vagas, candidaturas, className }: { vagas: Vaga[]; candidaturas: Candidatura[]; className?: string }) {
   const reducedMotion = useReducedMotion()
-  const gradient = useId().replace(/:/g, "")
   const [weeks, setWeeks] = useState(8)
   const [metric, setMetric] = useState<Metric>("candidaturas")
   const timeline = useMemo(() => weeklyBuckets(vagas, candidaturas, weeks), [vagas, candidaturas, weeks])
@@ -59,9 +49,8 @@ function ActivityChart({ vagas, candidaturas, className }: { vagas: Vaga[]; cand
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 id="activity-title" className="text-base font-semibold tracking-tight text-foreground">
-            Ritmo do recrutamento
+            Atividade semanal
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">As conexões que sua empresa está construindo.</p>
         </div>
         <SegmentedControl
           label="Período do gráfico"
@@ -71,7 +60,7 @@ function ActivityChart({ vagas, candidaturas, className }: { vagas: Vaga[]; cand
         />
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:max-w-md" role="group" aria-label="Métrica do gráfico">
+      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Métrica do gráfico">
         {(Object.keys(METRICS) as Metric[]).map((key) => {
           const sum = timeline.reduce((acc, point) => acc + point[key], 0)
           const selected = metric === key
@@ -82,49 +71,41 @@ function ActivityChart({ vagas, candidaturas, className }: { vagas: Vaga[]; cand
               aria-pressed={selected}
               onClick={() => setMetric(key)}
               className={cn(
-                "rounded-2xl border px-4 py-3 text-left transition-colors",
-                selected ? "border-foreground bg-surface" : "border-border hover:bg-muted",
+                "inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left transition-colors",
+                selected ? "border-primary-soft bg-primary-subtle" : "border-border hover:bg-muted",
               )}
             >
               <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <span aria-hidden className="size-2 rounded-full" style={{ background: METRICS[key].color }} />
                 {METRICS[key].label}
               </span>
-              <span className="mt-1 block text-xl font-semibold tabular-nums text-foreground">{sum}</span>
+              <span className="text-sm font-semibold tabular-nums text-ink">{sum}</span>
             </button>
           )
         })}
       </div>
 
       {total ? (
-        <div className="mt-6 h-64 w-full sm:h-72">
+        <div className="mt-4 h-36 w-full sm:h-44">
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-            <AreaChart data={timeline} margin={{ top: 8, right: 8, left: -24, bottom: 0 }} accessibilityLayer>
-              <defs>
-                <linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={config.color} stopOpacity={0.24} />
-                  <stop offset="100%" stopColor={config.color} stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
+            <BarChart data={timeline} margin={{ top: 8, right: 8, left: -24, bottom: 0 }} accessibilityLayer>
               <CartesianGrid vertical={false} stroke="var(--border-subtle)" />
               <XAxis dataKey="label" tick={axis} axisLine={false} tickLine={false} minTickGap={24} />
               <YAxis tick={axis} allowDecimals={false} axisLine={false} tickLine={false} />
               <Tooltip
                 content={<ChartTooltip label={config.label} />}
-                cursor={{ stroke: "var(--border-strong)", strokeDasharray: "4 4" }}
+                cursor={{ fill: "var(--surface)" }}
               />
-              <Area
-                type="monotone"
+              <Bar
                 dataKey={metric}
                 name={config.label}
-                stroke={config.color}
-                strokeWidth={2.5}
-                fill={`url(#${gradient})`}
-                activeDot={{ r: 5, stroke: "var(--card)", strokeWidth: 3 }}
+                fill={config.color}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={32}
                 isAnimationActive={!reducedMotion}
                 animationDuration={600}
               />
-            </AreaChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       ) : (
@@ -192,7 +173,7 @@ const STATUS_COLORS: Record<StatusCandidatura, string> = {
   CANCELADA: "bg-border-strong",
 }
 
-function FunnelCard({ candidaturas }: { candidaturas: Candidatura[] }) {
+export function FunnelCard({ candidaturas }: { candidaturas: Candidatura[] }) {
   const total = candidaturas.length
   // Cada vaga tem seu próprio fluxo: só conta quem passou pela etapa dentro do fluxo da sua vaga.
   const flows = candidaturas.map((item) => {
@@ -284,7 +265,7 @@ function FunnelCard({ candidaturas }: { candidaturas: Candidatura[] }) {
 
 function EmptyChart({ text }: { text: string }) {
   return (
-    <div className="mt-5 flex h-56 items-center justify-center rounded-xl border border-dashed border-border bg-surface px-6 text-center text-sm leading-relaxed text-muted-foreground">
+    <div className="mt-5 flex h-36 items-center justify-center rounded-xl border border-dashed border-border bg-surface px-6 text-center text-sm leading-relaxed text-muted-foreground">
       {text}
     </div>
   )

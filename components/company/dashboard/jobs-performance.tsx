@@ -25,13 +25,13 @@ export function JobsPerformance({ vagas, candidaturas }: { vagas: Vaga[]; candid
     .slice(0, LIMIT)
 
   return (
-    <section aria-labelledby="jobs-performance-title" className="min-w-0 overflow-hidden rounded-3xl border border-border/80 bg-card shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)]">
+    <section aria-labelledby="jobs-performance-title" className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between gap-3 px-6 pb-4 pt-6">
         <div>
           <h2 id="jobs-performance-title" className="text-base font-semibold tracking-tight text-foreground">
             Desempenho por vaga
           </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">Candidaturas e andamento de cada oportunidade.</p>
+          {vagas.length > LIMIT && <p className="mt-1 text-xs text-muted-foreground">{LIMIT} de {vagas.length} vagas</p>}
         </div>
         {vagas.length > 0 && <SectionLink href={ROUTES.company.jobs}>Ver todas</SectionLink>}
       </div>
@@ -52,13 +52,13 @@ export function JobsPerformance({ vagas, candidaturas }: { vagas: Vaga[]; candid
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] text-left text-sm">
+          <table className="w-full sm:min-w-[520px] text-left text-sm">
             <caption className="sr-only">Desempenho das vagas publicadas</caption>
-            <thead>
+            <thead className="border-y border-border-subtle bg-surface">
               <tr className="text-xs text-muted-foreground">
                 <th scope="col" className="px-5 py-3 font-medium">Vaga</th>
                 <th scope="col" className="px-3 py-3 text-right font-medium">Candidatos</th>
-                <th scope="col" className="w-[34%] px-5 py-3 font-medium">Andamento</th>
+                <th scope="col" className="hidden sm:table-cell w-[34%] px-5 py-3 font-medium">Andamento</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
@@ -67,14 +67,14 @@ export function JobsPerformance({ vagas, candidaturas }: { vagas: Vaga[]; candid
                   <td className="px-5 py-3.5">
                     <Link
                       href={`${ROUTES.company.processes}?vaga=${encodeURIComponent(vaga.id)}`}
-                      className="flex items-center gap-3 outline-none"
+                      className="flex items-center gap-3 rounded focus-visible:outline-primary"
                     >
                       <span
                         aria-hidden
                         className={cn("size-2 shrink-0 rounded-full", vaga.ativa ? "bg-success" : "bg-border-strong")}
                       />
                       <span className="min-w-0">
-                        <span className="block truncate font-semibold text-foreground group-hover:text-primary">{vaga.titulo}</span>
+                        <span className="block break-words font-semibold text-foreground group-hover:text-primary">{vaga.titulo}</span>
                         <span className="block truncate text-xs text-muted-foreground">
                           {MODALIDADE_LABELS[vaga.modalidade]} · {vaga.cidade}
                           {vaga.ativa ? "" : " · Pausada"}
@@ -83,7 +83,7 @@ export function JobsPerformance({ vagas, candidaturas }: { vagas: Vaga[]; candid
                     </Link>
                   </td>
                   <td className="px-3 py-3.5 text-right text-base font-semibold tabular-nums text-foreground">{total}</td>
-                  <td className="px-5 py-3.5">
+                  <td className="hidden px-5 py-3.5 sm:table-cell">
                     {total ? (
                       <>
                         <div className="flex h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>

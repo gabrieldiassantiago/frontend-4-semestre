@@ -28,7 +28,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
       currency: "BRL",
       maximumFractionDigits: 0,
     })
-    : null
+    : "A combinar"
 
   return new ImageResponse(
     (
@@ -120,7 +120,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           <div style={{ display: "flex", flexDirection: "column" }}>
             {salario ? (
               <span style={{ fontSize: "38px", fontWeight: 700, color: "#09090b" }}>
-                {salario} <span style={{ fontSize: "24px", color: "#71717a" }}>/ mês</span>
+                {salario} {Boolean(vaga?.salario) && <span style={{ fontSize: "24px", color: "#71717a" }}>/ mês</span>}
               </span>
             ) : (
               <span style={{ fontSize: "28px", fontWeight: 600, color: "#09090b" }}>

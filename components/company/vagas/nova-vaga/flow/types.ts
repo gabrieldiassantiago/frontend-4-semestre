@@ -13,6 +13,7 @@ export interface VagaDraft {
   modalidade: VagaModalidade
   quantidadeVagas: number
   salario: number
+  salarioACombinar: boolean
   cidade: string
   estado: string
   latitude: number

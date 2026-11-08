@@ -1,4 +1,6 @@
 "use client"
+
+import { resumeHref } from "@/lib/utils/resume"
 import { etapaLabel } from "@/lib/types/candidatura.types"
 import { ROUTES } from "@/lib/config/routes"
 import { useMemo, useState } from "react"
@@ -461,7 +463,7 @@ function InscricaoRealizada(
     onDesistir: () => void
   },
 ) {
-  const hasCurriculo = !!curriculoUrl && isWebUrl(curriculoUrl)
+  const resume = resumeHref(curriculoUrl)
 
   return (
     <section aria-labelledby="application-documents-title" className={cn(cardBase, "p-6")}>
@@ -499,8 +501,8 @@ function InscricaoRealizada(
       <h3 className="mt-6 text-sm font-medium text-muted-foreground">Documentos</h3>
       <ul className="mt-3 space-y-2">
         <li>
-          {hasCurriculo ? (<a
-            href={curriculoUrl!}
+          {resume ? (<a
+            href={resume}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-3 rounded-xl bg-surface p-3 transition-colors hover:bg-muted">

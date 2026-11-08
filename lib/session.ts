@@ -1,8 +1,3 @@
-/**
- * Helpers de sessão que rodam em qualquer runtime (proxy, servidor e browser).
- * Não validam a assinatura do JWT — isso é papel do backend. Servem apenas para
- * descobrir papel e expiração sem uma ida à API.
- */
 
 export type SessionRole = "CANDIDATE" | "COMPANY"
 
@@ -49,7 +44,6 @@ function decodeBase64Url(segment: string) {
   return new TextDecoder().decode(bytes)
 }
 
-/** Retorna `null` quando o token não é um JWT legível. */
 export function readSessionClaims(token: string): SessionClaims | null {
   try {
     const payload = token.split(".")[1]
@@ -72,7 +66,6 @@ export function isSessionExpired(claims: SessionClaims | null, now = Date.now())
   return claims.expiresAt - EXPIRY_LEEWAY_MS <= now
 }
 
-/** URL de login preservando a página de origem e sinalizando sessão expirada. */
 export function buildLoginRedirect(from: string, expired = true) {
   const params = new URLSearchParams({ from })
   if (expired) params.set("expired", "1")

@@ -1,5 +1,7 @@
 "use client"
 
+import { resumeHref } from "@/lib/utils/resume"
+
 import { etapaLabel } from "@/lib/types/candidatura.types"
 
 
@@ -72,7 +74,7 @@ export function CompanyCandidateDetailScreen({ candidaturaId }: { candidaturaId:
 
   const { candidatura } = detalhe
   const profile = profileQuery.profile
-  const resume = documentUrl(candidatura.curriculoUrl ?? profile?.resumeUrl)
+  const resume = resumeHref(candidatura.curriculoUrl ?? profile?.resumeUrl)
   const nome = candidatura.candidatoNome ?? profile?.userName ?? "Candidato"
   const imagem = profile?.profileImageUrl ?? candidatura.candidatoImagemUrl
   const location = [profile?.city, profile?.state].filter(Boolean).join(", ")
@@ -260,7 +262,7 @@ export function CompanyCandidateDetailScreen({ candidaturaId }: { candidaturaId:
                   </object>
                 </div>
               ) : (
-                <EmptyBlock icon={FileText} text="Nenhum currículo foi anexado a esta candidatura." />
+                <EmptyBlock icon={FileText} text="Currículo indisponível para esta candidatura." />
               ))}
 
             {tab === "carta" &&

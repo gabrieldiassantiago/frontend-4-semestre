@@ -10,12 +10,6 @@ export interface SettingsNavSection {
   icon: LucideIcon
   danger?: boolean
 }
-
-/**
- * Navegação das configurações com destaque da seção visível (scroll spy).
- * Mobile/tablet: faixa horizontal fixa no topo, rolável.
- * Desktop: coluna lateral fixa.
- */
 export function SettingsNav({ sections }: { sections: readonly SettingsNavSection[] }) {
   const [activeId, setActiveId] = useState(sections[0]?.id)
   const listRef = useRef<HTMLUListElement>(null)
@@ -40,7 +34,6 @@ export function SettingsNav({ sections }: { sections: readonly SettingsNavSectio
     return () => observer.disconnect()
   }, [sections])
 
-  // Mantém o item ativo visível na faixa horizontal do mobile.
   useEffect(() => {
     const list = listRef.current
     const item = list?.querySelector<HTMLElement>(`[data-section="${activeId}"]`)

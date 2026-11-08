@@ -43,7 +43,7 @@ export function PipelineCandidateCard(
           <span
             className={item.curriculoUrl ? "inline-flex items-center gap-1.5 rounded-full bg-primary-subtle px-2.5 py-1.5 text-[10px] font-medium text-primary-subtle-foreground" : "rounded-full bg-surface px-2.5 py-1.5 text-[10px] text-muted-foreground"}>
             {item.curriculoUrl && <FileText aria-hidden className="size-3" />}
-            {item.curriculoUrl ? "Currículo anexado" : "Sem currículo"}
+            {item.curriculoUrl ? "Currículo anexado" : "Currículo indisponível"}
           </span>
         </div>
       </button>

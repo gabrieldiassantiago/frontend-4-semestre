@@ -111,12 +111,12 @@ function useInvalidateVagas() {
   return () => queryClient.invalidateQueries({ queryKey: queryKeys.vagas.all })
 }
 
-export function useCreateVaga() {
+export function useCreateVaga(options?: { silent?: boolean }) {
   const invalidate = useInvalidateVagas()
   return useMutation({
     mutationFn: async (dto: CreateVagaDto) => unwrap(await createVagaAction(dto)),
     onSuccess: () => {
-      toastSuccess("Vaga publicada com sucesso!")
+      if (!options?.silent) toastSuccess("Vaga publicada com sucesso!")
       void invalidate()
     },
   })

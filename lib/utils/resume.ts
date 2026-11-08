@@ -1,3 +1,18 @@
+const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+const privateResumePath = new RegExp(`^/candidate-profile/(${uuid})/resume/(${uuid}\\.pdf)$`, "i")
+
+export function resumeHref(value?: string | null) {
+  if (!value) return null
+  const match = privateResumePath.exec(value)
+  if (match) return `/api/curriculos/${match[1]}/${match[2]}`
+  try {
+    const url = new URL(value)
+    return ["https:", "http:"].includes(url.protocol) ? url.href : null
+  } catch {
+    return null
+  }
+}
+
 export const MAX_RESUME_SIZE = 10 * 1024 * 1024
 
 export async function validateResume(file: File): Promise<string | null> {

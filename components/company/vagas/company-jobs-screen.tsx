@@ -71,10 +71,9 @@ export function CompanyJobsScreen() {
   return (
     <PageShell className="max-w-[1380px]">
       <PageHeader
-        eyebrow="Recrutamento"
-        title="Suas vagas, novas possibilidades."
-        description="Cada oportunidade é o começo de uma nova história. Cuide das suas vagas por aqui."
-        actions={<Link href={ROUTES.company.newJob} className="btn-primary rounded-full px-5"><Plus aria-hidden className="size-4" />Criar uma vaga</Link>}
+        className="flex-row items-center justify-between gap-3 sm:items-center [&_h1]:text-ink"
+        title="Vagas da empresa"
+        actions={<Link href={ROUTES.company.newJob} className="btn-primary rounded-xl px-4"><Plus aria-hidden className="size-4" />Criar vaga</Link>}
       />
 
       {(error || actionError) && (
@@ -84,28 +83,27 @@ export function CompanyJobsScreen() {
         </div>
       )}
 
-      <div className="mt-8">
-        <div className="mb-6 flex flex-col gap-4 border-b border-border pb-5 md:flex-row md:items-center md:justify-between">
-          <div role="tablist" aria-label="Filtrar por status" className="no-scrollbar flex gap-1 overflow-x-auto">
+      <div className="mt-5 sm:mt-6">
+        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div role="group" aria-label="Filtrar por status" className="flex max-w-full self-start gap-0.5 rounded-2xl border border-border bg-card p-1">
             {STATUS_FILTERS.map((filter) => {
               const selected = status === filter.id
               return (
                 <button
                   key={filter.id}
                   type="button"
-                  role="tab"
-                  aria-selected={selected}
+                  aria-pressed={selected}
                   onClick={() => setStatus(filter.id)}
                   className={cn(
-                    "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors",
-                    selected ? "bg-foreground text-background" : "text-muted-foreground hover:bg-card hover:text-foreground",
+                    "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-2 text-xs font-semibold transition-colors focus-visible:outline-primary sm:px-4 sm:text-sm",
+                    selected ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-primary-subtle hover:text-primary-deep",
                   )}
                 >
                   {filter.label}
                   <span
                     className={cn(
                       "rounded-full px-1.5 text-xs tabular-nums",
-                      selected ? "bg-background/15 text-background" : "bg-card text-muted-foreground",
+                      selected ? "bg-primary-deep/40 text-primary-foreground" : "bg-surface text-strong-foreground",
                     )}
                   >
                     {counts[filter.id]}
@@ -119,9 +117,9 @@ export function CompanyJobsScreen() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar uma oportunidade"
+            placeholder="Buscar por título, cidade ou estado"
             aria-label="Buscar vaga"
-            wrapperClassName="w-full md:max-w-sm"
+            wrapperClassName="w-full lg:max-w-sm"
           />
         </div>
 
@@ -138,7 +136,7 @@ export function CompanyJobsScreen() {
                 ? "Tente outro termo de busca ou limpe os filtros atuais."
                 : "Publique sua primeira oportunidade para começar a receber candidaturas."
             }
-            className="rounded-none border-0"
+            className="rounded-3xl border border-dashed border-primary-soft bg-card"
             action={
               hasFilters ? (
                 <button

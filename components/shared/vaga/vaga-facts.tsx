@@ -94,8 +94,8 @@ export function VagaHighlights({
   return (
     <ul className={cn("flex list-none flex-col gap-2", className)}>
       <Highlight icon={Wallet} tone="salary">
-        <span className="font-semibold text-foreground">{formatCurrency(vaga.salario)}</span>
-        <span className="text-muted-foreground"> / mês</span>
+        <span className="font-semibold text-foreground">{vaga.salario > 0 ? formatCurrency(vaga.salario) : "A combinar"}</span>
+        {vaga.salario > 0 && <span className="text-muted-foreground"> / mês</span>}
       </Highlight>
 
       <Highlight icon={MapPin} tone="location">

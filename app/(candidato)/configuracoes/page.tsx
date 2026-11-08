@@ -1,15 +1,8 @@
 import type { Metadata } from "next"
 import { SettingsScreen } from "@/components/candidate/settings/settings-screen"
 
-export const metadata: Metadata = {
-  title: "Configurações",
-  description: "Configurações da sua conta",
-}
+export const metadata: Metadata = { title: "Configurações" }
 
 export default function ConfiguracoesPage() {
-  return <div>
-    <h1>
-      
-    </h1>
-  </div>
+  return <SettingsScreen />
 }

@@ -48,13 +48,13 @@ export function RecommendedJobCard({ vaga }: { vaga: Vaga }) {
             <dd className="truncate">{location}</dd>
           </div>
         )}
-        {vaga.salario ? (
+        {(
           <div className="flex items-center gap-2">
             <dt className="sr-only">Salário</dt>
             <Wallet aria-hidden className="size-4 shrink-0 text-subtle-foreground" />
-            <dd className="font-semibold text-strong-foreground">{formatCurrency(vaga.salario)} / mês</dd>
+            <dd className="font-semibold text-strong-foreground">{vaga.salario > 0 ? `${formatCurrency(vaga.salario)} / mês` : "A combinar"}</dd>
           </div>
-        ) : null}
+        )}
       </dl>
     </Link>
   )

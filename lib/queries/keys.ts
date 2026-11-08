@@ -6,6 +6,7 @@ import type { VagaFilters, VagaProximasParams } from "@/lib/types/vaga.types"
  * qualquer tela invalidem exatamente as consultas afetadas.
  */
 export const queryKeys = {
+  preferences: { me: () => ["preferences", "me"] as const },
   candidateProfile: {
     all: ["candidate-profile"] as const,
     me: () => ["candidate-profile", "me"] as const,

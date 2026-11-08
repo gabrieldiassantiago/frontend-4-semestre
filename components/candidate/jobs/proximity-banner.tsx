@@ -1,6 +1,6 @@
 "use client"
 
-import { Crosshair, MapPin, X, AlertTriangle, RefreshCw, ChevronRight } from "lucide-react"
+import { MapPin, X, AlertTriangle, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export const RADII_OPTIONS = [5, 10, 25, 50] as const
@@ -74,57 +74,58 @@ export function ProximityBanner({
   if (!isActive) return null
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary-subtle/80 via-primary-subtle/40 to-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-3">
-        <div className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-xs">
-          <Crosshair className="size-4" />
-          <span className="absolute -top-0.5 -right-0.5 flex size-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-            <span className="relative inline-flex size-2.5 rounded-full bg-success" />
-          </span>
-        </div>
-
-        <div>
-          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary">
-            <span>Busca por Proximidade Ativa</span>
-          </p>
-          <p className="text-sm font-semibold text-foreground">
-            Exibindo vagas em um raio de{" "}
-            <span className="font-bold text-primary">{raioKm} km</span> da sua localização
+    <section
+      aria-label="Filtro por proximidade"
+      className="flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card p-4"
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-subtle text-primary">
+          <MapPin aria-hidden className="size-5" strokeWidth={1.7} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-ink">Vagas perto de você</h2>
+          <p role="status" className="mt-0.5 text-xs leading-5 text-muted-foreground">
+            Até <span className="font-semibold text-primary-deep">{raioKm} km</span> da sua localização
           </p>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1 rounded-xl bg-surface/80 p-1 border border-border">
-          <span className="px-2 text-[11px] font-semibold text-muted-foreground">Raio:</span>
-          {RADII_OPTIONS.map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => onChangeRaio(r)}
-              className={cn(
-                "rounded-lg px-2.5 py-1 text-xs font-bold transition-all",
-                raioKm === r
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              {r} km
-            </button>
-          ))}
+      <div className="flex w-full items-end gap-3 sm:w-auto">
+        <div className="min-w-0 flex-1">
+          <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">Distância máxima</p>
+          <div
+            role="group"
+            aria-label="Distância máxima da busca"
+            className="grid grid-cols-4 gap-1 rounded-xl border border-border-subtle bg-surface p-1"
+          >
+            {RADII_OPTIONS.map(radius => (
+              <button
+                key={radius}
+                type="button"
+                aria-pressed={raioKm === radius}
+                onClick={() => onChangeRaio(radius)}
+                className={cn(
+                  "min-h-9 min-w-11 rounded-lg px-2 text-xs font-medium tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                  raioKm === radius
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-card hover:text-primary-deep",
+                )}
+              >
+                {radius} km
+              </button>
+            ))}
+          </div>
         </div>
-
         <button
           type="button"
           onClick={onClear}
-          title="Desativar busca por proximidade"
-          className="inline-flex items-center gap-1 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-border-strong hover:bg-muted hover:text-foreground"
+          aria-label="Remover filtro por proximidade"
+          title="Remover filtro por proximidade"
+          className="mb-0.5 grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <X className="size-3.5" />
-          <span>Limpar</span>
+          <X aria-hidden className="size-4" />
         </button>
       </div>
-    </div>
+    </section>
   )
 }

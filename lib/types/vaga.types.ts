@@ -62,6 +62,7 @@ export interface Vaga {
   id: string
   titulo: string
   salario: number
+  salarioACombinar?: boolean
   quantidadeVagas?: number
   descricao: string
   beneficios?: string
@@ -87,6 +88,7 @@ export interface Vaga {
 export interface CreateVagaDto {
   titulo: string
   salario: number
+  salarioACombinar?: boolean
   quantidadeVagas?: number
   descricao: string
   beneficios?: string
@@ -115,6 +117,7 @@ export interface EtapaVaga {
 export interface UpdateVagaDto {
   titulo?: string
   salario?: number
+  salarioACombinar?: boolean
   quantidadeVagas?: number
   descricao?: string
   beneficios?: string

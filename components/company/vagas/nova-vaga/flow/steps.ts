@@ -51,7 +51,7 @@ export const FLOW_STEPS: FlowStep[] = [
     id: "salario",
     label: "Salário",
     title: "Quanto a vaga paga?",
-    description: "Vagas com salário transparente recebem até 3x mais candidaturas qualificadas.",
+    description: "Informe o valor mensal ou escolha combinar o salário durante o processo.",
     icon: Wallet,
   },
   {
@@ -99,7 +99,7 @@ export const EDIT_STEPS: FlowStep[] = FLOW_STEPS.filter((step) => step.id !== "p
     case "local":
       return { ...step, title: "Local de trabalho", description: "Onde a pessoa contratada vai atuar." }
     case "salario":
-      return { ...step, title: "Salário", description: "Valores transparentes atraem candidaturas mais qualificadas." }
+      return { ...step, title: "Salário", description: "Informe o valor mensal ou selecione salário a combinar." }
     case "beneficios":
       return { ...step, title: "Benefícios", description: "Marque ou desmarque o que a vaga oferece." }
     case "descricao":
@@ -134,7 +134,7 @@ export function validateStep(id: StepId, draft: VagaDraft): DraftErrors {
     case "local":
       return draft.cidade.trim() ? {} : { cidade: "Escolha onde fica a vaga." }
     case "salario":
-      return draft.salario > 0 ? {} : { salario: "Informe um salário maior que zero." }
+      return draft.salarioACombinar || draft.salario > 0 ? {} : { salario: "Informe um salário maior que zero." }
     case "descricao":
       return stripHtml(draft.descricao) ? {} : { descricao: "Escreva a descrição da vaga." }
     case "processo":
@@ -156,7 +156,7 @@ export function stepSummary(id: StepId, draft: VagaDraft): string | null {
     case "local":
       return draft.cidade ? `${draft.cidade}${draft.estado ? `, ${draft.estado}` : ""}` : null
     case "salario":
-      return draft.salario > 0 ? formatCurrency(draft.salario) : null
+      return draft.salarioACombinar ? "A combinar" : draft.salario > 0 ? formatCurrency(draft.salario) : null
     case "beneficios":
       return `${draft.beneficios.length} ${draft.beneficios.length === 1 ? "benefício" : "benefícios"}`
     case "descricao": {
