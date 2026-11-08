@@ -1,7 +1,8 @@
 "use client"
 
-import { Fragment, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
-import { ArrowUp, Check, CheckCheck, Clock, LoaderCircle, MessageCircle, MessageSquarePlus } from "lucide-react"
+import { Fragment, useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react"
+import { MotionConfig, motion } from "framer-motion"
+import { ArrowUp, Check, CheckCheck, Clock, LoaderCircle, MessageCircle, MessageSquarePlus, Sparkles } from "lucide-react"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { CardSkeleton, ErrorState } from "@/components/ui/states"
 import { useEnviarMensagem, useMarcarLidas, useMensagens, type ChatConexao } from "@/lib/queries/use-chat"
@@ -26,6 +27,8 @@ const SUGESTOES_EMPRESA = [
 /** Mensagens do mesmo remetente enviadas em até 5 minutos formam um grupo visual. */
 const GROUP_WINDOW_MS = 5 * 60 * 1000
 
+const EASE_OUT = [0.22, 1, 0.36, 1] as const
+
 /**
  * Histórico + campo de envio. A API só deixa a empresa enviar a primeira
  * mensagem; até lá o candidato vê a tela de espera.
@@ -37,43 +40,74 @@ export function ChatConversa({ candidaturaId, perspectiva, contatoNome, contatoI
 
   if (aguardandoEmpresa) {
     return (
-      <div className={cn("flex min-h-0 flex-1 flex-col bg-surface", className)}>
-        <AguardandoEmpresa contatoNome={contatoNome} />
-      </div>
+      <MotionConfig reducedMotion="user">
+        <div className={cn("chat-canvas flex min-h-0 flex-1 flex-col", className)}>
+          <AguardandoEmpresa contatoNome={contatoNome} />
+        </div>
+      </MotionConfig>
     )
   }
 
   const vazio = !loading && !error && mensagens.length === 0
 
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
-      <Historico
-        candidaturaId={candidaturaId}
-        perspectiva={perspectiva}
-        contatoNome={contatoNome}
-        contatoImagemUrl={contatoImagemUrl}
+    <MotionConfig reducedMotion="user">
+      <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
+        <Historico
+          candidaturaId={candidaturaId}
+          perspectiva={perspectiva}
+          contatoNome={contatoNome}
+          contatoImagemUrl={contatoImagemUrl}
+        />
+        <ChatComposer
+          candidaturaId={candidaturaId}
+          texto={rascunho}
+          onTextoChange={setRascunho}
+          sugestoes={vazio && perspectiva === "empresa" ? SUGESTOES_EMPRESA : undefined}
+        />
+      </div>
+    </MotionConfig>
+  )
+}
+
+/** Ícone com anéis pulsando: transmite "estamos esperando algo" sem parecer travado. */
+function IconePulsante({ children, tone = "muted" }: { children: ReactNode; tone?: "muted" | "primary" }) {
+  return (
+    <span className="relative grid size-14 place-items-center">
+      <motion.span
+        aria-hidden
+        className={cn("absolute inset-0 rounded-2xl", tone === "primary" ? "bg-primary/20" : "bg-muted-foreground/15")}
+        animate={{ scale: [1, 1.45], opacity: [0.7, 0] }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
       />
-      <ChatComposer
-        candidaturaId={candidaturaId}
-        texto={rascunho}
-        onTextoChange={setRascunho}
-        sugestoes={vazio && perspectiva === "empresa" ? SUGESTOES_EMPRESA : undefined}
-      />
-    </div>
+      <span
+        className={cn(
+          "relative grid size-14 place-items-center rounded-2xl shadow-card",
+          tone === "primary" ? "bg-primary-subtle text-primary" : "bg-card text-muted-foreground",
+        )}
+      >
+        {children}
+      </span>
+    </span>
   )
 }
 
 function AguardandoEmpresa({ contatoNome }: { contatoNome: string }) {
   return (
-    <div className="m-auto flex max-w-xs flex-col items-center px-6 py-10 text-center">
-      <span className="grid size-12 place-items-center rounded-2xl bg-muted text-muted-foreground">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: EASE_OUT }}
+      className="m-auto flex max-w-xs flex-col items-center px-6 py-10 text-center"
+    >
+      <IconePulsante>
         <Clock className="size-5" aria-hidden />
-      </span>
-      <p className="mt-4 text-base font-semibold text-foreground">Aguardando a empresa</p>
+      </IconePulsante>
+      <p className="mt-5 text-base font-semibold tracking-tight text-foreground">Aguardando a empresa</p>
       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
         O chat é aberto por {contatoNome}. Assim que a empresa iniciar a conversa, você poderá responder por aqui e em Mensagens.
       </p>
-    </div>
+    </motion.div>
   )
 }
 
@@ -91,6 +125,7 @@ function Historico({
   const { mensagens, naoLidas, loading, error, refetch } = useMensagens(candidaturaId)
   const marcarLidas = useMarcarLidas(candidaturaId)
   const fimRef = useRef<HTMLLIElement>(null)
+  const primeiraRenderizacao = useRef(true)
 
   const marcar = marcarLidas.mutate
   // Só dispara quando o total muda, para uma falha no PATCH não virar um loop de tentativas.
@@ -99,11 +134,17 @@ function Historico({
   }, [naoLidas, marcar])
 
   useEffect(() => {
-    fimRef.current?.scrollIntoView({ block: "end" })
+    // Primeira carga vai direto ao fim; mensagens novas rolam suavemente.
+    fimRef.current?.scrollIntoView({ block: "end", behavior: primeiraRenderizacao.current ? "auto" : "smooth" })
+    primeiraRenderizacao.current = false
   }, [mensagens.length, candidaturaId])
 
   return (
-    <ol aria-label="Mensagens" aria-live="polite" className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-surface px-4 py-5 sm:px-6">
+    <ol
+      aria-label="Mensagens"
+      aria-live="polite"
+      className="chat-canvas flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-5 sm:px-6"
+    >
       {loading ? (
         <li>
           <CardSkeleton rows={3} />
@@ -121,19 +162,22 @@ function Historico({
         </li>
       ) : mensagens.length === 0 ? (
         <li className="m-auto flex max-w-xs flex-col items-center text-center">
-          <span className="grid size-12 place-items-center rounded-2xl bg-primary-subtle text-primary">
-            {perspectiva === "empresa" ? (
-              <MessageSquarePlus className="size-5" aria-hidden />
-            ) : (
-              <MessageCircle className="size-5" aria-hidden />
-            )}
-          </span>
-          <p className="mt-4 text-sm font-semibold text-foreground">Comece a conversa</p>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            {perspectiva === "empresa"
-              ? `Envie a primeira mensagem para ${contatoNome}. O histórico fica salvo para os dois lados.`
-              : "Envie uma mensagem sobre esta candidatura."}
-          </p>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: EASE_OUT }}
+            className="flex flex-col items-center"
+          >
+            <IconePulsante tone="primary">
+              {perspectiva === "empresa" ? <MessageSquarePlus className="size-5" aria-hidden /> : <MessageCircle className="size-5" aria-hidden />}
+            </IconePulsante>
+            <p className="mt-5 text-sm font-semibold tracking-tight text-foreground">Comece a conversa</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {perspectiva === "empresa"
+                ? `Envie a primeira mensagem para ${contatoNome}. O histórico fica salvo para os dois lados.`
+                : "Envie uma mensagem sobre esta candidatura."}
+            </p>
+          </motion.div>
         </li>
       ) : (
         mensagens.map((mensagem, index) => {
@@ -146,10 +190,12 @@ function Historico({
           return (
             <Fragment key={`${mensagem.enviadoEm}-${index}`}>
               {novoDia && dia && (
-                <li role="separator" className="my-4 flex justify-center first:mt-0">
-                  <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] font-semibold text-muted-foreground">
+                <li role="separator" className="my-5 flex items-center gap-3 first:mt-0">
+                  <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
+                  <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] font-semibold tracking-wide text-muted-foreground shadow-card">
                     {dia}
                   </span>
+                  <span aria-hidden className="h-px flex-1 bg-gradient-to-l from-transparent to-border" />
                 </li>
               )}
               <MensagemItem
@@ -173,15 +219,27 @@ function mesmoGrupo(a: ChatMensagem, b: ChatMensagem) {
   return Math.abs(new Date(b.enviadoEm).getTime() - new Date(a.enviadoEm).getTime()) <= GROUP_WINDOW_MS
 }
 
+const CONEXAO_ESTILO = {
+  online: { label: "Tempo real", chip: "bg-success-subtle text-success-foreground", dot: "bg-success", ping: true },
+  conectando: { label: "Conectando", chip: "bg-warning-subtle text-warning-foreground", dot: "bg-warning", ping: false },
+  offline: { label: "Offline", chip: "bg-muted text-muted-foreground", dot: "bg-subtle-foreground", ping: false },
+} as const
+
 export function StatusConexao({ conexao }: { conexao: ChatConexao }) {
-  const config = {
-    online: { label: "Tempo real", dot: "bg-success" },
-    conectando: { label: "Conectando", dot: "bg-warning animate-pulse" },
-    offline: { label: "Offline", dot: "bg-subtle-foreground" },
-  }[conexao]
+  const config = CONEXAO_ESTILO[conexao]
   return (
-    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground">
-      <span aria-hidden className={cn("size-1.5 rounded-full", config.dot)} />
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors duration-300",
+        config.chip,
+      )}
+    >
+      <span aria-hidden className="relative flex size-1.5">
+        {config.ping && (
+          <span className="absolute inline-flex h-full w-full rounded-full bg-success opacity-75 motion-safe:animate-ping" />
+        )}
+        <span className={cn("relative inline-flex size-1.5 rounded-full", config.dot, conexao === "conectando" && "animate-pulse")} />
+      </span>
       {config.label}
     </span>
   )
@@ -202,30 +260,39 @@ function MensagemItem({
 }) {
   const minha = mensagem.enviadoPorSiMesmo
   return (
-    <li className={cn("flex items-end gap-2", minha ? "justify-end" : "justify-start", inicioGrupo ? "mt-3" : "mt-0.5")}>
+    <li className={cn("flex items-end gap-2", minha ? "justify-end" : "justify-start", inicioGrupo ? "mt-4" : "mt-1")}>
       {!minha && (
         <span className="w-8 shrink-0">
           {fimGrupo && (
-            <EntityAvatar name={mensagem.remetente || contatoNome} src={contatoImagemUrl} size="sm" className="size-8 rounded-full" />
+            <EntityAvatar
+              name={mensagem.remetente || contatoNome}
+              src={contatoImagemUrl}
+              size="sm"
+              className="size-8 rounded-full ring-2 ring-card"
+            />
           )}
         </span>
       )}
       <div className={cn("flex max-w-[80%] flex-col gap-1 sm:max-w-[65%]", minha ? "items-end" : "items-start")}>
         {!minha && inicioGrupo && <span className="px-1 text-[11px] font-semibold text-muted-foreground">{mensagem.remetente}</span>}
-        <p
+        <motion.p
+          initial={{ opacity: 0, y: 10, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.3, ease: EASE_OUT }}
           className={cn(
-            "whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
-            minha ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground",
+            "whitespace-pre-wrap break-words px-3.5 py-2.5 text-sm leading-relaxed",
+            minha ? "bubble-mine text-primary-foreground" : "border border-border-subtle bg-card text-foreground shadow-card",
             minha && !inicioGrupo && "rounded-tr-md",
             minha && !fimGrupo && "rounded-br-md",
             minha && fimGrupo && "rounded-br-sm",
             !minha && !inicioGrupo && "rounded-tl-md",
             !minha && !fimGrupo && "rounded-bl-md",
             !minha && fimGrupo && "rounded-bl-sm",
+            "rounded-2xl",
           )}
         >
           {mensagem.mensagem}
-        </p>
+        </motion.p>
         {fimGrupo && (
           <span className="flex items-center gap-1 px-1 text-[11px] text-subtle-foreground">
             <time dateTime={mensagem.enviadoEm}>{formatHora(mensagem.enviadoEm)}</time>
@@ -240,6 +307,16 @@ function MensagemItem({
       </div>
     </li>
   )
+}
+
+const SUGESTOES_CONTAINER = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+}
+
+const SUGESTAO_ITEM = {
+  hidden: { opacity: 0, y: 6 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: EASE_OUT } },
 }
 
 function ChatComposer({
@@ -280,30 +357,43 @@ function ChatComposer({
   }
 
   return (
-    <form onSubmit={(event) => void submeter(event)} className="border-t border-border-subtle bg-card px-4 py-3 sm:px-6">
+    <form onSubmit={(event) => void submeter(event)} className="border-t border-border-subtle bg-card/95 px-4 pb-3 pt-3 backdrop-blur sm:px-6">
       {sugestoes && !texto && (
-        <div className="mb-3 flex gap-2 overflow-x-auto pb-1" aria-label="Sugestões de mensagem">
+        <motion.div
+          variants={SUGESTOES_CONTAINER}
+          initial="hidden"
+          animate="show"
+          className="mb-3 flex gap-2 overflow-x-auto pb-1"
+          aria-label="Sugestões de mensagem"
+        >
+          <span className="flex shrink-0 items-center gap-1 text-[11px] font-semibold text-primary">
+            <Sparkles aria-hidden className="size-3.5" />
+            Sugestões
+          </span>
           {sugestoes.map((sugestao) => (
-            <button
+            <motion.button
               key={sugestao}
+              variants={SUGESTAO_ITEM}
               type="button"
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => {
                 onTextoChange(sugestao)
                 inputRef.current?.focus()
               }}
-              className="shrink-0 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-strong-foreground transition-colors hover:border-primary/40 hover:bg-primary-subtle"
+              className="shrink-0 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-strong-foreground shadow-card transition-colors hover:border-primary/40 hover:bg-primary-subtle hover:text-primary-subtle-foreground"
             >
               {sugestao}
-            </button>
+            </motion.button>
           ))}
-        </div>
+        </motion.div>
       )}
       {erro && (
         <p role="alert" className="mb-2 text-xs font-medium text-danger-foreground">
           {erro}
         </p>
       )}
-      <div className="flex items-end gap-2 rounded-2xl border border-border bg-background py-1.5 pl-3 pr-1.5 transition-colors focus-within:border-primary focus-within:shadow-[0_0_0_3px_var(--primary-ring)]">
+      <div className="flex items-end gap-2 rounded-2xl border border-border bg-background py-1.5 pl-3 pr-1.5 shadow-card transition-[border-color,box-shadow] duration-200 focus-within:border-primary focus-within:shadow-[0_0_0_4px_var(--primary-ring)]">
         <label htmlFor={`chat-${candidaturaId}`} className="sr-only">
           Escreva uma mensagem
         </label>
@@ -318,18 +408,21 @@ function ChatComposer({
           placeholder="Escreva uma mensagem..."
           className="max-h-36 min-h-9 flex-1 resize-none bg-transparent py-2 text-sm leading-relaxed text-foreground outline-none [field-sizing:content] placeholder:text-subtle-foreground"
         />
-        <button
+        <motion.button
           type="submit"
           disabled={!podeEnviar}
           aria-label="Enviar mensagem"
-          className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary-hover disabled:bg-muted disabled:text-subtle-foreground"
+          whileHover={podeEnviar ? { scale: 1.06 } : undefined}
+          whileTap={podeEnviar ? { scale: 0.88, rotate: -8 } : undefined}
+          transition={{ type: "spring", stiffness: 500, damping: 22 }}
+          className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-none transition-[background-color,box-shadow,color] duration-200 enabled:shadow-[0_6px_16px_-6px_var(--primary)] hover:bg-primary-hover disabled:bg-muted disabled:text-subtle-foreground"
         >
           {enviar.isPending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <ArrowUp className="size-4" aria-hidden />}
-        </button>
+        </motion.button>
       </div>
       <p className="mt-1.5 flex justify-between gap-3 px-1 text-[11px] text-subtle-foreground">
         <span className="hidden sm:inline">Enter envia · Shift+Enter quebra linha</span>
-        <span className={cn("ml-auto tabular-nums", pertoDoLimite ? "font-semibold text-warning-foreground" : "invisible")}>
+        <span className={cn("ml-auto tabular-nums transition-colors", pertoDoLimite ? "font-semibold text-warning-foreground" : "invisible")}>
           {texto.length}/{CHAT_MAX_CARACTERES}
         </span>
       </p>

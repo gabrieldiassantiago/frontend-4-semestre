@@ -42,6 +42,30 @@
   animation-delay: calc(var(--stagger-index, 0) * 55ms);
 }
 
+/* Chat: fundo com pontilhado e brilho suave no canto superior, como nos apps de mensagem modernos. */
+.chat-canvas {
+  background-color: var(--surface);
+  background-image:
+    radial-gradient(color-mix(in oklab, var(--primary) 8%, transparent) 1px, transparent 1px),
+    radial-gradient(ellipse 80% 60% at 100% 0%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 70%);
+  background-size: 22px 22px, 100% 100%;
+}
+
+/* Bolha enviada por quem está logado: gradiente da marca com sombra colorida. */
+.bubble-mine {
+  background-image: linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 140%);
+  box-shadow: 0 8px 20px -10px color-mix(in oklab, var(--primary) 70%, transparent);
+}
+
+@keyframes chat-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.chat-float {
+  animation: chat-float 3.2s ease-in-out infinite;
+}
+
 /* Textura pontilhada violeta do hero, esmaecendo a partir do canto superior direito. */
 .hero-dots {
   background-image: radial-gradient(color-mix(in oklab, var(--primary) 22%, transparent) 1px, transparent 1px);
@@ -55,6 +79,7 @@
   .motion-enter,
   .motion-pop,
   .motion-stagger > * { animation: none; }
+  .chat-float { animation: none; }
 }
 
 /*
