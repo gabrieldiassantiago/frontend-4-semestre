@@ -13,12 +13,16 @@ import {
   CircleAlert,
   FileText,
   LoaderCircle,
+  MapPin,
   UserRound,
+  Wallet,
 } from "lucide-react"
+import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { Modal } from "@/components/ui/modal"
 import { Field } from "@/components/ui/form-field"
 import { Alert, Skeleton } from "@/components/ui/states"
 import { Badge } from "@/components/ui/badge"
+import { TickBar } from "@/components/ui/tick-bar"
 import { useCandidateProfile, useUploadCandidateResume } from "@/lib/queries/use-candidate-profile"
 import { useCriarCandidatura } from "@/lib/queries/use-candidaturas"
 import { ApplicationResumePicker, type ResumeSelection } from "./application-resume-picker"
@@ -30,7 +34,6 @@ import type { Vaga } from "@/lib/types/vaga.types"
 import type { Candidatura } from "@/lib/types/candidatura.types"
 import { cn } from "@/lib/utils"
 import sucessoVagaAnimation from "@/public/images/sucesso_vaga.json"
-import Image from "next/image"
 import { CompanyLogo } from "@/components/shared/company-logo"
 import styles from "./apply-modal.module.css"
 
@@ -44,24 +47,30 @@ const CARTA_MAX = 2000
 
 function StepTrack({ current }: { current: number }) {
   return (
-    <ol aria-label={`Etapa ${current} de ${STEPS.length}`} className="grid grid-cols-3 gap-2 rounded-xl border border-border/60 bg-surface/70 p-2">
-      {STEPS.map((step) => {
+    <ol aria-label={`Etapa ${current} de ${STEPS.length}`} className="flex items-center">
+      {STEPS.map((step, index) => {
         const active = step.id === current
         const done = step.id < current
-        const StepIcon = done ? Check : step.icon
-
         return (
-          <li key={step.id} aria-current={active ? "step" : undefined} className={cn("flex min-w-0 items-center justify-center rounded-lg px-1 py-2 transition-colors", active && "bg-card shadow-card")}>
-            <span
-              className={cn(
-                "flex items-center gap-1.5 text-[11px] font-medium transition-colors",
-                active ? "text-primary-subtle-foreground" : done ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              <span aria-hidden className={cn("grid size-5 shrink-0 place-items-center rounded-full text-[10px]", active ? "bg-primary text-white" : done ? "bg-primary-subtle text-primary" : "bg-border/50 text-muted-foreground")}>{done ? <StepIcon className="size-3" /> : step.id}</span>
-              <span className="truncate">{step.label}</span>
-              {done && <span className="sr-only">(concluída)</span>}
+          <li key={step.id} aria-current={active ? "step" : undefined} className={cn("flex items-center", index < STEPS.length - 1 && "flex-1")}>
+            <span className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className={cn(
+                  "grid size-8 shrink-0 place-items-center rounded-full text-xs font-semibold tabular-nums transition-colors",
+                  active ? "bg-primary text-primary-foreground ring-4 ring-primary/15" : done ? "bg-mint text-ink" : "border border-border bg-card text-muted-foreground",
+                )}
+              >
+                {done ? <Check className="size-3.5" strokeWidth={3} /> : step.id}
+              </span>
+              <span className={cn("text-xs font-medium transition-colors", active ? "text-ink" : done ? "text-strong-foreground" : "text-muted-foreground")}>
+                {step.label}
+                {done && <span className="sr-only"> (concluída)</span>}
+              </span>
             </span>
+            {index < STEPS.length - 1 && (
+              <span aria-hidden className={cn("mx-3 h-0.5 flex-1 rounded-full transition-colors", done ? "bg-mint" : "bg-border")} />
+            )}
           </li>
         )
       })}
@@ -183,10 +192,10 @@ export function ApplyModal({
         className={styles.dialog}
         footer={
           <>
-            <button type="button" onClick={onClose} className="btn-secondary">
+            <button type="button" onClick={onClose} className="btn-secondary rounded-full">
               Ver outras vagas
             </button>
-            <Link href={ROUTES.candidate.application(criada.id)} className="btn-primary">
+            <Link href={ROUTES.candidate.application(criada.id)} className="btn-primary rounded-full px-5">
               Acompanhar processo
               <ArrowRight className="size-4" aria-hidden />
             </Link>
@@ -194,10 +203,10 @@ export function ApplyModal({
         }
       >
         <div className="flex flex-col items-center py-2 text-center">
-          <div className="flex size-32 items-center justify-center">
-            {reduceMotion ? <BadgeCheck aria-hidden className="size-16 text-success" /> : <Lottie
+          <div className="flex size-48 items-center justify-center">
+            {reduceMotion ? <BadgeCheck aria-hidden className="size-24 text-success" /> : <Lottie
               src={sucessoVagaAnimation}
-              loop={false}
+              loop={true}
               autoplay
               aria-label="Candidatura enviada com sucesso"
               className="size-32"
@@ -205,7 +214,7 @@ export function ApplyModal({
           </div>
 
           <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground text-balance">
-            Candidatura enviada para {company}
+            Você fez a sua parte! Agora é com a {company}
           </h3>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground text-pretty">
             Sua candidatura para {vaga.titulo} foi recebida. Acompanhe as próximas etapas e os feedbacks da empresa pelo seu painel.
@@ -218,21 +227,21 @@ export function ApplyModal({
   const footer =
     step === 1 ? (
       <>
-        <button type="button" onClick={onClose} className="btn-ghost">
+        <button type="button" onClick={onClose} className="btn-ghost rounded-full">
           Cancelar
         </button>
-        <button type="button" onClick={avancar} disabled={loadingProfile} className="btn-primary min-w-32">
+        <button type="button" onClick={avancar} disabled={loadingProfile} className="btn-primary min-w-32 rounded-full px-5">
           Continuar
           <ArrowRight className="size-4" aria-hidden />
         </button>
       </>
     ) : step === 2 ? (
       <>
-        <button type="button" onClick={() => changeStep(1)} disabled={checkingResume} className="btn-ghost">
+        <button type="button" onClick={() => changeStep(1)} disabled={checkingResume} className="btn-ghost rounded-full">
           <ArrowLeft className="size-4" aria-hidden />
           Voltar
         </button>
-        <button type="button" onClick={avancar} disabled={checkingResume} className="btn-primary min-w-32">
+        <button type="button" onClick={avancar} disabled={checkingResume} className="btn-primary min-w-32 rounded-full px-5">
           {checkingResume ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null}
           {checkingResume ? "Verificando arquivo..." : "Revisar candidatura"}
           {!checkingResume && <ArrowRight className="size-4" aria-hidden />}
@@ -244,12 +253,12 @@ export function ApplyModal({
           type="button"
           onClick={() => changeStep(2)}
           disabled={submitting}
-          className="btn-ghost"
+          className="btn-ghost rounded-full"
         >
           <ArrowLeft className="size-4" aria-hidden />
           Voltar
         </button>
-        <button type="button" onClick={() => void enviar()} disabled={submitting} className="btn-primary">
+        <button type="button" onClick={() => void enviar()} disabled={submitting} className="btn-primary rounded-full px-5">
           {submitting && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
           {submitting ? "Enviando" : "Enviar candidatura"}
         </button>
@@ -262,20 +271,30 @@ export function ApplyModal({
       onClose={() => { if (!submitLock.current && !checkingResume) onClose() }}
       title={`Candidatar-se para ${vaga.titulo}`}
       size="md"
-      className={cn(styles.dialog, "sm:max-w-[600px]")}
-      bodyClassName="bg-surface/35"
+      className={cn(styles.dialog, "sm:max-w-[600px] sm:rounded-[28px]")}
+      bodyClassName="bg-surface"
       footer={footer}
-      footerStart={<span className="text-[11px]">Etapa <span className="font-semibold text-foreground">{step}</span> de 3</span>}
+      footerStart={<span className="text-xs">Etapa <span className="font-semibold text-foreground">{step}</span> de 3</span>}
       header={
-        <div className="flex flex-col gap-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Nova candidatura</p>
-          <div className="flex items-center gap-3">
-            <CompanyLogo name={company} url={vaga.logoUrlEmpresa} size="md" />
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-muted-foreground">{company}</p>
-              <h2 className="mt-0.5 text-base font-semibold leading-snug tracking-tight text-foreground">
-                {vaga.titulo}
-              </h2>
+        <div className="flex flex-col gap-5">
+          <div className="flex items-start gap-4">
+            <CompanyLogo name={company} url={vaga.logoUrlEmpresa} size="lg" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-muted-foreground">Candidatura para {company}</p>
+              <h2 className="mt-0.5 text-lg font-semibold leading-snug tracking-tight text-ink">{vaga.titulo}</h2>
+              <p className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs text-strong-foreground [&>span]:inline-flex [&>span]:min-h-7 [&>span]:items-center [&>span]:rounded-full [&>span]:bg-surface [&>span]:px-2.5">
+                <span>{MODALIDADE_LABELS[vaga.modalidade]}</span>
+                {vaga.cidade && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin aria-hidden className="size-3" />
+                    {[vaga.cidade, vaga.estado].filter(Boolean).join(", ")}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1">
+                  <Wallet aria-hidden className="size-3" />
+                  {vaga.salarioACombinar || !(vaga.salario > 0) ? "A combinar" : formatCurrency(vaga.salario)}
+                </span>
+              </p>
             </div>
           </div>
           <StepTrack current={step} />
@@ -292,7 +311,7 @@ export function ApplyModal({
             {step === 1 && (
               <div className="flex flex-col gap-5">
                 <div>
-                  <h3 className="text-sm font-semibold tracking-tight text-foreground text-balance">
+                  <h3 className="text-base font-semibold tracking-tight text-foreground text-balance">
                     Confira o que a empresa vai ver
                   </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground text-pretty">
@@ -307,52 +326,32 @@ export function ApplyModal({
                   </div>
                 ) : (
                   <>
-                    <div
-                      className={cn(
-                        "rounded-xl border p-3.5",
-                        completion.ready
-                          ? "border-success/15 bg-success-subtle/50"
-                          : "border-border/70 bg-card",
-                      )}
-                    >
-                      <div className="flex items-center justify-between gap-3 text-xs font-bold">
-                        <span
-                          className={
-                            completion.ready ? "text-success-foreground" : "text-strong-foreground"
-                          }
-                        >
-                          Perfil {completion.value}% completo
-                        </span>
+                    <div className="rounded-2xl border border-border/60 bg-card p-4">
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="font-semibold text-ink">Perfil {completion.value}% completo</span>
                         {completion.ready && (
-                          <span className="flex items-center gap-1.5 text-success-foreground">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-mint-strong">
                             <BadgeCheck className="size-4" aria-hidden />
                             Pronto para enviar
                           </span>
                         )}
                       </div>
-
                       <div
                         role="progressbar"
                         aria-valuenow={completion.value}
                         aria-valuemin={0}
                         aria-valuemax={100}
                         aria-label="Progresso do perfil"
-                        className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-background"
+                        className="mt-3"
                       >
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-[width] duration-500",
-                            completion.ready ? "bg-success" : "bg-primary",
-                          )}
-                          style={{ width: `${completion.value}%` }}
-                        />
+                        <TickBar value={completion.value} ticks={32} className="h-5" />
                       </div>
                     </div>
 
                     {profile && (
-                      <div className="rounded-xl border border-border/70 bg-card p-4">
+                      <div className="rounded-2xl border border-border/60 bg-card p-4">
                         <div className="flex items-center gap-3">
-                          <Image src={profile.profileImageUrl ?? "/images/avatar-placeholder.png"} alt="" width={48} height={48} className="rounded-full" />
+                          <EntityAvatar name={profile.userName} src={profile.profileImageUrl} size="md" className="size-12 rounded-full" />
                           <div className="min-w-0">
                             <p className="truncate text-sm font-bold text-foreground">
                               {profile.userName || "Minha conta"}
@@ -376,7 +375,7 @@ export function ApplyModal({
                     )}
 
                     {completion.missing.length > 0 && (
-                      <details className="rounded-xl border border-border/70 bg-card p-4">
+                      <details className="rounded-2xl border border-border/60 bg-card p-4">
                         <summary className="cursor-pointer text-xs font-semibold text-strong-foreground">
                           Oportunidades para melhorar seu perfil ({completion.missing.length})
                         </summary>
@@ -418,7 +417,7 @@ export function ApplyModal({
             {step === 2 && (
               <div className="flex flex-col gap-5">
                 <div>
-                  <h3 className="text-sm font-semibold tracking-tight text-foreground text-balance">
+                  <h3 className="text-base font-semibold tracking-tight text-foreground text-balance">
                     Conte por que essa vaga é para você
                   </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground text-pretty">
@@ -448,7 +447,7 @@ export function ApplyModal({
             {step === 3 && (
               <div className="flex flex-col gap-5">
                 <div>
-                  <h3 className="text-sm font-semibold tracking-tight text-foreground text-balance">
+                  <h3 className="text-base font-semibold tracking-tight text-foreground text-balance">
                     Tudo certo para enviar?
                   </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground text-pretty">
@@ -456,7 +455,7 @@ export function ApplyModal({
                   </p>
                 </div>
 
-                <dl className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-card">
+                <dl className="divide-y divide-border-subtle overflow-hidden rounded-2xl border border-border/60 bg-card">
                   <div className="flex items-start justify-between gap-4 px-4 py-3">
                     <dt className="text-sm text-muted-foreground">Vaga</dt>
                     <dd className="min-w-0 text-right text-sm font-semibold text-foreground text-pretty">
@@ -473,7 +472,7 @@ export function ApplyModal({
                       {MODALIDADE_LABELS[vaga.modalidade]}
                     </dd>
                   </div>
-                  {vaga.salario > 0 && (
+                  {vaga.salario > 0 && !vaga.salarioACombinar && (
                     <div className="flex items-start justify-between gap-4 px-4 py-3">
                       <dt className="text-sm text-muted-foreground">Salário</dt>
                       <dd className="text-right text-sm font-semibold text-foreground">

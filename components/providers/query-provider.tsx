@@ -9,7 +9,6 @@ import { SessionWatcher, redirectToLogin } from "./session-watcher"
 function createQueryClient() {
   let redirecting = false
 
-  // 401 numa tela protegida significa token vencido/recusado: volta para o login.
   function handleUnauthorized(error: unknown) {
     if (redirecting || typeof window === "undefined") return
     if (!isApiError(error, 401) || !isProtectedPath(window.location.pathname)) return
@@ -25,7 +24,6 @@ function createQueryClient() {
         staleTime: 60 * 1000,
         refetchOnWindowFocus: false,
         retry: (failureCount, error) => {
-          // 4xx é regra de negócio/autorização; repetir não muda o resultado.
           if (isApiError(error) && error.status >= 400 && error.status < 500) return false
           return failureCount < 2
         },

@@ -172,7 +172,10 @@ export interface CandidaturaHistorico {
   etapaNova: EtapaProcesso
   statusAnterior?: StatusCandidatura
   statusNovo: StatusCandidatura
+  /** Mensagem visível ao candidato. */
   observacao?: string
+  /** Anotação da equipe. O backend só envia quando quem consulta é a empresa. */
+  notaInterna?: string
   autorUserId?: string
   autorNome?: string
   createdAt?: string
@@ -218,6 +221,44 @@ export interface CandidaturaAgendamento {
 }
 
 
+/** Agendamento na listagem geral da empresa: reunião + candidato + vaga. */
+export interface AgendamentoEmpresa {
+  id: string
+  candidaturaId: string
+  candidaturaStatus: StatusCandidatura
+  vagaId: string
+  vagaTitulo: string
+  candidatoUserId?: string
+  candidatoNome: string
+  candidatoEmail?: string
+  candidatoHeadline?: string
+  candidatoImagemUrl?: string
+  etapa: EtapaProcesso
+  etapaDescricao?: string
+  titulo: string
+  mensagem?: string
+  inicio: string
+  duracaoMinutos: number
+  link: string
+  status: StatusAgendamento
+  statusDescricao?: string
+  criadoPorUserId?: string
+  criadoPorNome?: string
+  motivoCancelamento?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface AgendamentoEmpresaFilters {
+  status?: StatusAgendamento
+  /** Somente os agendamentos criados pelo usuário logado. */
+  criadoPorMim?: boolean
+  /** ISO-8601: início da janela (inclusivo). */
+  de?: string
+  /** ISO-8601: fim da janela (exclusivo). */
+  ate?: string
+}
+
 export interface CreateCandidaturaDto {
   vagaId: string
   cartaApresentacao?: string
@@ -226,12 +267,18 @@ export interface CreateCandidaturaDto {
 
 export interface AvancarEtapaDto {
   etapa: EtapaProcesso
+  /** Mensagem ao candidato (histórico, notificação e e-mail). */
   observacao?: string
+  /** Só a equipe da empresa vê. */
+  notaInterna?: string
 }
 
 export interface DecidirCandidaturaDto {
   status: Extract<StatusCandidatura, "APROVADA" | "REPROVADA">
+  /** Mensagem ao candidato (histórico, notificação e e-mail). */
   motivo?: string
+  /** Só a equipe da empresa vê. */
+  notaInterna?: string
 }
 
 export interface CreateFeedbackDto {

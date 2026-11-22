@@ -82,8 +82,8 @@ export function ResumeUpload({ profile, onProfileChange, onUploadingChange }: Re
           const selected = event.dataTransfer.files[0]
           if (selected) void upload(selected)
         }}
-        className={cn("flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-5 py-8 text-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary disabled:opacity-60", dragging ? "border-primary bg-primary-subtle" : "border-border-strong bg-muted/50 hover:border-primary hover:bg-primary-subtle/50")}>
-        <span className="grid size-12 place-items-center rounded-2xl bg-primary-subtle text-primary">
+        className={cn("flex w-full flex-col items-center gap-3 rounded-3xl border-2 border-dashed px-5 py-10 text-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary disabled:opacity-60", dragging ? "border-primary bg-primary-subtle" : "border-border-strong bg-muted/50 hover:border-primary hover:bg-primary-subtle/50")}>
+        <span className="grid size-14 place-items-center rounded-full bg-primary-subtle text-primary">
           {uploading ? <LoaderCircle className="size-6 animate-spin" aria-hidden /> : <Upload className="size-6" aria-hidden />}
         </span>
         <span className="text-base font-semibold">{uploading ? "Enviando seu currículo…" : source ? "Quer atualizar seu currículo?" : "Seu próximo passo pode estar neste PDF"}</span>

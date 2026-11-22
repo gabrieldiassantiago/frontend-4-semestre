@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { LayoutGroup, MotionConfig, motion } from "framer-motion"
-import { Search, MessageSquareText } from "lucide-react"
+import { Search } from "lucide-react"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { CardSkeleton, ErrorState } from "@/components/ui/states"
 import { formatQuando } from "./chat-conversa"
@@ -25,13 +25,18 @@ interface ChatListProps {
   onRetry: () => void
   activeId: string | null
   perspectiva: ChatPerspectiva
-  hrefFor: (candidaturaId: string) => string
+  /** Navega para a conversa (página de Mensagens). */
+  hrefFor?: (candidaturaId: string) => string
+  /** Alternativa ao link: seleciona a conversa sem sair da tela (painel de chat). */
+  onSelect?: (candidaturaId: string) => void
+  /** Esconde o título "Mensagens" quando quem usa a lista já tem o próprio cabeçalho. */
+  hideTitle?: boolean
   className?: string
 }
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const
 
-export function ChatList({ chats, naoLidas, loading, error, onRetry, activeId, perspectiva, hrefFor, className }: ChatListProps) {
+export function ChatList({ chats, naoLidas, loading, error, onRetry, activeId, perspectiva, hrefFor, onSelect, hideTitle, className }: ChatListProps) {
   const [busca, setBusca] = useState("")
   const [filtro, setFiltro] = useState<Filtro>("todas")
   const termo = busca.trim().toLocaleLowerCase("pt-BR")
@@ -48,20 +53,15 @@ export function ChatList({ chats, naoLidas, loading, error, onRetry, activeId, p
     <MotionConfig reducedMotion="user">
       <aside aria-label="Conversas" className={cn("flex min-h-0 flex-col border-border bg-card", className)}>
         <div className="flex flex-col gap-3.5 px-4 pb-3 pt-4">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground">
-              <span className="grid size-8 place-items-center rounded-lg bg-primary-subtle text-primary">
-                <MessageSquareText aria-hidden className="size-4" />
-              </span>
-              Mensagens
-            </h2>
+          <div className={cn("flex items-center justify-between gap-2", hideTitle && "hidden")}>
+            <h2 className="text-xl font-semibold tracking-tight text-ink">Mensagens</h2>
             {naoLidas > 0 && (
               <motion.span
                 key={naoLidas}
                 initial={{ scale: 0.6, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 500, damping: 18 }}
-                className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-[0_4px_12px_-4px_var(--primary)]"
+                className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground"
               >
                 {naoLidas} {naoLidas === 1 ? "nova" : "novas"}
               </motion.span>
@@ -148,7 +148,8 @@ export function ChatList({ chats, naoLidas, loading, error, onRetry, activeId, p
                     chat={chat}
                     perspectiva={perspectiva}
                     active={chat.candidaturaId === activeId}
-                    href={hrefFor(chat.candidaturaId)}
+                    href={hrefFor?.(chat.candidaturaId)}
+                    onSelect={onSelect ? () => onSelect(chat.candidaturaId) : undefined}
                   />
                 </motion.li>
               ))}
@@ -160,19 +161,27 @@ export function ChatList({ chats, naoLidas, loading, error, onRetry, activeId, p
   )
 }
 
-function ChatListItem({ chat, perspectiva, active, href }: { chat: Chat; perspectiva: ChatPerspectiva; active: boolean; href: string }) {
+function ChatListItem({
+  chat,
+  perspectiva,
+  active,
+  href,
+  onSelect,
+}: {
+  chat: Chat
+  perspectiva: ChatPerspectiva
+  active: boolean
+  href?: string
+  onSelect?: () => void
+}) {
   const contato = chatContato(chat, perspectiva)
   const naoLidas = chat.naoLidas ?? 0
-  return (
-    <Link
-      href={href}
-      scroll={false}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "group relative flex w-full items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-left transition-[background-color,transform] duration-200 active:scale-[0.98]",
-        active ? "bg-primary-subtle" : "hover:-translate-y-px hover:bg-muted",
-      )}
-    >
+  const className = cn(
+    "group relative flex w-full items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-left transition-[background-color,transform] duration-200 active:scale-[0.98]",
+    active ? "bg-primary-subtle/70" : "hover:bg-muted",
+  )
+  const conteudo = (
+    <>
       {active && (
         <motion.span
           layoutId="chat-ativo-indicador"
@@ -189,7 +198,7 @@ function ChatListItem({ chat, perspectiva, active, href }: { chat: Chat; perspec
           className={cn("rounded-full transition-shadow duration-200", active ? "ring-2 ring-primary/30" : "group-hover:ring-2 group-hover:ring-border")}
         />
         {naoLidas > 0 && (
-          <span aria-hidden className="absolute right-0 top-0 size-3 rounded-full bg-primary ring-2 ring-card motion-safe:animate-pulse" />
+          <span aria-hidden className="absolute right-0 top-0 size-3 rounded-full bg-primary ring-2 ring-card" />
         )}
       </span>
       <span className="min-w-0 flex-1">
@@ -199,7 +208,7 @@ function ChatListItem({ chat, perspectiva, active, href }: { chat: Chat; perspec
             {formatQuando(chat.ultimaMensagemEm)}
           </span>
         </span>
-        <span className="mt-0.5 block truncate text-[11px] font-medium uppercase tracking-wide text-subtle-foreground">{chat.vagaTitulo}</span>
+        <span className="mt-0.5 block truncate text-xs text-muted-foreground">{chat.vagaTitulo}</span>
         <span className="mt-0.5 flex items-center justify-between gap-2">
           <span className={cn("truncate text-sm", naoLidas ? "font-medium text-foreground" : "text-muted-foreground")}>
             {chat.ultimaMensagem || "Conversa iniciada"}
@@ -210,7 +219,7 @@ function ChatListItem({ chat, perspectiva, active, href }: { chat: Chat; perspec
               initial={{ scale: 0.5 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 600, damping: 20 }}
-              className="grid min-w-5 shrink-0 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-bold leading-5 text-primary-foreground shadow-[0_4px_10px_-4px_var(--primary)]"
+              className="grid min-w-5 shrink-0 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-bold leading-5 text-primary-foreground"
             >
               {naoLidas > 99 ? "99+" : naoLidas}
               <span className="sr-only"> mensagens não lidas</span>
@@ -218,6 +227,20 @@ function ChatListItem({ chat, perspectiva, active, href }: { chat: Chat; perspec
           )}
         </span>
       </span>
+    </>
+  )
+
+  if (onSelect || !href) {
+    return (
+      <button type="button" onClick={onSelect} aria-current={active ? "true" : undefined} className={className}>
+        {conteudo}
+      </button>
+    )
+  }
+
+  return (
+    <Link href={href} scroll={false} aria-current={active ? "page" : undefined} className={className}>
+      {conteudo}
     </Link>
   )
 }

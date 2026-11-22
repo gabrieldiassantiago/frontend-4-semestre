@@ -1,11 +1,12 @@
 "use client"
 
-import { ArrowLeft, ArrowRight, CornerDownLeft, Loader2, Rocket, Save } from "lucide-react"
+import { ArrowLeft, ArrowRight, Loader2, Rocket, Save } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { useFlow } from "./flow-context"
 
 /** Grade compartilhada entre conteúdo e rodapé para que os botões alinhem com a coluna central. */
 export const FLOW_GRID =
-  "mx-auto grid w-full max-w-7xl gap-x-10 px-4 sm:px-6 lg:grid-cols-[200px_minmax(0,1fr)] lg:px-8 xl:grid-cols-[200px_minmax(0,1fr)_280px]"
+  "mx-auto grid w-full max-w-7xl gap-x-10 px-4 sm:px-6 lg:px-8 xl:grid-cols-[minmax(0,1fr)_280px]"
 
 export function FlowFooter({
   isFirst,
@@ -29,38 +30,32 @@ export function FlowFooter({
   const editing = mode === "edit"
 
   return (
-    <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 mt-10 border-t border-border bg-background/90 backdrop-blur-md lg:bottom-0">
-      <div className={FLOW_GRID}>
-        <span aria-hidden className="hidden lg:block" />
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 py-3.5">
+    // Ações no fim do próprio formulário, sem faixa/caixa separada.
+    <div className="mt-10 flex items-center justify-between gap-2 border-t border-border-subtle pt-6 sm:gap-3">
           <button
             type="button"
             onClick={onBack}
             disabled={isFirst || submitting}
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-strong-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-0"
+            aria-label="Voltar para a etapa anterior"
+            className={cn(
+              "inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-border text-sm font-semibold text-strong-foreground transition-colors hover:bg-muted max-sm:size-11 sm:rounded-xl sm:border-transparent sm:px-3.5",
+              "disabled:pointer-events-none sm:disabled:opacity-0",
+              isFirst && "max-sm:hidden",
+            )}
           >
             <ArrowLeft className="size-4" aria-hidden />
-            Voltar
+            <span className="hidden sm:inline">Voltar</span>
           </button>
 
-          {!isLast && !editing && (
-            <p className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex">
-              Pressione
-              <kbd className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-0.5 font-sans text-[11px] font-semibold text-strong-foreground">
-                Enter <CornerDownLeft className="size-3" aria-hidden />
-              </kbd>
-              para continuar
-            </p>
-          )}
-
-          <div className="flex items-center gap-2">
+          <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
             {editing && !isLast && (
               <button
                 type="button"
                 onClick={onNext}
-                className="group inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold text-strong-foreground transition-colors hover:bg-muted"
+                aria-label="Próxima seção"
+                className="group inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold text-strong-foreground transition-colors hover:bg-muted max-sm:size-11 max-sm:rounded-full sm:px-4"
               >
-                Próxima
+                <span className="hidden sm:inline">Próxima</span>
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
               </button>
             )}
@@ -70,7 +65,7 @@ export function FlowFooter({
                 type="button"
                 onClick={onPublish}
                 disabled={submitting || (editing && !dirty)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-raised transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50 disabled:shadow-none"
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 sm:flex-none text-sm font-semibold text-primary-foreground shadow-raised transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50 disabled:shadow-none"
               >
                 {submitting ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -85,15 +80,13 @@ export function FlowFooter({
               <button
                 type="button"
                 onClick={onNext}
-                className="group inline-flex min-h-11 items-center gap-2 rounded-xl bg-foreground px-6 text-sm font-semibold text-background transition-all hover:opacity-90 active:scale-[0.98]"
+                className="group inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-foreground px-6 sm:flex-none text-sm font-semibold text-background transition-all hover:opacity-90 active:scale-[0.98]"
               >
                 Continuar
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
               </button>
             )}
           </div>
-        </div>
-      </div>
     </div>
   )
 }

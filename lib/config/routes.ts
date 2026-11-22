@@ -41,6 +41,7 @@ export const ROUTES = {
     candidates: "/empresa/candidatos",
     candidate: (id: string) => `/empresa/candidatos/${encodeURIComponent(id)}`,
     processes: "/empresa/processos",
+    appointments: "/empresa/agendamentos",
     messages: "/empresa/mensagens",
     chat: (candidaturaId: string) => `/empresa/mensagens?chat=${encodeURIComponent(candidaturaId)}`,
     profile: "/empresa/perfil",
@@ -73,6 +74,12 @@ export const HOME_BY_ROLE = {
   CANDIDATE: ROUTES.candidate.overview,
   COMPANY: ROUTES.company.dashboard,
 } as const
+
+/**
+ * Query param que liga a tela de boas-vindas no cadastro de perfil do candidato.
+ * Só é enviado para contas recém-criadas (cadastro por e-mail ou primeiro login social).
+ */
+export const WELCOME_PARAM = "boasVindas"
 
 /** `true` quando `pathname` é a rota ou uma sub-rota dela. */
 export function matchesRoute(pathname: string, route: string) {

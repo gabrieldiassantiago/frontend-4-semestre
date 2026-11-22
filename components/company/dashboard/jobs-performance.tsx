@@ -25,7 +25,7 @@ export function JobsPerformance({ vagas, candidaturas }: { vagas: Vaga[]; candid
     .slice(0, LIMIT)
 
   return (
-    <section aria-labelledby="jobs-performance-title" className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card">
+    <section aria-labelledby="jobs-performance-title" className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
       <div className="flex items-center justify-between gap-3 px-6 pb-4 pt-6">
         <div>
           <h2 id="jobs-performance-title" className="text-base font-semibold tracking-tight text-foreground">

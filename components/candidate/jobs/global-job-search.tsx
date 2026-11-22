@@ -1,17 +1,23 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { CornerDownLeft, Search, X } from "lucide-react"
 import { ROUTES } from "@/lib/config/routes"
 
+/** Id do campo de busca principal da tela de vagas (alvo do atalho Ctrl/Cmd+K). */
+export const JOB_PAGE_SEARCH_ID = "job-page-search"
+
 /** Busca da topbar: leva o termo para a tela de vagas via `?q=`. Atalho: "/" ou Ctrl/Cmd+K. */
 export function GlobalJobSearch() {
   const router = useRouter()
+  const pathname = usePathname()
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState("")
   const [focused, setFocused] = useState(false)
+  // Na tela de vagas já existe uma busca principal: evitamos duplicá-la na topbar.
+  const hasPageSearch = pathname === ROUTES.candidate.jobs
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -20,17 +26,20 @@ export function GlobalJobSearch() {
       const combo = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k"
       if (combo || (event.key === "/" && !typing)) {
         event.preventDefault()
-        inputRef.current?.focus()
+        const pageInput = document.getElementById(JOB_PAGE_SEARCH_ID) as HTMLInputElement | null
+        ;(pageInput ?? inputRef.current)?.focus()
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [])
 
+  if (hasPageSearch) return null
+
   return (
     <motion.form
       role="search"
-      className="relative hidden w-full max-w-sm md:block"
+      className="relative hidden w-full max-w-md md:block"
       onSubmit={(event) => {
         event.preventDefault()
         const term = query.trim()
@@ -57,7 +66,7 @@ export function GlobalJobSearch() {
         onBlur={() => setFocused(false)}
         placeholder="Buscar vagas ou empresas"
         autoComplete="off"
-        className="h-10 w-full rounded-lg border border-border/60 bg-surface/70 pl-11 pr-20 text-xs text-foreground transition-colors placeholder:text-muted-foreground hover:border-border-strong focus:border-primary/40 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/10"
+        className="h-11 w-full rounded-full border border-transparent bg-surface pl-11 pr-20 text-sm text-foreground transition-colors placeholder:text-muted-foreground hover:border-border focus:border-primary focus:bg-card focus:outline-none focus:ring-[3px] focus:ring-primary/10"
       />
       <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
         <AnimatePresence mode="wait" initial={false}>
@@ -93,7 +102,7 @@ export function GlobalJobSearch() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="rounded-md border border-border bg-card px-1.5 py-0.5 font-sans text-[11px] font-medium text-subtle-foreground"
+              className="rounded-full border border-border bg-card px-2 py-0.5 font-sans text-[11px] font-medium text-muted-foreground"
             >
               Ctrl K
             </motion.kbd>

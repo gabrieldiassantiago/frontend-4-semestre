@@ -1,11 +1,13 @@
 "use client"
 
+import { Select } from "@/components/ui/select"
 import { toastSuccess } from "@/lib/toast"
 import { recordSearchMetadataAction } from "@/actions/vagas"
 
 import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
+  BellRing,
   Building2,
   ChevronLeft,
   ChevronRight,
@@ -16,7 +18,6 @@ import {
   Loader2,
   RefreshCw,
   SearchX,
-  SlidersHorizontal,
   UserRound,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -41,23 +42,25 @@ import { MotionConfig, motion, useReducedMotion } from "framer-motion"
 
 function JobCardSkeleton() {
   return (
-    <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-xs">
+    <div className="rounded-[28px] border border-border/60 bg-card p-5 sm:p-6">
       <div className="flex items-start gap-4">
-        <Skeleton className="size-14 rounded-2xl" />
+        <Skeleton className="size-14 rounded-xl" />
         <div className="flex flex-1 flex-col gap-2">
-          <Skeleton className="h-3 w-28" />
-          <Skeleton className="h-5 w-56" />
-          <div className="mt-2 flex gap-2">
-            <Skeleton className="h-6 w-16 rounded-full" />
-            <Skeleton className="h-6 w-16 rounded-full" />
-            <Skeleton className="h-6 w-28 rounded-full" />
-          </div>
+          <Skeleton className="h-4 w-20 rounded-full" />
+          <Skeleton className="h-5 w-3/5" />
+          <Skeleton className="h-3.5 w-32" />
         </div>
       </div>
-      <div className="mt-4 flex gap-4 pt-2">
-        <Skeleton className="h-3.5 w-24" />
-        <Skeleton className="h-3.5 w-24" />
-        <Skeleton className="h-3.5 w-28" />
+      <div className="mt-4 flex flex-wrap gap-5">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-20" />
+      </div>
+      <Skeleton className="mt-3 h-3.5 w-full" />
+      <Skeleton className="mt-2 h-3.5 w-4/5" />
+      <div className="mt-4 flex justify-between border-t border-border/70 pt-3">
+        <Skeleton className="h-3.5 w-36" />
+        <Skeleton className="h-3.5 w-16" />
       </div>
     </div>
   )
@@ -385,9 +388,19 @@ export function JobsDashboardScreen() {
     <PageShell className="max-w-[1280px] px-4 py-5 sm:px-6 sm:py-6 lg:py-6">
       {/* 1. Barra de Busca Superior */}
       <header className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Encontre sua próxima oportunidade</h1>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Explore vagas e descubra o que combina com você.</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Oportunidades abertas</p>
+            <h1 className="mt-1 text-[28px] font-medium leading-tight tracking-tight text-foreground sm:text-4xl">Vagas</h1>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAlertsOpen(true)}
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-medium text-strong-foreground transition-colors hover:border-primary hover:bg-primary hover:text-white"
+          >
+            <BellRing className="size-4" aria-hidden />
+            <span>Criar alerta de vagas</span>
+          </button>
         </div>
         <JobSearchBar
           value={search}
@@ -413,49 +426,29 @@ export function JobsDashboardScreen() {
               aria-pressed={active}
               onClick={() => handleChipClick(chip.id)}
               className={cn(
-                "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-4 py-2 text-xs font-medium transition-colors duration-200",
+                "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors duration-200",
                 active
                   ? "border-primary bg-primary text-white"
-                  : "border border-border/90 bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "border-border/70 bg-card text-strong-foreground hover:border-border-strong hover:text-primary"
               )}
             >
-              <ChipIcon className={cn("size-3.5", active ? "text-white" : "text-muted-foreground")} />
+              <ChipIcon strokeWidth={1.75} className="size-4" />
               <span>{chip.label}</span>
             </button>
           )
         })}
-
-        {/* Botão Mais Filtros */}
-        <button
-          type="button"
-          onClick={() => setFiltersOpen(true)}
-          className={cn(
-            "inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-200 hover:bg-muted",
-            activeFilterCount > 0
-              ? "border-primary bg-primary-subtle text-primary"
-              : "border-border/90 bg-card text-muted-foreground"
-          )}
-        >
-          <SlidersHorizontal className="size-3.5" />
-          <span>Mais filtros</span>
-          {activeFilterCount > 0 && (
-            <span className="grid size-4 place-items-center rounded-full bg-primary text-[10px] font-bold text-white">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
       </div>
 
       {/* 3. Linha de Contagem e Ordenação */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-4">
-        <p aria-live="polite" className="flex items-center gap-2 text-sm font-bold text-foreground">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+        <p aria-live="polite" className="flex items-center gap-2 text-sm font-semibold text-foreground">
           {isRefreshing ? (
             <>
               <Loader2 className="size-4 animate-spin text-primary" aria-hidden />
               <span className="font-medium text-muted-foreground">Atualizando vagas...</span>
             </>
           ) : (
-            <span>
+            <span className="text-base">
               {results.length} {results.length === 1 ? "vaga encontrada" : "vagas encontradas"}
               {proximityCoords && (
                 <span className="font-normal text-muted-foreground"> em um raio de {raioKm} km</span>
@@ -468,21 +461,19 @@ export function JobsDashboardScreen() {
           <span className="hidden text-xs font-medium text-subtle-foreground sm:inline">
             Ordenar por:
           </span>
-          <select
+          <Select
             aria-label="Ordenar vagas"
+            variant="pill"
             value={filters.sort}
-            onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                sort: e.target.value as JobFiltersState["sort"],
-              }))
+            onValueChange={(value) =>
+              setFilters((prev) => ({ ...prev, sort: value as JobFiltersState["sort"] }))
             }
-            className="h-8 rounded-xl border border-border/80 bg-card px-3 text-xs font-semibold text-strong-foreground outline-none transition-colors hover:border-border-strong focus:border-primary"
-          >
-            <option value="recent">Mais recentes</option>
-            <option value="salary-desc">Maior salário</option>
-            <option value="salary-asc">Menor salário</option>
-          </select>
+            options={[
+              { value: "recent", label: "Mais recentes" },
+              { value: "salary-desc", label: "Maior salário" },
+              { value: "salary-asc", label: "Menor salário" },
+            ]}
+          />
         </div>
       </div>
 
@@ -535,7 +526,7 @@ export function JobsDashboardScreen() {
             <ul
               aria-busy={isRefreshing}
               className={cn(
-                "grid list-none gap-3 transition-opacity duration-200",
+                "grid list-none gap-4 transition-opacity duration-200",
                 isRefreshing && "pointer-events-none opacity-60",
               )}
             >
@@ -564,7 +555,7 @@ export function JobsDashboardScreen() {
           {!isPageLoading && !pageError && displayedResults.length > 0 && totalPages > 1 && (
             <nav
               aria-label="Paginação de vagas"
-              className="mt-8 flex flex-col items-center justify-between gap-4 rounded-3xl border border-border/80 bg-card p-4 sm:px-6 shadow-xs sm:flex-row"
+              className="mt-6 flex flex-col items-center justify-between gap-4 rounded-[28px] border border-border/60 bg-card p-3 sm:flex-row sm:pl-6"
             >
               <p className="text-xs font-medium text-muted-foreground">
                 Página <span className="font-bold text-foreground">{page + 1}</span> de{" "}
@@ -576,7 +567,7 @@ export function JobsDashboardScreen() {
                   type="button"
                   onClick={() => handlePageChange(page - 1)}
                   disabled={!hasPrevPage || loading}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-strong-foreground shadow-xs transition-all hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex h-10 items-center gap-1.5 rounded-full border border-border bg-card px-3.5 text-xs font-medium text-strong-foreground transition-colors hover:border-border-strong hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <ChevronLeft className="size-4" />
                   <span className="hidden sm:inline">Anterior</span>
@@ -607,10 +598,10 @@ export function JobsDashboardScreen() {
                         disabled={loading}
                         aria-current={isActive ? "page" : undefined}
                         className={cn(
-                          "grid size-8 sm:size-9 place-items-center rounded-xl text-xs font-semibold transition-all duration-200",
+                          "grid size-9 sm:size-10 place-items-center rounded-full text-xs font-medium tabular-nums transition-colors duration-200",
                           isActive
-                            ? "bg-primary text-white shadow-xs font-bold scale-105"
-                            : "border border-border/70 bg-card text-strong-foreground hover:bg-muted hover:border-border-strong"
+                            ? "bg-primary text-white"
+                            : "border border-border/70 bg-card text-strong-foreground hover:border-border-strong hover:text-primary"
                         )}
                       >
                         {p}
@@ -623,7 +614,7 @@ export function JobsDashboardScreen() {
                   type="button"
                   onClick={() => handlePageChange(page + 1)}
                   disabled={!hasNextPage || loading}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-strong-foreground shadow-xs transition-all hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex h-10 items-center gap-1.5 rounded-full border border-border bg-card px-3.5 text-xs font-medium text-strong-foreground transition-colors hover:border-border-strong hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <span className="hidden sm:inline">Próxima</span>
                   <ChevronRight className="size-4" />

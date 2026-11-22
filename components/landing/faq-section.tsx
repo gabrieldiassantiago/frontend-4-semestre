@@ -30,7 +30,7 @@ export function FaqSection() {
           Perguntas<br />frequentes
         </h2>
         <p className="mt-5 text-base text-muted-foreground sm:text-lg">Ficou com alguma dúvida? Fale com a nossa equipe!</p>
-        <a href="#contato" className="mt-8 inline-flex h-12 items-center rounded-full bg-strong px-7 text-[15px] font-medium text-white transition-all hover:-translate-y-px hover:bg-primary">
+        <a href="#contato" data-magnetic className="mt-8 inline-flex h-12 items-center rounded-full bg-primary px-7 text-[15px] font-medium text-white transition-colors hover:bg-primary-hover">
           Falar com a equipe
         </a>
       </div>
@@ -39,7 +39,7 @@ export function FaqSection() {
         {FAQ.map((f, i) => {
           const isOpen = open === i
           return (
-            <div key={f.q} className={cn("rounded-3xl border transition-colors duration-300", isOpen ? "border-transparent bg-muted" : "border-border bg-background hover:border-border-strong")}>
+            <div key={f.q} className={cn("rounded-3xl border transition-colors duration-300", isOpen ? "border-transparent bg-primary-subtle" : "border-border/60 bg-background hover:border-primary/40")}>
               <h3>
                 <button
                   type="button"
@@ -50,7 +50,7 @@ export function FaqSection() {
                   className="flex w-full items-center justify-between gap-4 px-6 py-6 text-left text-lg font-normal sm:text-[22px]"
                 >
                   {f.q}
-                  <span ref={(el) => { icons.current[i] = el }} className="shrink-0" style={{ transform: isOpen ? "rotate(180deg)" : undefined }}>
+                  <span ref={(el) => { icons.current[i] = el }} className={cn("grid size-10 shrink-0 place-items-center rounded-full border transition-colors duration-300", isOpen ? "border-primary bg-primary text-white" : "border-border text-strong-foreground")} style={{ transform: isOpen ? "rotate(180deg)" : undefined }}>
                     <ChevronDown className="size-5" aria-hidden />
                   </span>
                 </button>
@@ -63,7 +63,7 @@ export function FaqSection() {
                 style={{ height: i === 0 ? "auto" : 0, opacity: i === 0 ? 1 : 0 }}
                 className="overflow-hidden"
               >
-                <p className="px-6 pb-6 text-base leading-relaxed text-muted-foreground">{f.a}</p>
+                <p className="max-w-[60ch] px-6 pb-6 text-base leading-relaxed text-strong-foreground">{f.a}</p>
               </div>
             </div>
           )

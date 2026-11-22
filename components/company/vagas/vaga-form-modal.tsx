@@ -1,5 +1,6 @@
 "use client"
 
+import { Select } from "@/components/ui/select"
 import { useEffect, useRef, useState } from "react"
 import { Briefcase, DollarSign, Loader2, MapPin, X, Crosshair, Users } from "lucide-react"
 import { useCreateVaga, useUpdateVaga } from "@/lib/queries/use-vagas"
@@ -386,31 +387,23 @@ export function VagaFormModal({ companyProfileId, vagaToEdit, onSuccess, onClose
               <label htmlFor="vf-categoria" className="block text-sm font-semibold text-strong-foreground">
                 Categoria
               </label>
-              <select
+              <Select
                 id="vf-categoria"
                 value={form.categoria}
-                onChange={(e) => set("categoria", e.target.value as VagaCategoria)}
-                className="w-full rounded-xl border border-border bg-muted p-2.5 text-sm outline-none focus:bg-background"
-              >
-                {CATEGORIAS.map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+                onValueChange={(value) => set("categoria", value as VagaCategoria)}
+                options={CATEGORIAS.map(([value, label]) => ({ value, label }))}
+              />
             </div>
             <div className="space-y-1.5">
               <label htmlFor="vf-modalidade" className="block text-sm font-semibold text-strong-foreground">
                 Modalidade
               </label>
-              <select
+              <Select
                 id="vf-modalidade"
                 value={form.modalidade}
-                onChange={(e) => set("modalidade", e.target.value as VagaModalidade)}
-                className="w-full rounded-xl border border-border bg-muted p-2.5 text-sm outline-none focus:bg-background"
-              >
-                {MODALIDADES.map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+                onValueChange={(value) => set("modalidade", value as VagaModalidade)}
+                options={MODALIDADES.map(([value, label]) => ({ value, label }))}
+              />
             </div>
           </div>
 

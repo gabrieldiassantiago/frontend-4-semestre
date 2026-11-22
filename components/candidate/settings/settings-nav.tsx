@@ -44,7 +44,7 @@ export function SettingsNav({ sections }: { sections: readonly SettingsNavSectio
   return (
     <nav
       aria-label="Seções das configurações"
-      className="sticky top-16 z-10 -mx-4 border-b border-border-subtle bg-background/90 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:-mx-6 sm:px-6 lg:top-24 lg:mx-0 lg:self-start lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+      className="sticky top-[var(--topbar-offset,76px)] z-10 -mx-4 transition-[top] duration-300 ease-out border-b border-border-subtle bg-background/90 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:-mx-6 sm:px-6 lg:top-[calc(var(--topbar-offset,76px)+20px)] lg:mx-0 lg:self-start lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
     >
       <ul
         ref={listRef}

@@ -1,6 +1,7 @@
 "use client"
 
 import { resumeHref } from "@/lib/utils/resume"
+import { attachmentHref } from "@/lib/utils/attachment"
 
 import { etapaLabel } from "@/lib/types/candidatura.types"
 
@@ -8,6 +9,7 @@ import { etapaLabel } from "@/lib/types/candidatura.types"
 import { useState } from "react"
 import Link from "next/link"
 import {
+  Award,
   Briefcase,
   CalendarDays,
   Check,
@@ -16,6 +18,7 @@ import {
   FileText,
   FolderGit2,
   GraduationCap,
+  Languages,
   Mail,
   MapPin,
   Phone,
@@ -473,6 +476,70 @@ function CandidateProfileContent({ profile }: { profile: CandidateProfile }) {
           <p className="text-muted-foreground">Não informados.</p>
         )}
       </ProfileBlock>
+
+      <ProfileBlock title="Certificados" icon={Award}>
+        {profile.certificates?.length ? (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {profile.certificates.map((item) => {
+              const fileHref = attachmentHref(item.fileUrl)
+              return (
+                <li key={item.id} className="flex flex-col rounded-xl border border-border p-4">
+                  <p className="font-semibold text-foreground">{item.name}</p>
+                  <p className="mt-0.5 text-muted-foreground">{item.issuer}</p>
+                  <p className="mt-1.5 text-xs text-subtle-foreground">Emitido em {experienceDate(item.issueDate)}</p>
+                  <div className="mt-auto flex flex-wrap gap-x-4 gap-y-1 pt-3 text-xs font-semibold text-primary">
+                    {item.credentialUrl && (
+                      <a href={item.credentialUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5">
+                        Ver credencial
+                        <ExternalLink aria-hidden className="size-3" />
+                      </a>
+                    )}
+                    {fileHref && (
+                      <a href={fileHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5">
+                        {item.fileName ?? "Abrir anexo"}
+                        <ExternalLink aria-hidden className="size-3" />
+                      </a>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        ) : (
+          <p className="text-muted-foreground">Não informados.</p>
+        )}
+      </ProfileBlock>
+
+      <ProfileBlock title="Idiomas" icon={Languages}>
+        {profile.languages?.length ? (
+          <ul className="flex flex-wrap gap-2">
+            {profile.languages.map((item) => {
+              const certificateHref = attachmentHref(item.certificateUrl)
+              return (
+                <li key={item.id} className="flex items-center gap-2 rounded-xl border border-border px-3 py-2">
+                  <span className="font-semibold text-foreground">{item.language}</span>
+                  <span className="text-xs text-muted-foreground">{PROFICIENCY_LABEL[item.proficiency] ?? item.proficiency}</span>
+                  {certificateHref && (
+                    <a href={certificateHref} target="_blank" rel="noopener noreferrer" aria-label={`Certificado de ${item.language}`} className="text-primary">
+                      <ExternalLink aria-hidden className="size-3.5" />
+                    </a>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        ) : (
+          <p className="text-muted-foreground">Não informados.</p>
+        )}
+      </ProfileBlock>
     </div>
   )
+}
+
+const PROFICIENCY_LABEL: Record<string, string> = {
+  BASICO: "Básico",
+  INTERMEDIARIO: "Intermediário",
+  AVANCADO: "Avançado",
+  FLUENTE: "Fluente",
+  NATIVO: "Nativo",
 }

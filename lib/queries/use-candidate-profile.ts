@@ -3,17 +3,27 @@
 import { useCallback } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  addCandidateCertificateAction,
   addCandidateExperienceAction,
+  addCandidateLanguageAction,
   addCandidateProjectAction,
+  deleteCandidateCertificateAction,
+  deleteCandidateCertificateFileAction,
   deleteCandidateExperienceAction,
+  deleteCandidateLanguageAction,
+  deleteCandidateLanguageCertificateAction,
   deleteCandidateProjectAction,
   getCandidateProfileByUserIdAction,
   getCandidateProfileMeAction,
   saveCandidateProfileAction,
+  updateCandidateCertificateAction,
   updateCandidateExperienceAction,
+  updateCandidateLanguageAction,
   updateCandidateProfileMeAction,
   updateCandidateProjectAction,
   uploadCandidateAvatarAction,
+  uploadCandidateCertificateFileAction,
+  uploadCandidateLanguageCertificateAction,
   uploadCandidateResumeAction,
 } from "@/actions/candidate"
 import { unwrap } from "@/lib/actions/result"
@@ -21,8 +31,12 @@ import { getErrorMessage } from "@/lib/errors"
 import { toastSuccess } from "@/lib/toast"
 import { queryKeys } from "./keys"
 import type {
+  CandidateCertificate,
+  CandidateLanguage,
   CandidateProfile,
+  CreateCertificateDto,
   CreateExperienceDto,
+  CreateLanguageDto,
   CreateProfileDto,
   CreateProjectDto,
   UpdateCandidateProfileDto,
@@ -146,5 +160,132 @@ export function useUploadCandidateResume(options?: { silent?: boolean }) {
   return useProfileMutation(
     async (file: File) => unwrap(await uploadCandidateResumeAction(toFormData(file))),
     options?.silent ? undefined : "Currículo enviado com sucesso!",
+  )
+}
+
+/* ---------- Certificados e idiomas ----------
+ * As rotas de item devolvem só o item (ou nada, no DELETE). Por isso o cache
+ * do perfil é ajustado localmente, sem um novo GET.
+ */
+
+type ListKey = "certificates" | "languages"
+type QueryClient = ReturnType<typeof useQueryClient>
+
+function patchProfileList(queryClient: QueryClient, key: ListKey, update: (list: unknown[]) => unknown[]) {
+  const current = queryClient.getQueryData<CandidateProfile | null>(queryKeys.candidateProfile.me())
+  // Sem perfil em cache (ex.: criado pelo próprio POST), busca o perfil completo.
+  if (!current) {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.candidateProfile.me() })
+    return
+  }
+  queryClient.setQueryData<CandidateProfile | null>(queryKeys.candidateProfile.me(), {
+    ...current,
+    [key]: update((current[key] ?? []) as unknown[]),
+  } as CandidateProfile)
+}
+
+function upsertById<T extends { id: string }>(list: unknown[], item: T, sort: (a: T, b: T) => number): T[] {
+  const items = list as T[]
+  const next = items.some((existing) => existing.id === item.id)
+    ? items.map((existing) => (existing.id === item.id ? item : existing))
+    : [...items, item]
+  return next.sort(sort)
+}
+
+const byIssueDateDesc = (a: CandidateCertificate, b: CandidateCertificate) => b.issueDate.localeCompare(a.issueDate)
+const byLanguageName = (a: CandidateLanguage, b: CandidateLanguage) => a.language.localeCompare(b.language, "pt-BR")
+
+/** Mutação de item que devolve o item e o põe no lugar certo do cache. */
+function useItemMutation<TVariables, TItem extends { id: string }>(
+  key: ListKey,
+  mutationFn: (variables: TVariables) => Promise<TItem>,
+  sort: (a: TItem, b: TItem) => number,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn,
+    onSuccess: (item) => patchProfileList(queryClient, key, (list) => upsertById(list, item, sort)),
+  })
+}
+
+/** Mutação de remoção: o servidor responde 204, então o id é usado no cache. */
+function useRemoveItemMutation(key: ListKey, mutationFn: (id: string) => Promise<unknown>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn,
+    onSuccess: (_data, id) =>
+      patchProfileList(queryClient, key, (list) => (list as { id: string }[]).filter((item) => item.id !== id)),
+  })
+}
+
+export function useAddCandidateCertificate() {
+  return useItemMutation<CreateCertificateDto, CandidateCertificate>(
+    "certificates",
+    async (dto) => unwrap(await addCandidateCertificateAction(dto)),
+    byIssueDateDesc,
+  )
+}
+
+export function useUpdateCandidateCertificate() {
+  return useItemMutation<{ id: string; dto: CreateCertificateDto }, CandidateCertificate>(
+    "certificates",
+    async ({ id, dto }) => unwrap(await updateCandidateCertificateAction(id, dto)),
+    byIssueDateDesc,
+  )
+}
+
+export function useDeleteCandidateCertificate() {
+  return useRemoveItemMutation("certificates", async (id) => unwrap(await deleteCandidateCertificateAction(id)))
+}
+
+export function useUploadCandidateCertificateFile() {
+  return useItemMutation<{ id: string; file: File }, CandidateCertificate>(
+    "certificates",
+    async ({ id, file }) => unwrap(await uploadCandidateCertificateFileAction(id, toFormData(file))),
+    byIssueDateDesc,
+  )
+}
+
+export function useDeleteCandidateCertificateFile() {
+  return useItemMutation<string, CandidateCertificate>(
+    "certificates",
+    async (id) => unwrap(await deleteCandidateCertificateFileAction(id)),
+    byIssueDateDesc,
+  )
+}
+
+export function useAddCandidateLanguage() {
+  return useItemMutation<CreateLanguageDto, CandidateLanguage>(
+    "languages",
+    async (dto) => unwrap(await addCandidateLanguageAction(dto)),
+    byLanguageName,
+  )
+}
+
+export function useUpdateCandidateLanguage() {
+  return useItemMutation<{ id: string; dto: CreateLanguageDto }, CandidateLanguage>(
+    "languages",
+    async ({ id, dto }) => unwrap(await updateCandidateLanguageAction(id, dto)),
+    byLanguageName,
+  )
+}
+
+export function useDeleteCandidateLanguage() {
+  return useRemoveItemMutation("languages", async (id) => unwrap(await deleteCandidateLanguageAction(id)))
+}
+
+export function useUploadCandidateLanguageCertificate() {
+  return useItemMutation<{ id: string; file: File }, CandidateLanguage>(
+    "languages",
+    async ({ id, file }) => unwrap(await uploadCandidateLanguageCertificateAction(id, toFormData(file))),
+    byLanguageName,
+  )
+}
+
+export function useDeleteCandidateLanguageCertificate() {
+  return useItemMutation<string, CandidateLanguage>(
+    "languages",
+    async (id) => unwrap(await deleteCandidateLanguageCertificateAction(id)),
+    byLanguageName,
   )
 }

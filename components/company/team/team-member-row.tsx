@@ -1,5 +1,6 @@
 "use client"
 
+import { Select } from "@/components/ui/select"
 import { useState } from "react"
 import { KeyRound, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -53,15 +54,18 @@ export function TeamMemberRow({
         {editable && canChangeRole ? (
           <label className="flex items-center gap-2">
             <span className="sr-only">Papel de {member.name}</span>
-            <select
+            <Select
+              aria-label="Papel na equipe"
+              variant="pill"
+              className="w-auto"
               value={member.role}
               disabled={update.isPending}
-              onChange={(event) => void changeRole(event.target.value as TeamMemberRole)}
-              className="field-input h-9 w-auto py-0 pr-8 text-sm"
-            >
-              <option value="RECRUTADOR">{TEAM_ROLE_LABEL.RECRUTADOR}</option>
-              <option value="ADMIN">{TEAM_ROLE_LABEL.ADMIN}</option>
-            </select>
+              onValueChange={(value) => void changeRole(value as TeamMemberRole)}
+              options={[
+                { value: "RECRUTADOR", label: TEAM_ROLE_LABEL.RECRUTADOR },
+                { value: "ADMIN", label: TEAM_ROLE_LABEL.ADMIN },
+              ]}
+            />
           </label>
         ) : (
           <Badge variant={ROLE_VARIANT[member.role]}>{TEAM_ROLE_LABEL[member.role]}</Badge>

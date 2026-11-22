@@ -9,12 +9,12 @@ export const AUTH_COOKIE = "token"
 export const REFRESH_COOKIE = "refresh_token"
 
 export const DEFAULT_SESSION_SECONDS = 86400
-export const REFRESH_SESSION_SECONDS = 7 * 24 * 60 * 60 // 7 dias (igual ao backend)
+export const REFRESH_SESSION_SECONDS = 7 * 24 * 60 * 60
 
 interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   body?: unknown
   nullOn?: number[]
-  _isRetry?: boolean // Evita loop infinito de refresh
+  _isRetry?: boolean
 }
 
 export async function getServerToken() {
@@ -50,7 +50,6 @@ export async function setAuthCookies(tokenJwt: string, refreshToken?: string, ex
       })
     }
   } catch {
-    // Ignorado quando chamado dentro de Server Components (o Middleware cuidará disso)
   }
 }
 
@@ -85,10 +84,10 @@ async function tryRefreshToken(): Promise<string | null> {
   }
 }
 
-export async function fetchPrivateResume(userId: string, file: string) {
-  const url = API_BASE_URL + "/candidate-profile/" + userId + "/resume/" + file
+export async function fetchPrivateFile(apiPath: string, accept = "*/*") {
+  const url = API_BASE_URL + apiPath
   const request = (token: string) => fetch(url, {
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/pdf" },
+    headers: { Authorization: `Bearer ${token}`, Accept: accept },
     cache: "no-store",
     redirect: "error",
   })
@@ -99,6 +98,10 @@ export async function fetchPrivateResume(userId: string, file: string) {
   }
   const renewed = await tryRefreshToken()
   return renewed ? request(renewed) : new Response(null, { status: 401 })
+}
+
+export function fetchPrivateResume(userId: string, file: string) {
+  return fetchPrivateFile(`/candidate-profile/${userId}/resume/${file}`, "application/pdf")
 }
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<ActionResult<T>> {
@@ -119,7 +122,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
   let response: Response
   try {
-    response = await fetch(`${API_BASE_URL}${path}`,{ ...init, headers, body: payload, cache: "no-store" })
+    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers, body: payload, cache: "no-store" })
   } catch {
     return fail("Não foi possível conectar ao servidor.", 503)
   }
@@ -135,7 +138,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
       retryHeaders.set("Accept", "application/json")
       retryHeaders.set("Authorization", `Bearer ${newToken}`)
       return apiFetch<T>(path, { ...options, headers: retryHeaders, _isRetry: true })
-    
+
     }
 
     await clearExpiredSession()

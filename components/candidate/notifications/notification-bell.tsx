@@ -44,15 +44,15 @@ export function NotificationBell() {
         aria-controls="notificacoes-painel"
         aria-label={naoLidas > 0 ? `Notificações, ${naoLidas} não lidas` : "Notificações"}
         className={cn(
-          "relative grid size-10 place-items-center rounded-lg transition-colors hover:bg-muted hover:text-foreground",
-          open ? "bg-muted text-foreground" : "text-muted-foreground",
+          "relative grid size-10 place-items-center rounded-full border transition-colors hover:border-primary/40 hover:bg-primary-subtle hover:text-primary",
+          open ? "border-primary/40 bg-primary-subtle text-primary" : "border-border text-strong-foreground",
         )}
       >
-        <Bell aria-hidden className="size-5" strokeWidth={1.75} />
+        <Bell aria-hidden className="size-[18px]" strokeWidth={1.75} />
         {naoLidas > 0 && (
           <span
             aria-hidden
-            className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none tabular-nums text-primary-foreground ring-2 ring-card"
+            className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none tabular-nums text-primary-foreground ring-2 ring-card"
           >
             {formatBadge(naoLidas)}
           </span>
@@ -65,7 +65,7 @@ export function NotificationBell() {
         aria-label="Notificações recentes"
         inert={!open}
         className={cn(
-          "fixed inset-x-3 top-[4.5rem] z-50 flex max-h-[calc(100dvh-6rem)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-overlay transition-[opacity,transform] duration-150",
+          "fixed inset-x-3 top-[5.25rem] z-50 flex max-h-[calc(100dvh-6rem)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-overlay transition-[opacity,transform] duration-150",
           "sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[24rem] sm:origin-top-right",
           open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-1 opacity-0",
         )}

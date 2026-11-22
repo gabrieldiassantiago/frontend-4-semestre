@@ -11,7 +11,7 @@ export function ActiveApplicationCard({ candidatura }: { candidatura: Candidatur
   const href = ROUTES.candidate.application(candidatura.id)
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xs transition-shadow hover:shadow-card">
+    <article className="overflow-hidden rounded-[28px] border border-border/60 bg-card">
       <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex min-w-0 items-start gap-4">
           <CompanyLogo name={company} url={candidatura.logoUrlEmpresa} size="lg" />
@@ -42,14 +42,16 @@ export function ActiveApplicationCard({ candidatura }: { candidatura: Candidatur
 
         <Link
           href={href}
-          className="inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-primary/10 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground sm:w-auto"
+          className="inline-flex min-h-11 w-full shrink-0 items-center justify-between gap-3 rounded-full bg-primary py-1.5 pl-5 pr-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover sm:w-auto"
         >
           Acompanhar
-          <ArrowRight aria-hidden className="size-4" />
+          <span className="grid size-8 place-items-center rounded-full bg-white text-primary">
+            <ArrowRight aria-hidden className="size-4" />
+          </span>
         </Link>
       </div>
 
-      <div className="border-t border-border/60 bg-muted/25 px-5 py-4 overflow-x-auto sm:px-6">
+      <div className="mx-2 mb-2 overflow-x-auto rounded-[20px] bg-surface px-4 py-4 sm:px-5">
         <EtapaTrilha
           etapa={candidatura.etapaAtual}
           status={candidatura.status}

@@ -40,10 +40,16 @@ export function AboutSection() {
               className={cn(
                 "flex min-h-[240px] flex-col justify-between rounded-3xl border p-6 lg:min-h-[295px]",
                 s.featured
-                  ? "border-transparent bg-[radial-gradient(120%_120%_at_0%_0%,#8b6dff_0%,#6d47f1_45%,#3b1fae_100%)] text-white shadow-[0_30px_60px_-30px_rgba(109,71,241,0.7)]"
-                  : "border-border bg-background",
+                  ? "relative isolate overflow-hidden border-transparent bg-primary text-white"
+                  : "border-border/60 bg-background",
               )}
             >
+              {s.featured && (
+                <svg aria-hidden viewBox="0 0 240 240" className="pointer-events-none absolute -bottom-10 -right-10 -z-10 size-52 text-white/[0.12]">
+                  <path fill="currentColor" d="M120 0 133 99 240 120 133 133 120 240 104 135 0 120 104 104Z" />
+                  <rect x="30" y="30" width="180" height="180" rx="32" fill="none" stroke="currentColor" strokeWidth="2" transform="rotate(12 120 120)" />
+                </svg>
+              )}
               <div>
                 <p className="text-6xl font-normal tracking-[-0.04em]">
                   {s.prefix && <span className={s.featured ? "text-mint" : "text-primary"}>{s.prefix}</span>}
@@ -58,10 +64,10 @@ export function AboutSection() {
           <Link
             href="#vagas"
             data-tilt
-            className="group flex min-h-[240px] flex-col justify-between rounded-3xl border border-border bg-background p-6 transition-colors hover:border-primary/30 hover:bg-primary-subtle/40 lg:min-h-[295px]"
+            className="group flex min-h-[240px] flex-col justify-between rounded-3xl border border-border/60 bg-background p-6 transition-colors hover:border-primary/40 hover:bg-primary-subtle lg:min-h-[295px]"
           >
             <p className="text-[28px] font-normal leading-tight tracking-tight">Veja outras<br />estatísticas</p>
-            <span className="grid size-14 place-self-end rounded-full bg-strong text-white transition-transform duration-300 group-hover:-rotate-45 group-hover:scale-105">
+            <span className="grid size-14 place-self-end rounded-full bg-primary text-white transition-transform duration-300 group-hover:-rotate-45 group-hover:scale-105">
               <ArrowDownRight className="m-auto size-6" aria-hidden />
             </span>
           </Link>
@@ -83,14 +89,12 @@ function MiniList() {
         <div
           key={r.t}
           data-cycle-item
-          className={cn(
-            "flex items-center gap-3 rounded-2xl border bg-white p-3 transition-all",
-            r.focus ? "w-full border-border shadow-[0_16px_40px_-20px_rgba(0,0,0,0.25)]" : "w-[90%] border-border-subtle opacity-60",
-          )}
+          data-focus={r.focus}
+          className="flex w-full scale-90 items-center gap-3 rounded-2xl border border-border-subtle bg-white p-3 opacity-60 transition-all duration-500 ease-out data-[focus=true]:scale-100 data-[focus=true]:border-primary/30 data-[focus=true]:opacity-100"
         >
           <span className="grid size-11 place-items-center rounded-xl border border-border bg-white"><CompanyLogo name={r.c} size="sm" /></span>
           <div className="min-w-0 flex-1">
-            <p className={cn("truncate font-medium", r.focus ? "text-base" : "text-sm")}>{r.t}</p>
+            <p className="truncate text-[15px] font-medium">{r.t}</p>
             <p className="text-xs text-muted-foreground">{r.c}</p>
           </div>
           <span className="self-start whitespace-nowrap text-xs text-muted-foreground">{r.w}</span>
@@ -103,7 +107,7 @@ function MiniList() {
 function MiniStats() {
   const rows = [["12", "enviadas", "68%"], ["6", "vistas", "74%"], ["4", "chamadas", "54%"]]
   return (
-    <div className="mx-auto w-full max-w-[330px] rounded-2xl border border-border bg-white p-5 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.3)]">
+    <div className="mx-auto w-full max-w-[330px] rounded-3xl border border-border/60 bg-white p-5">
       <div className="flex items-center justify-between">
         <p className="font-medium">Suas estatísticas</p>
         <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground">Últimos 7 dias <ChevronDown className="size-3" aria-hidden /></span>
@@ -136,7 +140,7 @@ function MiniArticles() {
   return (
     <div className="mx-auto flex w-full items-center justify-center -space-x-8 sm:-space-x-4">
       {cards.map(({ tip, cls }) => (
-        <div key={tip.title} data-hover-lift className={cn("relative shrink-0 overflow-hidden rounded-2xl bg-strong shadow-[0_20px_40px_-20px_rgba(0,0,0,0.5)]", cls)}>
+        <div key={tip.title} className={cn("relative shrink-0 overflow-hidden rounded-2xl bg-strong transition-[translate,opacity] duration-500 ease-out hover:z-20 hover:-translate-y-3 hover:opacity-100", cls)}>
           <Image src={tip.image} alt="" fill sizes="240px" className="object-cover" />
           <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" aria-hidden />
           <span className="absolute right-2.5 top-2.5 grid size-8 place-items-center rounded-full bg-white/90"><ArrowUpRight className="size-4" aria-hidden /></span>
@@ -149,7 +153,7 @@ function MiniArticles() {
 
 function MiniSearch() {
   return (
-    <div className="mx-auto w-full max-w-[390px] rounded-2xl border border-border bg-white p-5 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.3)]">
+    <div className="mx-auto w-full max-w-[390px] rounded-3xl border border-border/60 bg-white p-5">
       <div className="flex items-center justify-between font-medium">
         Buscar vagas
         <span className="grid size-8 place-items-center rounded-full border border-border"><X className="size-4" aria-hidden /></span>
@@ -178,17 +182,47 @@ export function FeaturesSection() {
           <article
             key={f.id}
             className={cn(
-              "group flex flex-col justify-between gap-8 overflow-hidden rounded-[28px] border border-border bg-muted p-6 transition-colors hover:border-border-strong sm:p-7",
+              "group flex flex-col justify-between gap-8 overflow-hidden rounded-[28px] border border-border/60 bg-surface p-6 transition-colors duration-300 hover:border-primary/40 sm:p-7",
               ["lg:col-span-6", "lg:col-span-6", "lg:col-span-7", "lg:col-span-5"][i],
             )}
           >
             <div className="flex min-h-[220px] items-center sm:min-h-[260px]">{visuals[i]}</div>
             <div>
-              <h3 className="text-2xl font-normal tracking-tight sm:text-[28px]">{f.title}</h3>
+              <h3 className="text-2xl font-normal tracking-tight transition-colors duration-300 group-hover:text-primary sm:text-[28px]">{f.title}</h3>
               <p className="mt-2 max-w-md text-[15px] leading-relaxed text-muted-foreground">{f.text}</p>
             </div>
           </article>
         ))}
+      </div>
+    </section>
+  )
+}
+
+const FLOW = [
+  { title: "Crie seu perfil", text: "Conta gratuita de candidato. Você preenche uma vez e usa em todas as candidaturas." },
+  { title: "Encontre a vaga", text: "Filtre por cargo, área, cidade ou modalidade e candidate-se." },
+  { title: "Acompanhe cada etapa", text: "Veja em que fase está cada processo e seja avisado a cada avanço." },
+  { title: "Converse com a empresa", text: "Quando a empresa abre o contato, a conversa acontece no chat da candidatura." },
+]
+
+export function HowItWorksSection() {
+  return (
+    <section aria-label="Como funciona" className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+      <SectionHeading eyebrow="Como funciona" lines={["Do cadastro à resposta,", "sem ficar no escuro"]} />
+      <div data-flow className="relative mt-14">
+        <span aria-hidden className="absolute inset-x-0 top-6 hidden h-px bg-border lg:block" />
+        <span data-flow-line aria-hidden className="absolute inset-x-0 top-6 hidden h-px origin-left bg-primary lg:block" />
+        <ol data-stagger className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          {FLOW.map((step, i) => (
+            <li key={step.title} className="relative">
+              <span data-flow-dot className="relative grid size-12 place-items-center rounded-full border border-border bg-background text-sm font-semibold tabular-nums text-strong-foreground">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <h3 className="mt-6 text-xl font-medium tracking-tight">{step.title}</h3>
+              <p className="mt-2 max-w-[30ch] text-[15px] leading-relaxed text-muted-foreground">{step.text}</p>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   )
@@ -208,7 +242,7 @@ export function TipsSection() {
           >
             <Image src={t.image} alt="" fill sizes="(min-width:768px) 33vw, 100vw" className="-z-20 object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
             <span className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/40 to-transparent" aria-hidden />
-            <span className="absolute right-4 top-4 grid size-12 place-items-center rounded-full bg-white text-strong transition-transform duration-300 group-hover:rotate-45">
+            <span className="absolute right-4 top-4 grid size-12 place-items-center rounded-full bg-white text-strong transition-[rotate,background-color,color] duration-300 group-hover:rotate-45 group-hover:bg-primary group-hover:text-white">
               <ArrowUpRight className="size-5" aria-hidden />
             </span>
             <h3 className="max-w-[22ch] text-[22px] font-medium leading-snug">{t.title}</h3>
@@ -217,8 +251,9 @@ export function TipsSection() {
         ))}
       </div>
       <div data-reveal className="mt-10 text-center">
-        <Link href={ROUTES.auth.root} className="inline-flex h-12 items-center rounded-full border border-border bg-muted px-7 text-sm font-medium transition-colors hover:bg-border-subtle">
+        <Link href={ROUTES.auth.root} data-magnetic className="group inline-flex h-12 items-center gap-3 rounded-full border border-border bg-background pl-6 pr-1.5 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary">
           Ver todas as dicas
+          <span className="grid size-9 place-items-center rounded-full bg-primary-subtle text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-white"><ArrowUpRight className="size-4" aria-hidden /></span>
         </Link>
       </div>
     </section>
@@ -226,10 +261,10 @@ export function TipsSection() {
 }
 
 const TONES: Record<string, string> = {
-  violet: "bg-[linear-gradient(180deg,#e6dffd_0%,#ffffff_75%)]",
-  pink: "bg-[linear-gradient(180deg,#d6f8e2_0%,#ffffff_75%)]",
-  blue: "bg-[linear-gradient(180deg,#f0ecfe_0%,#ffffff_75%)]",
-  none: "bg-muted",
+  violet: "border-transparent bg-primary-subtle",
+  pink: "border-transparent bg-mint-subtle",
+  blue: "border-transparent bg-primary-subtle",
+  none: "border-border/60 bg-background",
 }
 
 export function TestimonialsSection() {
@@ -238,9 +273,9 @@ export function TestimonialsSection() {
       <SectionHeading eyebrow="Depoimentos" lines={["Veja o que dizem nossos", "usuários satisfeitos"]} />
       <div data-stagger className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {TESTIMONIALS.map((t) => (
-          <figure key={t.author} data-tilt className={cn("flex min-h-[270px] flex-col rounded-3xl border border-border p-6", TONES[t.tone])}>
-            <span className="flex w-fit items-center gap-1.5 rounded-full bg-strong px-3 py-1.5 text-sm font-medium text-white">
-              <Star className="size-4 fill-white" aria-hidden /> {t.rating}
+          <figure key={t.author} data-tilt className={cn("flex min-h-[270px] flex-col rounded-3xl border p-6", TONES[t.tone])}>
+            <span className="flex w-fit items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-foreground ring-1 ring-border/60">
+              <Star className="size-4 fill-primary text-primary" aria-hidden /> {t.rating}
               <span className="sr-only">de 5 estrelas</span>
             </span>
             <blockquote className="mt-5 flex-1 text-[17px] leading-relaxed text-strong-foreground">{`“${t.quote}”`}</blockquote>
@@ -249,7 +284,7 @@ export function TestimonialsSection() {
                 <span className="block font-medium">{t.author}</span>
                 <span className="text-sm text-muted-foreground">{t.role}</span>
               </span>
-              <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary-deep text-sm font-semibold text-white">
+              <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-white">
                 {getInitials(t.author, "?")}
               </span>
             </figcaption>

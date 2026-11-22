@@ -1,4 +1,4 @@
-import type { CandidaturaFilters } from "@/lib/types/candidatura.types"
+import type { AgendamentoEmpresaFilters, CandidaturaFilters } from "@/lib/types/candidatura.types"
 import type { VagaFilters, VagaProximasParams } from "@/lib/types/vaga.types"
 
 /**
@@ -30,6 +30,8 @@ export const queryKeys = {
     minhas: () => ["candidaturas", "me"] as const,
     detalhe: (id: string) => ["candidaturas", "detalhe", id] as const,
     empresaLista: (filters?: CandidaturaFilters) => ["candidaturas", "empresa", "lista", filters ?? {}] as const,
+    // Fica sob "candidaturas" para ser invalidada junto com qualquer mutação de agendamento
+    agendamentosEmpresa: (filters?: AgendamentoEmpresaFilters) => ["candidaturas", "empresa", "agendamentos", filters ?? {}] as const,
     empresaDetalhe: (id: string) => ["candidaturas", "empresa", "detalhe", id] as const,
   },
   chat: {

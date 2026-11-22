@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "framer-motion"
 import { ArrowLeft, Briefcase, Loader2, UserCheck, X } from "lucide-react"
 
 import { useLogin, useRegisterUser } from "@/lib/queries/use-auth"
@@ -193,17 +193,17 @@ export function AuthScreen({
   }
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="flex min-h-screen w-full flex-col bg-background selection:bg-primary/15 selection:text-primary md:flex-row">
       {/* Lado Esquerdo: Área de Autenticação */}
       <section className="relative flex w-full flex-col justify-between px-5 py-8 sm:px-10 md:min-h-screen md:w-1/2 lg:px-14 xl:px-20">
-        {/* Glow sutil de fundo */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-64 bg-gradient-to-b from-primary/5 via-transparent to-transparent"
-        />
-
         {/* Top Bar: Navegação e Badge de Perfil */}
-        <div className="flex w-full items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="flex w-full items-center justify-between"
+        >
           <Link
             href="/auth"
             className="group inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/80 px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-2xs backdrop-blur-xs transition-all hover:border-border hover:bg-muted/60 hover:text-foreground"
@@ -228,14 +228,19 @@ export function AuthScreen({
               </>
             )}
           </span>
-        </div>
+        </motion.div>
 
         {/* Container Central do Formulário */}
         <div
           className="mx-auto flex w-full max-w-[460px] flex-1 flex-col items-center py-8"
         >
-          <header className="mb-6 flex w-full flex-col items-center text-center">
-            <Link href="/" className="mb-6 transition-opacity hover:opacity-90">
+          <motion.header
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-6 flex w-full flex-col items-center text-center"
+          >
+            <Link href="/" className="mb-6 transition-transform duration-300 hover:scale-[1.03]">
               <Image
                 src="/images/logo_selecta.svg"
                 alt="Selecta"
@@ -246,44 +251,58 @@ export function AuthScreen({
               />
             </Link>
 
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
-            </h1>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={mode}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="flex flex-col items-center"
+              >
+                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                  {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
+                </h1>
 
-            <p className="mt-2 max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
-              {mode === "login"
-                ? `Acesse sua conta de ${role} para continuar na plataforma.`
-                : SUBTITLES[role]}
-            </p>
-          </header>
+                <p className="mt-2 max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
+                  {mode === "login"
+                    ? `Acesse sua conta de ${role} para continuar na plataforma.`
+                    : SUBTITLES[role]}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+          </motion.header>
 
-          {/* Segmented Control (Entrar / Criar conta) */}
-          <div className="mb-6 grid w-full grid-cols-2 rounded-xl border border-border/60 bg-muted/50 p-1">
-            <button
-              type="button"
-              onClick={() => switchMode("login")}
-              className={cn(
-                "relative rounded-lg py-2 text-xs font-semibold transition-all duration-200 sm:text-sm",
-                mode === "login"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Entrar
-            </button>
-            <button
-              type="button"
-              onClick={() => switchMode("register")}
-              className={cn(
-                "relative rounded-lg py-2 text-xs font-semibold transition-all duration-200 sm:text-sm",
-                mode === "register"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Criar conta
-            </button>
-          </div>
+          {/* Segmented Control (Entrar / Criar conta) com indicador deslizante */}
+          <LayoutGroup id="auth-mode">
+            <div className="relative mb-6 grid w-full grid-cols-2 rounded-xl border border-border/60 bg-muted/50 p-1">
+              {(["login", "register"] as const).map((item) => {
+                const active = mode === item
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => switchMode(item)}
+                    className={cn(
+                      "relative z-10 rounded-lg py-2 text-xs font-semibold transition-colors duration-200 sm:text-sm",
+                      active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="auth-mode-pill"
+                        aria-hidden
+                        className="absolute inset-0 -z-10 rounded-lg bg-background shadow-xs"
+                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                      />
+                    )}
+                    {item === "login" ? "Entrar" : "Criar conta"}
+                  </button>
+                )
+              })}
+            </div>
+          </LayoutGroup>
 
           {/* Alertas de Erro / Sucesso Animados */}
           <AnimatePresence mode="wait">
@@ -301,9 +320,14 @@ export function AuthScreen({
           </AnimatePresence>
 
           {mode === "register" && <RegistrationProgress step={step} company={role === "recrutador"} />}
+          <AnimatePresence mode="wait" initial={false}>
           {mode === "login" ? (
-              <form
+              <motion.form
                 key="login"
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 12 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 onSubmit={handleLogin}
                 className="w-full space-y-4"
               >
@@ -392,12 +416,25 @@ export function AuthScreen({
                     "Entrar na conta"
                   )}
                 </button>
-              </form>
+              </motion.form>
             ) : role === "recrutador" ? (
-              <CompanyRegistrationForm step={step} setStep={setStep} onBackToLogin={() => switchMode("login")} />
+              <motion.div
+                key="company-register"
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="w-full"
+              >
+                <CompanyRegistrationForm step={step} setStep={setStep} onBackToLogin={() => switchMode("login")} />
+              </motion.div>
             ) : (
-              <form
+              <motion.form
                 key="register"
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 onSubmit={handleRegister}
                 className="w-full"
               >
@@ -498,8 +535,9 @@ export function AuthScreen({
                 </button>
                 </div>
                 </RegistrationStep>
-              </form>
+              </motion.form>
             )}
+          </AnimatePresence>
         </div>
 
         {/* Rodapé discreto para ancorar a coluna */}
@@ -614,10 +652,16 @@ export function AuthScreen({
 
       {/* Lado Direito: Carrossel de Depoimentos */}
       <section className="w-full px-3 pb-3 md:sticky md:top-0 md:h-screen md:w-1/2 md:p-3">
-        <div className="h-[420px] w-full overflow-hidden rounded-2xl shadow-lg ring-1 ring-border/50 sm:h-[500px] md:h-full">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="h-[420px] w-full overflow-hidden rounded-2xl shadow-lg ring-1 ring-border/50 sm:h-[500px] md:h-full"
+        >
           <TestimonialCarousel className="h-full w-full" />
-        </div>
+        </motion.div>
       </section>
     </div>
+    </MotionConfig>
   )
 }

@@ -105,7 +105,7 @@ export function ProfilePhotoField({
         .toUpperCase()
 
     return (
-        <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-surface/50 p-4 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex flex-col gap-3 rounded-3xl bg-surface p-4 sm:flex-row sm:items-center sm:gap-4">
             <div className="relative shrink-0 self-start sm:self-center">
                 <button
                     type="button"
@@ -115,7 +115,7 @@ export function ProfilePhotoField({
                         inputRef.current?.click()
                     }
                     className={cn(
-                        "group relative grid size-16 place-items-center overflow-hidden rounded-xl",
+                        "group relative grid size-16 place-items-center overflow-hidden rounded-full",
                         "border-2 border-border bg-muted",
                         "transition-all hover:border-primary/50",
                         uploading &&
@@ -176,7 +176,7 @@ export function ProfilePhotoField({
                     onClick={() =>
                         inputRef.current?.click()
                     }
-                    className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-4 inline-flex h-10 items-center gap-2 rounded-full border border-border bg-background px-4 text-xs font-semibold text-foreground transition-colors hover:border-primary/40 hover:bg-primary-subtle hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {uploading ? (
                         <>

@@ -115,9 +115,9 @@ export function ProjectEditor({
           {projects.map((item) => (
             <li
               key={item.id}
-              className="flex flex-wrap items-start gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm sm:flex-nowrap"
+              className="flex flex-wrap items-start gap-3 rounded-3xl border border-border/60 bg-card p-5 transition-colors hover:border-primary/40 sm:flex-nowrap"
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-subtle text-primary">
+              <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary-subtle text-primary">
                 <Code2 className="size-5" aria-hidden />
               </span>
 
@@ -166,7 +166,7 @@ export function ProjectEditor({
                     })
                   }
                   disabled={busy || Boolean(rascunho)}
-                  className="grid size-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="grid size-10 place-items-center rounded-full border border-border text-strong-foreground transition-colors hover:border-primary hover:bg-primary hover:text-white"
                 >
                   <Pencil className="size-4" aria-hidden />
                 </button>
@@ -175,7 +175,7 @@ export function ProjectEditor({
                   aria-label={`Remover projeto ${item.title}`}
                   onClick={() => remover(item.id)}
                   disabled={busy || Boolean(rascunho)}
-                  className="grid size-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-danger-subtle hover:text-danger-foreground disabled:opacity-50"
+                  className="grid size-10 place-items-center rounded-full border border-border text-strong-foreground transition-colors hover:border-transparent hover:bg-danger-subtle hover:text-danger-foreground disabled:opacity-50"
                 >
                   {removendo === item.id ? (
                     <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -190,7 +190,7 @@ export function ProjectEditor({
       )}
 
       {rascunho ? (
-        <section aria-label="Formulário de projeto" className="overflow-hidden rounded-2xl border border-primary/25 bg-card p-5 shadow-sm sm:p-6">
+        <section aria-label="Formulário de projeto" className="overflow-hidden rounded-3xl border border-primary/30 bg-card p-5 sm:p-6">
           <fieldset disabled={busy} className="min-w-0">
           <h4 className="text-lg font-bold tracking-tight text-foreground">
             {rascunho.id ? "Editar projeto" : "Novo projeto"}
@@ -259,7 +259,7 @@ export function ProjectEditor({
           <button
             type="button"
             onClick={() => { setErro(null); setFieldErrors({}); setRascunho({ ...VAZIO }) }}
-            className="btn-secondary w-full border-dashed py-4"
+            className="btn-secondary w-full !rounded-3xl border-dashed py-4"
           >
             <Plus className="size-4" aria-hidden />
             Adicionar projeto

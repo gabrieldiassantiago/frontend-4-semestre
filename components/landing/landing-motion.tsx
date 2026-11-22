@@ -18,6 +18,11 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
  *  data-clip             → imagem revelada de baixo para cima
  *  data-tilt             → inclinação 3D leve seguindo o ponteiro
  *  data-parallax="-8"    → deslocamento vertical durante o scroll
+ *  data-progress         → barra de progresso de leitura da página
+ *  data-magnetic         → botão atraído levemente pelo ponteiro
+ *  data-cycle            → destaca um [data-cycle-item] por vez, em loop
+ *  data-steps            → avança os [data-step] e troca o [data-step-label], em loop
+ *  data-flow             → linha ([data-flow-line]) e marcos ([data-flow-dot]) preenchidos pelo scroll
  * Com prefers-reduced-motion nada é animado e o conteúdo permanece visível.
  */
 export function LandingMotion({ children }: { children: React.ReactNode }) {
@@ -49,9 +54,10 @@ export function LandingMotion({ children }: { children: React.ReactNode }) {
           .from("[data-hero='header']", { y: -24, opacity: 0, duration: 0.6, clearProps: "transform" })
           .from("[data-hero='pill']", { y: 16, opacity: 0, scale: 0.96, duration: 0.5 }, "-=0.25")
           .from("[data-hero='title'] > span > span", { yPercent: 110, duration: 0.9, stagger: 0.12, ease: "power4.out" }, "-=0.3")
+          .from("[data-hero='marker']", { scaleX: 0, duration: 0.7, ease: "power3.inOut" }, "-=0.35")
           .from("[data-hero='text']", { y: 16, opacity: 0, duration: 0.5 }, "-=0.5")
           .from("[data-hero='search']", { y: 24, opacity: 0, scale: 0.96, duration: 0.7 }, "-=0.35")
-          .from("[data-hero='card']", { y: 90, opacity: 0, scale: 0.9, duration: 1, stagger: 0.1, ease: "back.out(1.4)" }, "-=0.45")
+          .from("[data-hero='card']", { y: 70, opacity: 0, scale: 0.94, duration: 1.1, stagger: 0.09, ease: "power4.out" }, "-=0.45")
           .from(heroBars, { scaleX: 0, duration: 0.9, stagger: 0.1, ease: "power3.out" }, "-=0.6")
           .add(() => heroCounters.forEach((t) => t.play()), "<")
 
@@ -165,6 +171,64 @@ export function LandingMotion({ children }: { children: React.ReactNode }) {
           })
         })
 
+        all("[data-progress]").forEach((el) => {
+          gsap.fromTo(el, { scaleX: 0 }, {
+            scaleX: 1, ease: "none",
+            scrollTrigger: { trigger: scope, start: "top top", end: "bottom bottom", scrub: 0.3 },
+          })
+        })
+
+        // Loops de "produto vivo": só rodam com o elemento na tela.
+        function loop(el: HTMLElement, every: number, tick: () => void) {
+          let id: number | undefined
+          const stop = () => { window.clearInterval(id); id = undefined }
+          const st = ScrollTrigger.create({
+            trigger: el, start: "top bottom", end: "bottom top",
+            onToggle: (self) => { stop(); if (self.isActive) id = window.setInterval(tick, every) },
+          })
+          cleanups.push(() => { stop(); st.kill() })
+        }
+
+        all("[data-cycle]").forEach((el) => {
+          const items = gsap.utils.toArray<HTMLElement>("[data-cycle-item]", el)
+          if (items.length < 2) return
+          let i = Math.max(0, items.findIndex((item) => item.dataset.focus === "true"))
+          loop(el, 2200, () => {
+            i = (i + 1) % items.length
+            items.forEach((item, idx) => { item.dataset.focus = String(idx === i) })
+          })
+        })
+
+        all("[data-steps]").forEach((el) => {
+          const steps = gsap.utils.toArray<HTMLElement>("[data-step]", el)
+          const label = el.querySelector<HTMLElement>("[data-step-label]")
+          const labels = (label?.dataset.labels ?? "").split("|")
+          if (steps.length < 2) return
+          let i = steps.filter((step) => step.dataset.active === "true").length - 1
+          loop(el, 2000, () => {
+            i = (i + 1) % steps.length
+            steps.forEach((step, idx) => { step.dataset.active = String(idx <= i) })
+            if (label && labels[i]) {
+              label.textContent = labels[i]
+              gsap.fromTo(label, { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" })
+            }
+          })
+        })
+
+        all("[data-flow]").forEach((el) => {
+          const line = el.querySelector("[data-flow-line]")
+          const dots = gsap.utils.toArray<HTMLElement>("[data-flow-dot]", el)
+          const primary = getComputedStyle(scope).getPropertyValue("--primary").trim() || "#6d47f1"
+          const tl = gsap.timeline({
+            defaults: { ease: "none" },
+            scrollTrigger: { trigger: el, start: "top 80%", end: "top 30%", scrub: 0.5 },
+          })
+          if (line) tl.fromTo(line, { scaleX: 0 }, { scaleX: 1, duration: 1 }, 0)
+          dots.forEach((dot, idx) => {
+            tl.to(dot, { backgroundColor: primary, borderColor: primary, color: "#ffffff", duration: 0.12 }, dots.length > 1 ? (idx / (dots.length - 1)) * 0.88 : 0)
+          })
+        })
+
         all("[data-parallax]").forEach((el) => {
           gsap.to(el, {
             yPercent: Number(el.dataset.parallax) || -8, ease: "none",
@@ -173,6 +237,23 @@ export function LandingMotion({ children }: { children: React.ReactNode }) {
         })
 
         if (fine) {
+          all("[data-magnetic]").forEach((el) => {
+            const x = gsap.quickTo(el, "x", { duration: 0.5, ease: "power3.out" })
+            const y = gsap.quickTo(el, "y", { duration: 0.5, ease: "power3.out" })
+            const onMove = (e: PointerEvent) => {
+              const r = el.getBoundingClientRect()
+              x((e.clientX - (r.left + r.width / 2)) * 0.22)
+              y((e.clientY - (r.top + r.height / 2)) * 0.3)
+            }
+            const onLeave = () => { x(0); y(0) }
+            el.addEventListener("pointermove", onMove)
+            el.addEventListener("pointerleave", onLeave)
+            cleanups.push(() => {
+              el.removeEventListener("pointermove", onMove)
+              el.removeEventListener("pointerleave", onLeave)
+            })
+          })
+
           all("[data-tilt]").forEach((el) => {
             const rx = gsap.quickTo(el, "rotationX", { duration: 0.5, ease: "power3.out" })
             const ry = gsap.quickTo(el, "rotationY", { duration: 0.5, ease: "power3.out" })

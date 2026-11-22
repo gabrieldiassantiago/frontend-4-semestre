@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils"
 import { EducationFields, LinksFields, ProfileFields } from "./profile-sections"
 import { ExperienceEditor } from "./experience-editor"
 import { ProjectEditor } from "./project-editor"
+import { CertificateEditor } from "./certificate-editor"
+import { LanguageEditor } from "./language-editor"
 import { ProfilePreview } from "./profile-preview"
 import { ResumeUpload } from "./resume-upload"
 import { SkillsInput } from "./skills-input"
@@ -32,10 +34,10 @@ function ProfileSkeleton() {
         <Skeleton className="mt-3 h-9 w-56" />
         <div className="mt-8 grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
           <div className="flex flex-col gap-5">
-            <Skeleton className="h-64 rounded-card" />
-            <Skeleton className="hidden h-80 rounded-card xl:block" />
+            <Skeleton className="h-64 rounded-[28px]" />
+            <Skeleton className="hidden h-80 rounded-[28px] xl:block" />
           </div>
-          <Skeleton className="h-[520px] rounded-card" />
+          <Skeleton className="h-[520px] rounded-[28px]" />
         </div>
       </div>
     </PageShell>
@@ -164,7 +166,7 @@ export function CandidateProfileScreen() {
   const showSaveBar = activeSection.editable || dirty
 
   return (
-    <PageShell className="candidate-profile min-w-0 max-w-[1200px] lg:py-6 [&_.field-input]:rounded-lg [&_.field-input]:border-border/80 [&_.field-input]:bg-card [&_.field-input:disabled]:bg-surface [&_.field-input]:sm:text-sm">
+    <PageShell className="candidate-profile min-w-0 max-w-[1200px] lg:py-6 [&_.btn-ghost]:rounded-full [&_.btn-primary]:rounded-full [&_.btn-secondary]:rounded-full [&_.field-input]:rounded-xl [&_.field-input]:border-border [&_.field-input]:bg-card [&_.field-input:disabled]:bg-surface [&_.field-input]:sm:text-sm">
       <PageHeader
         title="Meu perfil"
         description="Sua trajetória, suas habilidades e o que vem a seguir."
@@ -181,17 +183,17 @@ export function CandidateProfileScreen() {
       <div className="mt-5">
         <ProfileSummaryCard profile={profile} form={form} completion={completion} disabled={navDisabled} onGoTo={goTo} />
       </div>
-      <div className="mt-5 grid min-w-0 items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-5">
-        <aside className="min-w-0 lg:sticky lg:top-20">
+      <div className="mt-5 grid min-w-0 items-start gap-4 lg:grid-cols-[248px_minmax(0,1fr)] lg:gap-5">
+        <aside className="min-w-0 lg:sticky lg:top-[calc(var(--topbar-offset,76px)+20px)] lg:transition-[top] lg:duration-300 lg:ease-out">
           <ProfileSectionNav active={section} completion={completion} disabled={navDisabled} onSelect={goTo} />
         </aside>
 
         <section
           aria-labelledby="profile-section-title"
-          className="min-w-0 scroll-mt-24 rounded-2xl border border-border/80 bg-card"
+          className="min-w-0 scroll-mt-24 rounded-[28px] border border-border/60 bg-card"
         >
-          <header className="flex items-center gap-3 border-b border-border/70 px-5 py-4 sm:px-6">
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-subtle text-primary-subtle-foreground">
+          <header className="flex items-center gap-3.5 border-b border-border/60 px-5 py-5 sm:px-7">
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary-subtle text-primary">
               <activeSection.icon className="size-[18px]" aria-hidden />
             </span>
             <div className="min-w-0">
@@ -199,16 +201,16 @@ export function CandidateProfileScreen() {
                 id="profile-section-title"
                 ref={sectionRef}
                 tabIndex={-1}
-                className="scroll-mt-24 text-sm font-semibold tracking-tight text-foreground outline-none sm:text-base"
+                className="scroll-mt-24 text-base font-semibold tracking-tight text-foreground outline-none sm:text-lg"
               >
                 {activeSection.label}
               </h2>
-              <p className="mt-0.5 text-xs text-muted-foreground text-pretty">{activeSection.description}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground text-pretty">{activeSection.description}</p>
             </div>
           </header>
 
           <form onSubmit={salvar} noValidate>
-            <div className="min-w-0 px-5 py-5 sm:px-6 sm:py-6">
+            <div className="min-w-0 px-5 py-6 sm:px-7 sm:py-7">
               {saveError && (
                 <div className="mb-6">
                   <Alert tone="danger">{saveError}</Alert>
@@ -261,6 +263,14 @@ export function CandidateProfileScreen() {
                 <ProjectEditor onEditingChange={setBusy} projects={profile.projects ?? []} onProfileChange={setProfile} />
               )}
 
+              {section === "certificados" && (
+                <CertificateEditor onEditingChange={setBusy} certificates={profile.certificates ?? []} />
+              )}
+
+              {section === "idiomas" && (
+                <LanguageEditor onEditingChange={setBusy} languages={profile.languages ?? []} />
+              )}
+
               {section === "preview" && (
                 <div className="max-w-3xl">
                   <ProfilePreview profile={profile} form={form} />
@@ -271,11 +281,11 @@ export function CandidateProfileScreen() {
             {showSaveBar && (
               <footer
                 className={cn(
-                  "z-20 flex flex-wrap items-center gap-3 rounded-b-2xl border-t px-5 py-3 transition-colors sm:px-6",
-                  dirty ? "sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] border-primary/20 bg-primary-subtle/95 backdrop-blur lg:bottom-0" : "border-border/70 bg-surface/40",
+                  "z-20 flex flex-wrap items-center gap-3 rounded-b-[28px] border-t px-5 py-3.5 transition-colors sm:px-7",
+                  dirty ? "sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] border-primary/20 bg-primary-subtle lg:bottom-0" : "border-border/60 bg-card",
                 )}
               >
-                <p role="status" className="flex w-full items-center gap-2 text-xs font-medium sm:mr-auto sm:w-auto">
+                <p role="status" className="flex w-full items-center gap-2 text-sm font-medium sm:mr-auto sm:w-auto">
                   {dirty ? (
                     <>
                       <span className="size-2 rounded-full bg-primary" aria-hidden />

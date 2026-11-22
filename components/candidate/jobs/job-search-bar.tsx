@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useId, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { JOB_PAGE_SEARCH_ID } from "./global-job-search"
 import {
   Briefcase,
   Building2,
@@ -150,7 +151,7 @@ function UnifiedLocationSelect({
         aria-expanded={open}
         aria-label="Selecionar localização"
         className={cn(
-          "flex h-12 w-full items-center gap-2.5 rounded-xl border px-3 text-left outline-none transition-all duration-200",
+          "flex h-12 w-full items-center gap-2.5 rounded-full border px-2 text-left outline-none transition-all duration-200",
           open
             ? "border-primary bg-background shadow-sm ring-2 ring-primary/20"
             : "border-transparent bg-surface hover:bg-muted",
@@ -158,7 +159,7 @@ function UnifiedLocationSelect({
       >
         <div
           className={cn(
-            "grid size-8 shrink-0 place-items-center rounded-lg transition-colors",
+            "grid size-8 shrink-0 place-items-center rounded-full transition-colors",
             hasLocation ? "bg-primary-subtle text-primary" : "bg-background text-muted-foreground shadow-xs"
           )}
         >
@@ -362,7 +363,7 @@ function CategorySelect({
         aria-expanded={open}
         aria-label="Selecionar área de atuação"
         className={cn(
-          "flex h-12 w-full items-center gap-2.5 rounded-xl border px-3 text-left outline-none transition-all duration-200",
+          "flex h-12 w-full items-center gap-2.5 rounded-full border px-2 text-left outline-none transition-all duration-200",
           open
             ? "border-primary bg-background shadow-sm ring-2 ring-primary/20"
             : "border-transparent bg-surface hover:bg-muted",
@@ -370,7 +371,7 @@ function CategorySelect({
       >
         <div
           className={cn(
-            "grid size-8 shrink-0 place-items-center rounded-lg transition-colors",
+            "grid size-8 shrink-0 place-items-center rounded-full transition-colors",
             categoria !== "TODAS"
               ? "bg-primary-subtle text-primary"
               : "bg-background text-muted-foreground shadow-xs"
@@ -525,7 +526,7 @@ export function JobSearchBar({
   isSearching?: boolean
 }) {
   const [query, setQuery] = useState(value.query)
-  const queryId = useId()
+  const queryId = JOB_PAGE_SEARCH_ID
   const valueRef = useRef(value)
   const onSubmitRef = useRef(onSubmit)
 
@@ -561,7 +562,7 @@ export function JobSearchBar({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="rounded-[1.75rem] bg-card p-2 shadow-[0_8px_30px_rgba(0,0,0,0.07)] sm:p-2"
+      className="rounded-[28px] border border-border/60 bg-card p-2 transition-colors focus-within:border-border-strong"
     >
       <form
         onSubmit={(event) => {
@@ -606,7 +607,7 @@ export function JobSearchBar({
             className="h-12 w-full rounded-2xl bg-surface pl-11 pr-10 text-sm text-foreground outline-none transition-none placeholder:text-subtle-foreground focus:bg-surface focus:ring-0 focus:outline-none lg:bg-transparent lg:focus:bg-transparent"
           />
 
-          {query && (
+          {query ? (
             <button
               type="button"
               onClick={() => {
@@ -618,6 +619,13 @@ export function JobSearchBar({
             >
               <X className="size-4" aria-hidden />
             </button>
+          ) : (
+            <kbd
+              aria-hidden
+              className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-border bg-card px-1.5 py-0.5 font-sans text-[11px] font-medium text-subtle-foreground lg:block"
+            >
+              Ctrl K
+            </kbd>
           )}
           <span className="sr-only" aria-live="polite">
             {isSearching ? "Atualizando resultados" : ""}
@@ -654,16 +662,16 @@ export function JobSearchBar({
               whileTap={{ scale: 0.97 }}
               title="Buscar vagas mais próximas de você usando sua localização"
               className={cn(
-                "inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3.5 text-sm font-semibold transition-colors disabled:opacity-70",
+                "inline-flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors disabled:opacity-70",
                 isProximityActive
-                  ? "border-primary/40 bg-primary-subtle text-primary"
-                  : "border-border bg-card text-foreground hover:bg-muted",
+                  ? "border-primary bg-primary text-white"
+                  : "border-border bg-card text-foreground hover:border-border-strong",
               )}
             >
               {isLocating ? (
-                <Loader2 className="size-4 animate-spin text-primary" aria-hidden />
+                <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : (
-                <Navigation className={cn("size-4", isProximityActive ? "text-primary" : "text-muted-foreground")} aria-hidden />
+                <Navigation strokeWidth={1.75} className="size-4" aria-hidden />
               )}
               <span>{isLocating ? "Localizando..." : "Perto de mim"}</span>
             </motion.button>
@@ -674,16 +682,16 @@ export function JobSearchBar({
             onClick={onOpenFilters}
             whileTap={{ scale: 0.97 }}
             className={cn(
-              "inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors",
+              "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-full border px-5 text-sm font-medium transition-colors",
               activeFilterCount > 0
-                ? "border-primary/40 bg-primary-subtle text-primary"
-                : "border-border bg-card text-foreground hover:bg-muted",
+                ? "border-primary bg-primary text-white"
+                : "border-border bg-card text-foreground hover:border-border-strong",
             )}
           >
-            <SlidersHorizontal className="size-4" aria-hidden />
+            <SlidersHorizontal strokeWidth={1.75} className="size-4" aria-hidden />
             <span>Filtros</span>
             {activeFilterCount > 0 && (
-              <span className="grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              <span className="grid size-5 place-items-center rounded-full bg-white text-[10px] font-bold text-primary">
                 {activeFilterCount}
               </span>
             )}

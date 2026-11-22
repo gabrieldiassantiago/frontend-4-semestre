@@ -5,7 +5,7 @@ import { etapaLabel } from "@/lib/types/candidatura.types"
 
 import Link from "next/link"
 import { motion, MotionConfig } from "framer-motion"
-import { ArrowLeft, ArrowUpRight, Briefcase, MessageSquare, Sparkles, Workflow } from "lucide-react"
+import { ArrowLeft, ArrowUpRight, Briefcase, MessageSquare, Workflow } from "lucide-react"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { CardSkeleton, ErrorState } from "@/components/ui/states"
 import { StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
@@ -48,7 +48,7 @@ export function MessagesScreen({ perspectiva, activeId }: MessagesScreenProps) {
     <MotionConfig reducedMotion="user">
       <main className="mx-auto w-full max-w-[1480px] lg:px-6 lg:py-6">
         <h1 className="sr-only">Mensagens</h1>
-        <div className="chat-workspace flex h-[calc(100dvh-8rem-env(safe-area-inset-bottom))] overflow-hidden border-border bg-card lg:h-[calc(100dvh-7rem)] lg:rounded-2xl lg:border lg:shadow-raised">
+        <div className="chat-workspace flex h-[calc(100dvh-8.75rem-env(safe-area-inset-bottom))] overflow-hidden border-border bg-card lg:h-[calc(100dvh-7.75rem)] lg:rounded-2xl lg:border lg:shadow-xs">
           <ChatList
             chats={chats}
             naoLidas={naoLidas}
@@ -118,11 +118,11 @@ function ConversaAtiva({ candidaturaId, perspectiva, conexao }: { candidaturaId:
           >
             <ArrowLeft aria-hidden className="size-5" />
           </Link>
-          <EntityAvatar name={contatoNome} src={contato?.imagemUrl} size="md" className="rounded-full ring-2 ring-primary-subtle" />
+          <EntityAvatar name={contatoNome} src={contato?.imagemUrl} size="md" className="rounded-full" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold tracking-tight text-foreground">{chat ? contatoNome : "Chat da candidatura"}</p>
             {chat?.vagaTitulo && (
-              <p className="mt-1 flex w-fit max-w-full items-center gap-1 truncate rounded-full bg-primary-subtle px-2 py-0.5 text-[11px] font-medium text-primary-subtle-foreground">
+              <p className="mt-0.5 flex max-w-full items-center gap-1.5 truncate text-xs text-muted-foreground">
                 <Briefcase aria-hidden className="size-3 shrink-0" />
                 <span className="truncate">{chat.vagaTitulo}</span>
               </p>
@@ -161,7 +161,7 @@ function ContextoConversa({ chat, candidaturaId, perspectiva }: { chat: Chat | n
       initial={{ opacity: 0, x: 12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-      className="hidden w-72 shrink-0 flex-col overflow-y-auto border-l border-border-subtle bg-gradient-to-b from-primary-subtle/50 via-card to-card xl:flex"
+      className="hidden w-72 shrink-0 flex-col overflow-y-auto border-l border-border-subtle bg-card xl:flex"
     >
       <div className="flex flex-col items-center border-b border-border-subtle px-5 py-6 text-center">
         <EntityAvatar name={contato?.nome} src={contato?.imagemUrl} size="lg" className="size-16 rounded-full text-lg" />
@@ -194,7 +194,7 @@ function ContextoConversa({ chat, candidaturaId, perspectiva }: { chat: Chat | n
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: index <= current ? 1 : 0 }}
                       transition={{ duration: 0.5, delay: 0.25 + index * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                      className="block h-full origin-left rounded-full bg-gradient-to-r from-primary to-primary-soft"
+                      className="block h-full origin-left rounded-full bg-primary"
                     />
                   </span>
                 ))}
@@ -254,17 +254,8 @@ function SemConversa({ perspectiva, temChats }: { perspectiva: ChatPerspectiva; 
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="flex flex-col items-center"
       >
-        <span className="relative grid size-20 place-items-center">
-          <motion.span
-            aria-hidden
-            className="absolute inset-0 rounded-3xl bg-primary/15"
-            animate={{ scale: [1, 1.3], opacity: [0.8, 0] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut" }}
-          />
-          <span className="chat-float relative grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary-deep text-primary-foreground shadow-[0_12px_30px_-10px_var(--primary)]">
-            <MessageSquare className="size-7" aria-hidden />
-          </span>
-          <Sparkles aria-hidden className="absolute -right-1 -top-1 size-5 text-mint-strong" />
+        <span className="grid size-14 place-items-center rounded-2xl bg-card text-primary ring-1 ring-border">
+          <MessageSquare className="size-6" aria-hidden />
         </span>
         <p className="mt-6 text-lg font-semibold tracking-tight text-foreground">
           {temChats ? "Selecione uma conversa" : "Nenhuma conversa ainda"}

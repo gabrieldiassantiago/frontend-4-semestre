@@ -1,5 +1,6 @@
 "use client"
 
+import { Select } from "@/components/ui/select"
 import { AlertCircle, ArrowRight, CheckCircle2, Circle, Phone } from "lucide-react"
 import { Field, InputWithIcon } from "@/components/ui/form-field"
 import { PROFILE_STEPS, type ProfileCompletion, type ProfileStepId } from "@/lib/candidate-completion"
@@ -139,39 +140,28 @@ export function EducationStep({ form, onChange, errors }: StepProps) {
       </Field>
 
       <Field label="Semestre atual *" error={errors.currentSemester}>
-        <select
-          className="field-input"
-          value={form.currentSemester ?? ""}
-          aria-invalid={Boolean(errors.currentSemester)}
-          onChange={(event) =>
-            onChange({ currentSemester: event.target.value ? Number(event.target.value) : undefined })
-          }
-        >
-          <option value="">Selecione seu semestre</option>
-          {Array.from({ length: 20 }, (_, index) => index + 1).map((semester) => (
-            <option key={semester} value={semester}>
-              {semester}º semestre
-            </option>
-          ))}
-        </select>
+        <Select
+          aria-label="Semestre atual"
+          placeholder="Selecione seu semestre"
+          invalid={Boolean(errors.currentSemester)}
+          value={form.currentSemester ? String(form.currentSemester) : ""}
+          onValueChange={(value) => onChange({ currentSemester: value ? Number(value) : undefined })}
+          options={Array.from({ length: 20 }, (_, index) => ({ value: String(index + 1), label: `${index + 1}º semestre` }))}
+        />
       </Field>
 
       <Field label="Previsão de formatura *" error={errors.expectedGraduationYear}>
-        <select
-          className="field-input"
-          value={form.expectedGraduationYear ?? ""}
-          aria-invalid={Boolean(errors.expectedGraduationYear)}
-          onChange={(event) =>
-            onChange({ expectedGraduationYear: event.target.value ? Number(event.target.value) : undefined })
-          }
-        >
-          <option value="">Selecione o ano</option>
-          {Array.from({ length: 11 }, (_, index) => currentYear + index).map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
+        <Select
+          aria-label="Previsão de formatura"
+          placeholder="Selecione o ano"
+          invalid={Boolean(errors.expectedGraduationYear)}
+          value={form.expectedGraduationYear ? String(form.expectedGraduationYear) : ""}
+          onValueChange={(value) => onChange({ expectedGraduationYear: value ? Number(value) : undefined })}
+          options={Array.from({ length: 11 }, (_, index) => {
+            const year = String(currentYear + index)
+            return { value: year, label: year }
+          })}
+        />
       </Field>
     </div>
   )

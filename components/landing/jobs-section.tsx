@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { gsap } from "gsap"
-import { Banknote, BarChart3, Bookmark, Briefcase, CodeXml, Handshake, LayoutGrid, MapPin, Palette, Share2, Sparkles, type LucideIcon } from "lucide-react"
+import { ArrowRight, Banknote, BarChart3, Bookmark, Briefcase, CodeXml, Handshake, LayoutGrid, MapPin, Palette, Share2, Sparkles, type LucideIcon } from "lucide-react"
 
 import { CompanyLogo } from "@/components/shared/company-logo"
 import { SectionHeading } from "./section-heading"
@@ -82,7 +82,7 @@ export function JobsSection({ jobs }: { jobs: LandingJob[] }) {
 
       <div data-reveal className="no-scrollbar -mx-5 mt-10 flex overflow-x-auto px-5 sm:mx-0 sm:justify-center sm:px-0">
         <div role="tablist" aria-label="Filtrar por área" className="relative flex shrink-0 gap-2">
-          <span ref={pill} className="absolute inset-y-0 left-0 w-0 rounded-full bg-strong" aria-hidden />
+          <span ref={pill} className="absolute inset-y-0 left-0 w-0 rounded-full bg-primary" aria-hidden />
           {JOB_TABS.map((t) => {
             const Icon = TAB_ICONS[t.id] ?? Briefcase
             const active = tab === t.id
@@ -95,7 +95,7 @@ export function JobsSection({ jobs }: { jobs: LandingJob[] }) {
                 onClick={() => setTab(t.id)}
                 className={cn(
                   "relative z-10 flex h-12 items-center gap-2 whitespace-nowrap rounded-full border px-5 text-[15px] transition-colors duration-300",
-                  active ? "border-transparent text-white" : "border-border bg-muted text-strong-foreground hover:border-border-strong",
+                  active ? "border-transparent text-white" : "border-border bg-background text-strong-foreground hover:border-primary/40 hover:text-primary",
                 )}
               >
                 <Icon className="size-4" aria-hidden />
@@ -108,8 +108,8 @@ export function JobsSection({ jobs }: { jobs: LandingJob[] }) {
 
       <div ref={grid} data-reveal className="mt-10 grid min-h-[320px] gap-5 md:grid-cols-2 lg:grid-cols-3">
         {visible.map((j) => (
-          <article key={j.id} className="flex flex-col overflow-hidden rounded-3xl border border-border bg-background transition-[box-shadow,translate] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_50px_-30px_rgba(59,31,174,0.35)]">
-            <header className="flex items-start gap-3 border-b border-border bg-muted px-6 py-5">
+          <article key={j.id} className="flex flex-col overflow-hidden group/job rounded-3xl border border-border/60 bg-background transition-[border-color,translate] duration-300 hover:-translate-y-1 hover:border-primary/40">
+            <header className="flex items-start gap-3 border-b border-border/60 bg-muted px-6 py-5 transition-colors duration-300 group-hover/job:bg-primary-subtle">
               <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-border bg-white">
                 <CompanyLogo name={j.empresa} size="sm" />
               </span>
@@ -129,7 +129,7 @@ export function JobsSection({ jobs }: { jobs: LandingJob[] }) {
                 <span className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5"><Banknote className="size-3.5" aria-hidden />{j.salario}</span>
               </div>
               <footer className="mt-auto flex items-center gap-2 pt-6">
-                <Link href={ROUTES.publicJob(j.id)} className="flex h-12 flex-1 items-center justify-center rounded-full bg-strong text-[15px] font-medium text-white transition-colors hover:bg-primary">
+                <Link href={ROUTES.publicJob(j.id)} className="flex h-12 flex-1 items-center justify-center rounded-full bg-primary text-[15px] font-medium text-white transition-colors hover:bg-primary-hover">
                   Candidatar-se
                 </Link>
                 <button
@@ -137,11 +137,11 @@ export function JobsSection({ jobs }: { jobs: LandingJob[] }) {
                   aria-label={saved.has(j.id) ? "Remover dos salvos" : "Salvar vaga"}
                   aria-pressed={saved.has(j.id)}
                   onClick={() => toggleSaved(j.id)}
-                  className={cn("grid size-12 place-items-center rounded-full border transition-colors", saved.has(j.id) ? "border-primary bg-primary-subtle text-primary" : "border-border text-strong-foreground hover:border-border-strong")}
+                  className={cn("grid size-12 place-items-center rounded-full border transition-colors", saved.has(j.id) ? "border-primary bg-primary-subtle text-primary" : "border-border text-strong-foreground hover:border-primary/40 hover:bg-primary-subtle hover:text-primary")}
                 >
                   <Bookmark className={cn("size-[18px]", saved.has(j.id) && "fill-primary")} aria-hidden />
                 </button>
-                <button type="button" aria-label="Compartilhar vaga" onClick={() => share(j)} className="grid size-12 place-items-center rounded-full border border-border text-strong-foreground transition-colors hover:border-border-strong">
+                <button type="button" aria-label="Compartilhar vaga" onClick={() => share(j)} className="grid size-12 place-items-center rounded-full border border-border text-strong-foreground transition-colors hover:border-primary/40 hover:bg-primary-subtle hover:text-primary">
                   <Share2 className="size-[18px]" aria-hidden />
                 </button>
               </footer>
@@ -156,8 +156,9 @@ export function JobsSection({ jobs }: { jobs: LandingJob[] }) {
       </div>
 
       <div data-reveal className="mt-10 text-center">
-        <Link href={ROUTES.candidate.jobs} className="inline-flex h-12 items-center rounded-full border border-border bg-muted px-7 text-sm font-medium transition-colors hover:bg-border-subtle">
+        <Link href={ROUTES.candidate.jobs} data-magnetic className="group inline-flex h-12 items-center gap-3 rounded-full border border-border bg-background pl-6 pr-1.5 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary">
           Ver todas as vagas
+          <span className="grid size-9 place-items-center rounded-full bg-primary-subtle text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-white"><ArrowRight className="size-4" aria-hidden /></span>
         </Link>
       </div>
     </section>

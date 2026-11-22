@@ -48,7 +48,7 @@ export function AttentionPanel({ vagas, candidaturas }: { vagas: Vaga[]; candida
   }
 
   return (
-    <section aria-labelledby="attention-title" className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <section aria-labelledby="attention-title" className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
       <div className="flex items-center justify-between gap-3 px-6 pb-4 pt-6">
         <h2 id="attention-title" className="text-base font-semibold tracking-tight text-foreground">
           Pendências de recrutamento

@@ -1,11 +1,18 @@
 "use client"
 import Link from "next/link"
-import { ArrowUpRight, FileText, MessageSquareQuote, MoreHorizontal, UserRound } from "lucide-react"
+import {
+  MessageSquareQuote,
+  MoreHorizontal,
+  UserRound,
+} from "lucide-react"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { StatusBadge } from "@/components/shared/candidatura/candidatura-ui"
 import { ROUTES } from "@/lib/config/routes"
 import { formatRelativeDate } from "@/lib/format"
 import type { Candidatura } from "@/lib/types/candidatura.types"
+import { cn } from "@/lib/utils"
+
+const NEW_WINDOW_MS = 2 * 86_400_000
 
 export function PipelineCandidateCard(
   {
@@ -18,42 +25,49 @@ export function PipelineCandidateCard(
 ) {
   const name = item.candidatoNome?.trim() || "Candidato"
   const feedbacks = item.totalFeedbacks ?? 0
+  const isNew = item.createdAt ? Date.now() - new Date(item.createdAt).getTime() <= NEW_WINDOW_MS : false
+  const isOpen = item.status === "EM_ANDAMENTO"
 
   return (
-    <article
-      className="relative min-w-0 rounded-[20px] border border-black/[0.035] bg-card shadow-[0_2px_3px_-2px_rgba(24,24,27,0.06)] transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_6px_20px_-10px_rgba(24,24,27,0.15)]">
+    <article className="group relative min-w-0 rounded-lg border border-border bg-card transition-colors duration-150 hover:border-primary/50">
       <button
         type="button"
         onClick={onOpen}
         aria-haspopup="dialog"
         aria-label={`Avaliar candidatura de ${name}`}
-        className="block w-full rounded-[20px] p-5 text-left">
-        <div className="flex min-w-0 items-center gap-3 pr-9">
-          <EntityAvatar name={name} src={item.candidatoImagemUrl} size="sm" className="size-9 rounded-full font-medium" />
-          <h3 className="min-w-0 break-words text-sm font-medium leading-5 tracking-[-0.02em] text-foreground">{name}</h3>
-        </div>
-        <p className="mt-3 line-clamp-2 text-xs leading-5 text-muted-foreground">{item.candidatoHeadline || item.candidatoEmail || "Candidatura recebida"}</p>
-        <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{item.createdAt ? `Inscrição ${formatRelativeDate(item.createdAt)}` : "Data de inscrição não informada"}</p>
-
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border-subtle pt-4">
-          <div>
-            <span className="block text-[11px] text-muted-foreground">Feedbacks</span>
-            <span className="mt-1 flex items-center gap-1.5 text-sm font-medium tabular-nums text-foreground"><MessageSquareQuote aria-hidden className="size-3.5 text-subtle-foreground" />{feedbacks}</span>
+        className="block w-full rounded-lg p-3.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+        <div className="flex min-w-0 items-center gap-3 pr-8">
+          <EntityAvatar name={name} src={item.candidatoImagemUrl} size="sm" className="size-9 shrink-0 rounded-full font-medium" />
+          <div className="min-w-0">
+            <h3 className="flex items-center gap-2 text-sm font-semibold leading-5 text-foreground">
+              <span className="truncate">{name}</span>
+              {isNew && <span className="shrink-0 text-[11px] font-medium text-primary">Novo</span>}
+            </h3>
+            <p className="truncate text-xs leading-5 text-muted-foreground">
+              {item.candidatoHeadline || item.candidatoEmail || "Candidatura recebida"}
+            </p>
           </div>
-          <span
-            className={item.curriculoUrl ? "inline-flex items-center gap-1.5 rounded-full bg-primary-subtle px-2.5 py-1.5 text-[10px] font-medium text-primary-subtle-foreground" : "rounded-full bg-surface px-2.5 py-1.5 text-[10px] text-muted-foreground"}>
-            {item.curriculoUrl && <FileText aria-hidden className="size-3" />}
-            {item.curriculoUrl ? "Currículo anexado" : "Currículo indisponível"}
+        </div>
+
+        {!isOpen && <div className="mt-3"><StatusBadge status={item.status} size="sm" /></div>}
+
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-border-subtle pt-2.5 text-xs text-muted-foreground">
+          <span>{feedbacks > 0 ? `${feedbacks} ${feedbacks === 1 ? "feedback" : "feedbacks"}` : "Sem feedback"}</span>
+          <span className={cn(!item.curriculoUrl && "text-subtle-foreground")}>
+            {item.curriculoUrl ? "Currículo anexado" : "Sem currículo"}
           </span>
         </div>
+        <p className="mt-1 text-[11px] text-subtle-foreground">
+          Inscrito {item.createdAt ? formatRelativeDate(item.createdAt).toLowerCase() : "—"}
+        </p>
       </button>
 
-      <details className="absolute right-4 top-5 z-10">
+      <details className="absolute right-3 top-3 z-10">
         <summary
           aria-label={`Opções para ${name}`}
-          className="grid size-8 cursor-pointer list-none place-items-center rounded-lg border border-border-subtle text-muted-foreground transition-colors hover:bg-surface [&::-webkit-details-marker]:hidden"><MoreHorizontal aria-hidden className="size-4" /></summary>
+          className="grid size-8 cursor-pointer list-none place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&::-webkit-details-marker]:hidden"><MoreHorizontal aria-hidden className="size-4" /></summary>
         <div
-          className="absolute right-0 top-10 w-52 rounded-xl border border-border bg-card p-1.5 shadow-raised">
+          className="absolute right-0 top-10 w-52 rounded-lg border border-border bg-card p-1.5 shadow-raised">
           <button
             type="button"
             onClick={event => {
@@ -66,17 +80,6 @@ export function PipelineCandidateCard(
             className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-strong-foreground hover:bg-surface"><UserRound aria-hidden className="size-4" />Ver perfil completo</Link>
         </div>
       </details>
-
-      <div
-        className="mx-5 flex min-h-12 items-center justify-between gap-2 border-t border-border-subtle py-2">
-        {item.status === "EM_ANDAMENTO" ? <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><span aria-hidden className="size-1.5 rounded-full bg-primary/60" />Em andamento</span> : <StatusBadge status={item.status} size="sm" />}
-        <button
-          type="button"
-          onClick={onOpen}
-          aria-haspopup="dialog"
-          aria-label={`Abrir candidatura de ${name}`}
-          className="inline-flex min-h-8 items-center gap-1 rounded-md px-1 text-[11px] font-medium text-strong-foreground transition-colors hover:text-primary">Avaliar<ArrowUpRight aria-hidden className="size-3.5" /></button>
-      </div>
     </article>
   )
 }

@@ -105,7 +105,7 @@ export function SkillsInput({
               key={sugestao}
               type="button"
               onClick={() => adicionar(sugestao)}
-              className="min-h-11 rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground md:min-h-0 md:px-2.5 md:py-1"
+              className="min-h-11 rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary-subtle hover:text-primary md:min-h-0 md:px-2.5 md:py-1"
             >
               {sugestao}
             </button>

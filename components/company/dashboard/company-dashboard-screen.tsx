@@ -2,17 +2,19 @@
 
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { Activity, BriefcaseBusiness, CheckCircle2, Plus, Users, Workflow } from "lucide-react"
+import { Activity, BriefcaseBusiness, CalendarClock, CheckCircle2, Plus, Users, Workflow } from "lucide-react"
 import { PageShell } from "@/components/ui/page"
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
 import { BarChartSkeleton, ErrorState } from "@/components/ui/states"
 import { ROUTES } from "@/lib/config/routes"
-import { useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
+import { useAgendamentosEmpresa, useCandidaturasEmpresa } from "@/lib/queries/use-candidaturas"
+import { useCompanyIdentity } from "@/lib/queries/use-company-profile"
 import { useCompanyVagas } from "@/lib/queries/use-vagas"
+import { AgendaCard } from "./agenda-card"
 import { AttentionPanel } from "./attention-panel"
 import { JobsPerformance } from "./jobs-performance"
 import { KpiCard } from "./kpi-card"
-import { periodComparison } from "./metrics"
+import { isAwaitingReview, periodComparison } from "./metrics"
 import { RecentApplicationsList } from "./recent-applications-list"
 
 const ActivityChart = dynamic(() => import("./dashboard-charts").then(module => module.ActivityChart), {
@@ -27,6 +29,8 @@ const RECENT_LIMIT = 6
 export function CompanyDashboardScreen() {
   const jobsQuery = useCompanyVagas()
   const applicationsQuery = useCandidaturasEmpresa()
+  const company = useCompanyIdentity()
+  const { agendamentos } = useAgendamentosEmpresa()
 
   if (jobsQuery.loading || applicationsQuery.loading) return <RouteSkeleton variant="company-dashboard" />
 
@@ -61,15 +65,39 @@ export function CompanyDashboardScreen() {
   const inProgress = candidaturas.filter((c) => c.status === "EM_ANDAMENTO").length
   const approvalRate = finished > 0 ? Math.round((approved / finished) * 100) : null
   const weekly = periodComparison(candidaturas)
+  const awaiting = candidaturas.filter(isAwaitingReview).length
+  const todayKey = new Date().toDateString()
+  const meetingsToday = agendamentos.filter(
+    (item) => (item.status === "PENDENTE" || item.status === "CONFIRMADO") && new Date(item.inicio).toDateString() === todayKey,
+  ).length
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite"
+  const highlights = [
+    awaiting > 0 && `${awaiting} ${awaiting === 1 ? "candidatura aguarda" : "candidaturas aguardam"} triagem`,
+    meetingsToday > 0 && `${meetingsToday} ${meetingsToday === 1 ? "reunião" : "reuniões"} hoje`,
+  ].filter(Boolean)
   const recent = [...candidaturas]
     .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
     .slice(0, RECENT_LIMIT)
 
   return (
     <PageShell className="max-w-[1380px]">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight text-ink">Painel de recrutamento</h1>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p suppressHydrationWarning className="text-sm font-medium text-muted-foreground">
+            {greeting}
+            {company.companyName ? `, ${company.companyName}` : ""}
+          </p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">Painel de recrutamento</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {highlights.length > 0 ? highlights.join(" · ") : "Tudo em dia por aqui. Nenhuma pendência no momento."}
+          </p>
+        </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Link href={ROUTES.company.appointments} className="btn-secondary rounded-xl px-4">
+            <CalendarClock aria-hidden className="size-4" />
+            Agenda
+          </Link>
           <Link href={ROUTES.company.processes} className="btn-secondary rounded-xl px-4">
             <Workflow aria-hidden className="size-4" />
             Processos
@@ -82,7 +110,7 @@ export function CompanyDashboardScreen() {
       </header>
 
       <div className="mt-6 grid items-stretch gap-4 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-        <section aria-label="Indicadores do recrutamento" className="grid min-w-0 grid-cols-2 gap-2 rounded-2xl border border-border bg-card p-2 sm:gap-3 sm:p-3">
+        <section aria-label="Indicadores do recrutamento" className="grid min-w-0 grid-cols-2 gap-2 rounded-2xl border border-border bg-card p-2 shadow-xs sm:gap-3 sm:p-3">
           <KpiCard
             label="Vagas ativas"
             value={activeCount}
@@ -123,6 +151,7 @@ export function CompanyDashboardScreen() {
           <RecentApplicationsList candidaturas={recent} />
         </div>
         <div className="grid min-w-0 gap-4">
+          <AgendaCard />
           <AttentionPanel vagas={vagas} candidaturas={candidaturas} />
           <FunnelCard candidaturas={candidaturas} />
         </div>

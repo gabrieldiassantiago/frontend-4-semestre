@@ -10,7 +10,7 @@ export function RecentApplications({ candidaturas }: { candidaturas: Candidatura
   if (candidaturas.length === 0) return null
 
   return (
-    <ul className="divide-y divide-border-subtle overflow-hidden rounded-card border border-border bg-card">
+    <ul className="divide-y divide-border-subtle overflow-hidden rounded-3xl border border-border/60 bg-card">
       {candidaturas.map((candidatura) => {
         const company = candidatura.nomeEmpresa ?? "Empresa"
         return (
@@ -21,7 +21,7 @@ export function RecentApplications({ candidaturas }: { candidaturas: Candidatura
             >
               <CompanyLogo name={company} url={candidatura.logoUrlEmpresa} size="sm" />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-foreground group-hover:text-primary">
+                <span className="block truncate text-sm font-semibold text-foreground">
                   {candidatura.vagaTitulo}
                 </span>
                 <span className="block truncate text-xs text-muted-foreground">
@@ -32,7 +32,9 @@ export function RecentApplications({ candidaturas }: { candidaturas: Candidatura
               <span className="hidden sm:block">
                 <StatusBadge status={candidatura.status} size="sm" />
               </span>
-              <ChevronRight aria-hidden className="size-4 shrink-0 text-subtle-foreground" />
+              <span className="grid size-8 shrink-0 place-items-center rounded-full border border-border text-strong-foreground transition-colors group-hover:border-primary group-hover:bg-primary group-hover:text-white">
+                <ChevronRight aria-hidden className="size-4" />
+              </span>
             </Link>
           </li>
         )

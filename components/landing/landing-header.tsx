@@ -46,6 +46,7 @@ export function LandingHeader() {
         scrolled && !open ? "bg-background/80 shadow-[0_1px_0_var(--border)] backdrop-blur-xl" : "bg-background",
       )}
     >
+      <span data-progress aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary" />
       <div className="mx-auto flex h-[72px] max-w-[1400px] items-center justify-between px-5 sm:px-8 lg:h-[88px] lg:px-12">
         <Link href={ROUTES.home} aria-label="Selecta, página inicial" className="shrink-0">
           <SelectaLogo className="h-8 lg:h-9" />

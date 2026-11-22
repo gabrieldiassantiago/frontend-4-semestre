@@ -1,5 +1,6 @@
 "use client"
 
+import { Fragment } from "react"
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useFlow } from "./flow-context"
@@ -7,92 +8,75 @@ import { stepSummary } from "./steps"
 import type { VagaDraft } from "./types"
 
 /**
- * Trilha vertical de etapas. Só navega para etapas já visitadas, para que a
- * trilha não vire atalho para pular validações.
+ * Stepper horizontal do cabeçalho. Fica fora da área de conteúdo para não
+ * competir com o menu lateral do app. Só navega para etapas já visitadas,
+ * para não virar atalho que pula validações.
  */
-export function StepRail({
+export function StepTrack({
   current,
   maxReached,
   draft,
   onSelect,
+  className,
 }: {
   current: number
   maxReached: number
   draft: VagaDraft
   onSelect: (index: number) => void
+  className?: string
 }) {
   const { steps, mode } = useFlow()
 
   return (
-    <nav aria-label={mode === "edit" ? "Seções da vaga" : "Etapas da publicação"}>
-      <ol className="relative">
+    <nav aria-label={mode === "edit" ? "Seções da vaga" : "Etapas da publicação"} className={className}>
+      <ol className="flex items-center gap-1">
         {steps.map((step, index) => {
           const active = index === current
-          const done = index < current || (index <= maxReached && index !== current)
+          const done = !active && index <= maxReached && (mode === "edit" || index < maxReached || index < current)
           const reachable = index <= maxReached
-          const summary = reachable && !active ? stepSummary(step.id, draft) : null
-          const Icon = step.icon
-          const isLast = index === steps.length - 1
+          const summary = reachable ? stepSummary(step.id, draft) : null
 
           return (
-            <li key={step.id} className="relative pb-1">
-              {!isLast && (
-                <span
-                  aria-hidden
-                  className="absolute left-[19.5px] top-[38px] h-[calc(100%-36px)] w-px bg-border"
-                >
+            <Fragment key={step.id}>
+              {index > 0 && (
+                <li aria-hidden className="h-px min-w-2 flex-1 overflow-hidden rounded-full bg-border">
                   <span
                     className={cn(
-                      "block w-full bg-primary transition-all duration-500 ease-out",
-                      index < current ? "h-full" : "h-0",
+                      "block h-full bg-primary transition-[width] duration-500 ease-out",
+                      index <= current || (mode === "edit" && index <= maxReached) ? "w-full" : "w-0",
                     )}
                   />
-                </span>
+                </li>
               )}
-
-              <button
-                type="button"
-                disabled={!reachable}
-                aria-current={active ? "step" : undefined}
-                onClick={() => onSelect(index)}
-                className={cn(
-                  "flex w-full items-start gap-3 rounded-xl p-1.5 text-left transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                  reachable && !active && "hover:bg-muted",
-                  !reachable && "cursor-not-allowed",
-                )}
-              >
-                <span
+              <li className="shrink-0">
+                <button
+                  type="button"
+                  disabled={!reachable}
+                  aria-current={active ? "step" : undefined}
+                  title={summary ? `${step.label}: ${summary}` : step.label}
+                  onClick={() => onSelect(index)}
                   className={cn(
-                    "relative grid size-7 shrink-0 place-items-center rounded-full border text-xs transition-all duration-300",
-                    active && "border-primary bg-primary text-primary-foreground shadow-[0_0_0_4px_var(--primary-ring)]",
-                    !active && done && "border-primary bg-primary-subtle text-primary",
-                    !active && !done && "border-border bg-card text-subtle-foreground",
+                    "group relative flex items-center gap-2 rounded-full p-1 text-xs font-semibold transition-colors xl:pr-3",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    active && "bg-primary-subtle pr-3 text-primary-subtle-foreground",
+                    !active && reachable && "text-strong-foreground hover:bg-muted",
+                    !reachable && "cursor-not-allowed text-subtle-foreground",
                   )}
                 >
-                  {!active && done ? (
-                    <Check className="size-3.5" aria-hidden />
-                  ) : (
-                    <Icon className="size-3.5" aria-hidden />
-                  )}
-                </span>
-                <span className="min-w-0 pt-0.5">
                   <span
                     className={cn(
-                      "block text-sm font-semibold transition-colors",
-                      active ? "text-foreground" : reachable ? "text-strong-foreground" : "text-subtle-foreground",
+                      "grid size-6 shrink-0 place-items-center rounded-full text-[11px] tabular-nums transition-colors duration-300",
+                      active && "bg-primary text-primary-foreground",
+                      done && "bg-primary-subtle text-primary",
+                      !active && !done && "border border-border bg-card text-subtle-foreground",
                     )}
                   >
-                    {step.label}
+                    {done ? <Check className="size-3.5" strokeWidth={2.5} aria-hidden /> : index + 1}
                   </span>
-                  {summary && (
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                      {summary}
-                    </span>
-                  )}
-                </span>
-              </button>
-            </li>
+                  <span className={cn("whitespace-nowrap", !active && "sr-only xl:not-sr-only")}>{step.label}</span>
+                </button>
+              </li>
+            </Fragment>
           )
         })}
       </ol>

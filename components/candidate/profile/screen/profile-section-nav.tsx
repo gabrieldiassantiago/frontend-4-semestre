@@ -20,10 +20,10 @@ const STATE_LABEL: Record<SectionState, string> = {
   none: "",
 }
 
-function StateMark({ state }: { state: SectionState }) {
-  if (state === "done") return <Check className="size-4 shrink-0 text-success" strokeWidth={2.5} aria-hidden />
-  if (state === "pending-required") return <span className="size-2 shrink-0 rounded-full bg-warning" aria-hidden />
-  if (state === "pending-optional") return <span className="size-2 shrink-0 rounded-full border border-border-strong" aria-hidden />
+function StateMark({ state, current }: { state: SectionState; current: boolean }) {
+  if (state === "done") return <Check className={cn("size-4 shrink-0", current ? "text-white" : "text-mint-strong")} strokeWidth={2.5} aria-hidden />
+  if (state === "pending-required") return <span className={cn("size-2 shrink-0 rounded-full", current ? "bg-white" : "bg-primary")} aria-hidden />
+  if (state === "pending-optional") return <span className={cn("size-2 shrink-0 rounded-full border", current ? "border-white/70" : "border-border-strong")} aria-hidden />
   return null
 }
 
@@ -39,14 +39,15 @@ export function ProfileSectionNav({
   onSelect: (section: ProfileSectionId) => void
 }) {
   return (
-    <nav aria-label="Seções do perfil"><p className="mb-3 hidden px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground lg:block">Editar perfil</p>
-      <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-card lg:border lg:border-border lg:bg-card lg:p-2 lg:pb-2">
+    <nav aria-label="Seções do perfil">
+      <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:rounded-[28px] lg:border lg:border-border/60 lg:bg-card lg:p-3">
+        <li aria-hidden className="hidden px-3 pb-1.5 pt-1 text-xs text-muted-foreground lg:block">Editar perfil</li>
         {PROFILE_SECTIONS.map((item) => {
           const current = active === item.id
           const state = sectionState(completion, item.steps)
 
           return (
-            <li key={item.id} className={cn("shrink-0", item.id === "preview" && "lg:mt-1.5 lg:border-t lg:border-border-subtle lg:pt-1.5")}>
+            <li key={item.id} className={cn("shrink-0", item.id === "preview" && "lg:mt-2 lg:border-t lg:border-border/60 lg:pt-3")}>
               <button
                 type="button"
                 disabled={disabled}
@@ -54,15 +55,17 @@ export function ProfileSectionNav({
                 aria-current={current ? "page" : undefined}
                 aria-label={item.label + STATE_LABEL[state]}
                 className={cn(
-                  "flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-lg border px-3 text-xs font-medium transition-colors lg:w-full lg:rounded-lg lg:border-transparent lg:px-3",
+                  "group flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-full border py-1 pl-1 pr-3.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 lg:w-full lg:border-transparent",
                   current
-                    ? "border-primary bg-primary-subtle text-primary-subtle-foreground lg:border-transparent"
-                    : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground lg:bg-transparent",
+                    ? "border-transparent bg-primary text-white"
+                    : "border-border bg-card text-strong-foreground hover:bg-primary-subtle hover:text-primary lg:bg-transparent",
                 )}
               >
-                <item.icon className="size-[18px] shrink-0" aria-hidden />
+                <span className={cn("grid size-9 shrink-0 place-items-center rounded-full transition-colors", current ? "bg-white text-primary" : "bg-surface group-hover:bg-card")}>
+                  <item.icon className="size-[18px]" aria-hidden />
+                </span>
                 <span className="flex-1 text-left">{item.label}</span>
-                <StateMark state={state} />
+                <StateMark state={state} current={current} />
               </button>
             </li>
           )

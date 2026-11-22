@@ -15,6 +15,11 @@ export const metadata: Metadata = {
     default: "Selecta",
     template: "%s | Selecta",
   },
+  icons: {
+    icon: '/images/logo.svg',
+    shortcut: '/images/logo.svg',
+    apple: '/images/logo.svg',
+  },
   description: "Processos seletivos mais transparentes e humanos.",
 }
 

@@ -1,17 +1,17 @@
 import {
   Bell,
-  Briefcase,
   BriefcaseBusiness,
   Building2,
-  FileText,
-  LayoutDashboard,
-  LayoutGrid,
-  MessageSquare,
-  Settings,
+  CalendarDays,
+  CircleUserRound,
+  House,
+  MessagesSquare,
+  Search,
+  Send,
+  Settings2,
+  SquareKanban,
   UserCog,
-  UserRound,
   UsersRound,
-  Workflow,
   type LucideIcon,
 } from "lucide-react"
 import { ROUTES, matchesRoute } from "@/lib/config/routes"
@@ -26,6 +26,8 @@ export type NavItem = {
   aliases?: readonly string[]
   /** Quando `true`, só fica ativo na rota exata — sem sub-rotas. */
   exact?: boolean
+  /** Selo curto de destaque (ex.: "Novo") exibido no menu moderno. */
+  tag?: string
 }
 
 export type NavGroup = {
@@ -44,14 +46,14 @@ export type AreaNavigation = {
 }
 
 const candidateItems = {
-  overview: { href: ROUTES.candidate.overview, label: "Visão geral", shortLabel: "Início", icon: LayoutGrid },
-  jobs: { href: ROUTES.candidate.jobs, label: "Buscar vagas", shortLabel: "Vagas", icon: Briefcase, aliases: ["/dashboard"] },
-  applications: { href: ROUTES.candidate.applications, label: "Candidaturas", shortLabel: "Inscrições", icon: FileText },
-  messages: { href: ROUTES.candidate.messages, label: "Mensagens", shortLabel: "Mensagens", icon: MessageSquare },
+  overview: { href: ROUTES.candidate.overview, label: "Visão geral", shortLabel: "Início", icon: House },
+  jobs: { href: ROUTES.candidate.jobs, label: "Buscar vagas", shortLabel: "Vagas", icon: Search, aliases: ["/dashboard"] },
+  applications: { href: ROUTES.candidate.applications, label: "Candidaturas", shortLabel: "Inscrições", icon: Send },
+  messages: { href: ROUTES.candidate.messages, label: "Mensagens", shortLabel: "Mensagens", icon: MessagesSquare },
   notifications: { href: ROUTES.candidate.notifications, label: "Notificações", icon: Bell },
   // O assistente de completar perfil tem layout próprio e não deve ativar o item.
-  profile: { href: ROUTES.candidate.profile, label: "Meu perfil", shortLabel: "Perfil", icon: UserRound, exact: true },
-  settings: { href: ROUTES.candidate.settings, label: "Configurações", icon: Settings },
+  profile: { href: ROUTES.candidate.profile, label: "Meu perfil", shortLabel: "Perfil", icon: CircleUserRound, exact: true },
+  settings: { href: ROUTES.candidate.settings, label: "Configurações", icon: Settings2 },
 } satisfies Record<string, NavItem>
 
 export const CANDIDATE_NAVIGATION: AreaNavigation = {
@@ -63,10 +65,9 @@ export const CANDIDATE_NAVIGATION: AreaNavigation = {
         candidateItems.overview,
         candidateItems.jobs,
         candidateItems.applications,
-        candidateItems.messages,
-        candidateItems.notifications,
       ],
     },
+    { label: "Comunicação", items: [candidateItems.messages, candidateItems.notifications] },
     { label: "Conta", items: [candidateItems.profile] },
   ],
   tabs: [
@@ -80,11 +81,12 @@ export const CANDIDATE_NAVIGATION: AreaNavigation = {
 }
 
 const companyItems = {
-  dashboard: { href: ROUTES.company.dashboard, label: "Visão geral", shortLabel: "Início", icon: LayoutDashboard },
+  dashboard: { href: ROUTES.company.dashboard, label: "Visão geral", shortLabel: "Início", icon: House },
   jobs: { href: ROUTES.company.jobs, label: "Vagas", icon: BriefcaseBusiness },
   candidates: { href: ROUTES.company.candidates, label: "Candidatos", icon: UsersRound },
-  processes: { href: ROUTES.company.processes, label: "Processos seletivos", shortLabel: "Processos", icon: Workflow },
-  messages: { href: ROUTES.company.messages, label: "Mensagens", shortLabel: "Mensagens", icon: MessageSquare },
+  processes: { href: ROUTES.company.processes, label: "Processos seletivos", shortLabel: "Processos", icon: SquareKanban },
+  appointments: { href: ROUTES.company.appointments, label: "Agendamentos", shortLabel: "Agenda", icon: CalendarDays, tag: "Novo" },
+  messages: { href: ROUTES.company.messages, label: "Mensagens", shortLabel: "Mensagens", icon: MessagesSquare },
   profile: { href: ROUTES.company.profile, label: "Perfil da empresa", shortLabel: "Empresa", icon: Building2 },
   team: { href: ROUTES.company.team, label: "Equipe", icon: UserCog },
 } satisfies Record<string, NavItem>
@@ -94,8 +96,14 @@ export const COMPANY_NAVIGATION: AreaNavigation = {
   groups: [
     {
       label: "Recrutamento",
-      items: [companyItems.dashboard, companyItems.jobs, companyItems.candidates, companyItems.processes, companyItems.messages],
+      items: [
+        companyItems.dashboard,
+        companyItems.jobs,
+        companyItems.candidates,
+        companyItems.processes,
+      ],
     },
+    { label: "Agenda e contato", items: [companyItems.appointments, companyItems.messages] },
     { label: "Empresa", items: [companyItems.profile, companyItems.team] },
   ],
   tabs: [companyItems.dashboard, companyItems.jobs, companyItems.candidates, companyItems.processes, companyItems.messages],

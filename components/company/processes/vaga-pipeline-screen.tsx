@@ -1,14 +1,16 @@
 "use client"
+import { Select, type SelectOption } from "@/components/ui/select"
 import { useMemo, useState } from "react"
 import Link from "next/link"
 
 import {
   ArrowDownWideNarrow,
+  ArrowRight,
   ArrowUpRight,
-  ChevronDown,
   ChevronLeft,
   ExternalLink,
   FileText,
+  Hourglass,
   Inbox,
   KanbanSquare,
   Layers3,
@@ -20,6 +22,7 @@ import {
   UserRoundCheck,
   Users,
   X,
+  type LucideIcon,
 } from "lucide-react"
 
 import { PageShell } from "@/components/ui/page"
@@ -41,7 +44,8 @@ import { StageProgress } from "./stage-progress"
 type StatusFilter = PipelineStatus
 type View = "quadro" | "lista"
 type Sort = PipelineSort
-const STAGE_COLORS = ["bg-[#7771df]", "bg-[#c28657]", "bg-[#d4ac54]", "bg-[#6a9cb3]", "bg-[#8e83aa]", "bg-[#67a08f]"]
+
+const NEW_WEEK_MS = 7 * 86_400_000
 
 export function VagaPipelineScreen(
   {
@@ -81,6 +85,11 @@ export function VagaPipelineScreen(
     REPROVADA: daVaga.filter(item => item.status === "REPROVADA" || item.status === "CANCELADA").length,
   }
 
+  const novasNaSemana = useMemo(
+    () => daVaga.filter(item => item.createdAt && Date.now() - new Date(item.createdAt).getTime() <= NEW_WEEK_MS).length,
+    [daVaga],
+  )
+
   const visiveis = useMemo(() => filterPipelineCandidates(daVaga, {
     busca,
     status,
@@ -105,127 +114,137 @@ export function VagaPipelineScreen(
     setWithResume(false)
   }
 
+  const metrics: { value: StatusFilter; label: string; count: number; hint?: string }[] = [
+    { value: "todos", label: "Candidaturas", count: counts.todos, hint: novasNaSemana > 0 ? `+${novasNaSemana} na semana` : undefined },
+    { value: "EM_ANDAMENTO", label: "Em andamento", count: counts.EM_ANDAMENTO },
+    { value: "APROVADA", label: "Aprovadas", count: counts.APROVADA },
+    { value: "REPROVADA", label: "Encerradas", count: counts.REPROVADA },
+  ]
+
   return (
     <PageShell className="max-w-none pb-8">
       <Link
         href={ROUTES.company.processes}
         className="inline-flex items-center gap-1.5 rounded-md text-xs text-muted-foreground transition-colors hover:text-foreground"><ChevronLeft aria-hidden className="size-3.5" />Processos seletivos</Link>
 
-      <header className="mt-5 flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
+      {/* Cabeçalho da vaga */}
+      <header className="mt-4 flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h1
-              className="break-words text-2xl font-semibold tracking-[-0.04em] text-foreground sm:text-[28px] sm:leading-10">{vaga.titulo}</h1>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium",
-                vaga.ativa ? "bg-primary-subtle text-primary-subtle-foreground" : "bg-muted text-muted-foreground",
-              )}><span
-                aria-hidden
-                className={cn("size-1.5 rounded-full", vaga.ativa ? "bg-primary" : "bg-subtle-foreground")} />{vaga.ativa ? "Em recrutamento" : "Vaga pausada"}</span>
+            <h1 className="break-words text-2xl font-semibold tracking-tight text-foreground">{vaga.titulo}</h1>
+            <span className={cn("text-sm font-medium", vaga.ativa ? "text-success-foreground" : "text-muted-foreground")}>{vaga.ativa ? "Em recrutamento" : "Vaga pausada"}</span>
           </div>
           <div
-            className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-5 text-muted-foreground">
-            <span>{CATEGORIA_LABELS[vaga.categoria] ?? "Oportunidade"}</span><span aria-hidden className="size-1 rounded-full bg-border-strong" /><span>{MODALIDADE_LABELS[vaga.modalidade]}</span><span aria-hidden className="size-1 rounded-full bg-border-strong" /><span className="inline-flex items-center gap-1.5"><Users aria-hidden className="size-3.5" />{loading ? "Carregando candidaturas…" : `${daVaga.length} ${daVaga.length === 1 ? "candidatura" : "candidaturas"}`}</span>
+            className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm leading-5 text-muted-foreground">
+            <span>{CATEGORIA_LABELS[vaga.categoria] ?? "Oportunidade"}</span><span aria-hidden className="size-1 rounded-full bg-border-strong" /><span>{MODALIDADE_LABELS[vaga.modalidade]}</span>
             {vaga.cidade && <><span aria-hidden className="size-1 rounded-full bg-border-strong" /><span className="inline-flex items-center gap-1"><MapPin aria-hidden className="size-3" />{[vaga.cidade, vaga.estado].filter(Boolean).join(", ")}</span></>}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <button
             type="button"
             disabled={refreshing}
             onClick={() => void refetch()}
             aria-label="Atualizar candidaturas"
-            className="grid size-10 place-items-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"><RefreshCw aria-hidden className={cn("size-4", refreshing && "animate-spin")} /></button>
+            className="grid size-10 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"><RefreshCw aria-hidden className={cn("size-4", refreshing && "animate-spin")} /></button>
           <Link
             href={`/vaga/${vaga.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-secondary min-h-10 rounded-xl px-3 text-xs"><ExternalLink aria-hidden className="size-3.5" />Página pública</Link>
-          <Link href={ROUTES.company.editJob(vaga.id)} className="btn-secondary min-h-10 rounded-xl px-3 text-xs"><Pencil aria-hidden className="size-3.5" />Editar vaga</Link>
+            className="btn-secondary min-h-10 rounded-lg px-3 text-sm">Página pública<ExternalLink aria-hidden className="size-3.5" /></Link>
+          <Link href={ROUTES.company.editJob(vaga.id)} className="btn-primary min-h-10 rounded-lg px-4 text-sm">Editar vaga</Link>
         </div>
       </header>
 
+      {/* Métricas: também funcionam como filtro de situação */}
       <div
         role="group"
         aria-label="Filtrar candidaturas por situação"
-        className="mt-7 flex gap-5 overflow-x-auto border-b border-border sm:gap-7">
-        {([
-          ["todos", "Todas as candidaturas", KanbanSquare],
-          ["EM_ANDAMENTO", "Em andamento", Users],
-          ["APROVADA", "Aprovadas", UserRoundCheck],
-          ["REPROVADA", "Encerradas", Inbox],
-        ] as const).map(([value, label, Icon]) => (<button
-          key={value}
-          type="button"
-          aria-pressed={status === value}
-          onClick={() => setStatus(value)}
-          className={cn(
-            "-mb-px inline-flex min-h-14 shrink-0 items-center gap-2 border-b-2 text-xs font-medium transition-colors",
-            status === value ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground",
-          )}>
-          <Icon aria-hidden className="size-4" />{label}<span
-            className={cn(
-              "ml-1 rounded-md px-1.5 py-0.5 text-[10px] tabular-nums",
-              status === value ? "bg-primary-subtle" : "bg-muted",
-            )}>{counts[value]}</span>
-        </button>))}
-      </div>
-
-      <div className="flex flex-col gap-3 py-5 2xl:flex-row 2xl:items-center 2xl:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <div
-            role="group"
-            aria-label="Modo de visualização"
-            className="inline-flex rounded-xl border border-border bg-card p-1">
-            {([["quadro", "Quadro", KanbanSquare], ["lista", "Lista", List]] as const).map(([value, label, Icon]) => (<button
+        className="mt-6 flex gap-6 overflow-x-auto border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {metrics.map(({ value, label, count, hint }) => {
+          const active = status === value
+          return (
+            <button
               key={value}
               type="button"
-              aria-pressed={view === value}
-              onClick={() => setView(value)}
+              aria-pressed={active}
+              onClick={() => setStatus(value)}
               className={cn(
-                "inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs transition-colors",
-                view === value ? "bg-primary-subtle font-medium text-primary-subtle-foreground" : "text-muted-foreground hover:bg-surface hover:text-foreground",
-              )}><Icon aria-hidden className="size-3.5" />{label}</button>))}
-          </div>
-          <PipelineSelect label="Filtrar por etapa" value={stage} onChange={setStage} icon={Layers3}>
-            <option value="">Todas as etapas</option>{stages.map(id => <option key={id} value={id}>{stageName(id)}</option>)}
-          </PipelineSelect>
+                "-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 border-b-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+              )}>
+              {label}
+              <span className={cn("tabular-nums", active ? "text-primary" : "text-subtle-foreground")}>{loading ? "–" : count}</span>
+              {hint && <span className="text-xs font-normal text-success-foreground">{hint}</span>}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Barra de ferramentas */}
+      <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div
+          role="group"
+          aria-label="Modo de visualização"
+          className="inline-flex w-fit rounded-lg bg-muted p-1">
+          {([["quadro", "Quadro", KanbanSquare], ["lista", "Lista", List]] as const).map(([value, label, Icon]) => (<button
+            key={value}
+            type="button"
+            aria-pressed={view === value}
+            onClick={() => setView(value)}
+            className={cn(
+              "inline-flex min-h-9 items-center gap-2 rounded-md px-3.5 text-sm font-medium transition-colors",
+              view === value ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
+            )}><Icon aria-hidden className="size-4" />{label}</button>))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <PipelineSelect
+            label="Filtrar por etapa"
+            value={stage}
+            onChange={setStage}
+            icon={Layers3}
+            options={[{ value: "", label: "Todas as etapas" }, ...stages.map((id) => ({ value: id, label: stageName(id) }))]}
+          />
           <PipelineSelect
             label="Ordenar candidaturas"
             value={sort}
             onChange={value => setSort(value as Sort)}
-            icon={ArrowDownWideNarrow}>
-            <option value="recentes">Mais recentes</option><option value="antigas">Mais antigas</option><option value="nome">Nome A–Z</option>
-          </PipelineSelect>
+            icon={ArrowDownWideNarrow}
+            options={[
+              { value: "recentes", label: "Mais recentes" },
+              { value: "antigas", label: "Mais antigas" },
+              { value: "nome", label: "Nome A–Z" },
+            ]}
+          />
           <button
             type="button"
             aria-pressed={withResume}
             onClick={() => setWithResume(prev => !prev)}
             className={cn(
-              "inline-flex min-h-[42px] items-center gap-2 rounded-xl border px-3 text-xs transition-colors",
-              withResume ? "border-primary/30 bg-primary-subtle text-primary-subtle-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground",
-            )}><FileText aria-hidden className="size-3.5" />Com currículo</button>
+              "inline-flex min-h-[42px] items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors",
+              withResume ? "border-primary/40 bg-primary-subtle text-primary-subtle-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground",
+            )}>Com currículo</button>
+          <InputWithIcon
+            icon={Search}
+            type="search"
+            value={busca}
+            onChange={event => setBusca(event.target.value)}
+            placeholder="Buscar candidato"
+            aria-label="Buscar candidato"
+            wrapperClassName="w-full sm:w-64"
+            className="min-h-[42px] text-sm" />
         </div>
-        <InputWithIcon
-          icon={Search}
-          type="search"
-          value={busca}
-          onChange={event => setBusca(event.target.value)}
-          placeholder="Buscar candidato"
-          aria-label="Buscar candidato"
-          wrapperClassName="w-full sm:max-w-sm 2xl:w-64"
-          className="min-h-[42px] text-xs" />
       </div>
 
       <div
-        className="mb-4 flex min-h-6 flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground"
+        className="my-4 flex min-h-6 flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"
         aria-live="polite">
-        <p>{loading ? "Carregando…" : `${visiveis.length} ${visiveis.length === 1 ? "candidatura" : "candidaturas"}${temFiltro ? ` de ${daVaga.length}` : " no processo"}`}<span aria-hidden className="mx-2 text-border-strong">/</span>{shownStages.length}etapas</p>
+        <p>{loading ? "Carregando…" : `${visiveis.length} ${visiveis.length === 1 ? "candidatura" : "candidaturas"}${temFiltro ? ` de ${daVaga.length}` : " no processo"}`}<span aria-hidden className="mx-2 text-border-strong">/</span>{shownStages.length} {shownStages.length === 1 ? "etapa" : "etapas"}</p>
         {temFiltro ? <button
           type="button"
           onClick={clearFilters}
-          className="inline-flex min-h-7 items-center gap-1 rounded-md px-1 text-xs text-strong-foreground hover:text-primary"><X aria-hidden className="size-3" />Limpar filtros</button> : <p className="hidden sm:block">Selecione um candidato para avaliar a candidatura</p>}
+          className="inline-flex min-h-7 items-center gap-1 rounded-md px-1 font-semibold text-primary hover:underline"><X aria-hidden className="size-3" />Limpar filtros</button> : <p className="hidden sm:block">Selecione um candidato para avaliar a candidatura</p>}
       </div>
 
       {loading ? <KanbanSkeleton /> : error ? (<ErrorState
@@ -238,30 +257,22 @@ export function VagaPipelineScreen(
         role="region"
         aria-label="Quadro de candidaturas por etapa"
         tabIndex={0}
-        className="-mx-4 overflow-x-auto overscroll-x-contain px-4 pb-5 focus-visible:rounded-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        className="-mx-4 snap-x snap-mandatory overflow-x-auto overscroll-x-contain px-4 pb-5 focus-visible:rounded-xl sm:-mx-6 sm:snap-none sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex w-max min-w-full items-start gap-4">
           {shownStages.map((id, index) => {
             const items = colunas.get(id) ?? []
-
             return (
               <section
                 key={id}
                 aria-labelledby={`col-${id}`}
-                className="w-[min(320px,calc(100vw-3rem))] shrink-0 rounded-[26px] bg-[#f1f2f3] p-3 sm:w-[332px]">
-                <div className="flex min-h-14 items-center justify-between gap-3 px-2 pb-2">
-                  <h2
-                    id={`col-${id}`}
-                    className="flex min-w-0 items-center gap-2.5 text-[13px] font-medium leading-5 tracking-[-0.015em] text-foreground"><span
-                      aria-hidden
-                      className={cn("size-2 shrink-0 rounded-full", STAGE_COLORS[stages.indexOf(id) % STAGE_COLORS.length])} /><span className="break-words">{stageName(id)}</span></h2>
-                  <span
-                    className="shrink-0 px-1 text-xs tabular-nums text-muted-foreground"
-                    aria-label={`${items.length} candidaturas nesta etapa`}>{items.length}</span>
+                className="w-[min(320px,calc(100vw-3rem))] shrink-0 snap-start rounded-xl bg-surface p-2.5 sm:w-[336px]">
+                <div className="flex items-center justify-between gap-3 px-2 pb-3 pt-1">
+                  <h2 id={`col-${id}`} className="min-w-0 truncate text-sm font-semibold text-foreground">{stageName(id)}</h2>
+                  <span className="text-sm tabular-nums text-muted-foreground" aria-label={`${items.length} candidaturas nesta etapa`}>{items.length}</span>
                 </div>
                 {items.length ? <ul className="flex flex-col gap-3">{items.map(
                     item => <li key={item.id}><PipelineCandidateCard item={item} onOpen={() => setSelectedId(item.id)} /></li>,
-                  )}</ul> : (<div
-                  className="flex min-h-48 flex-col items-center justify-center rounded-[20px] border border-dashed border-[#dddee1] px-6 text-center"><span className="mb-3 grid size-9 place-items-center rounded-full bg-card/80 text-subtle-foreground"><Inbox aria-hidden className="size-4" strokeWidth={1.5} /></span><p className="text-xs font-medium text-muted-foreground">Nenhum candidato nesta etapa</p><p className="mt-1.5 text-[11px] leading-5 text-muted-foreground">{index === 0 ? "As novas candidaturas aparecem aqui." : "Os candidatos aparecem aqui ao avançar no processo."}</p></div>)}
+                  )}</ul> : (<div className="flex min-h-32 items-center justify-center rounded-lg border border-dashed border-border-strong/60 px-6 text-center"><p className="text-xs leading-5 text-muted-foreground">{index === 0 ? "As novas candidaturas aparecem aqui." : "Nenhum candidato nesta etapa."}</p></div>)}
               </section>
             )
           })}
@@ -289,31 +300,24 @@ export function VagaPipelineScreen(
   )
 }
 
-function PipelineSelect(
-  {
-    label,
-    value,
-    onChange,
-    icon: Icon,
-    children,
-  }: {
-    label: string
-    value: string
-    onChange: (value: string) => void
-    icon: typeof Layers3
-    children: React.ReactNode
-  },
-) {
+function PipelineSelect({
+  label,
+  value,
+  onChange,
+  icon: Icon,
+  options,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  icon: typeof Layers3
+  options: SelectOption[]
+}) {
   return (
-    <div className="relative max-w-full"><Icon
-        aria-hidden
-        className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" /><select
-        aria-label={label}
-        value={value}
-        onChange={event => onChange(event.target.value)}
-        className="min-h-[42px] max-w-52 appearance-none rounded-xl border border-border bg-card py-2 pl-9 pr-8 text-xs text-strong-foreground">{children}</select><ChevronDown
-        aria-hidden
-        className="pointer-events-none absolute right-3 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" /></div>
+    <div className="relative max-w-full">
+      <Icon aria-hidden className="pointer-events-none absolute left-3 top-1/2 z-10 size-3.5 -translate-y-1/2 text-muted-foreground" />
+      <Select aria-label={label} variant="pill" value={value} onValueChange={onChange} options={options} className="max-w-52 pl-9" />
+    </div>
   )
 }
 
@@ -327,7 +331,7 @@ function CandidateTable(
   },
 ) {
   return (
-    <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-card">
+    <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-card">
       <table className="w-full min-w-[720px] text-left text-sm">
         <caption className="sr-only">Candidaturas da vaga</caption>
         <thead className="border-b border-border-subtle text-xs text-muted-foreground">

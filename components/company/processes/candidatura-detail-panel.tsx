@@ -1,5 +1,6 @@
 "use client"
 
+import { Select } from "@/components/ui/select"
 import { resumeHref } from "@/lib/utils/resume"
 
 import { etapaLabel } from "@/lib/types/candidatura.types"
@@ -11,6 +12,7 @@ import {
   CalendarClock,
   Check,
   CheckCircle2,
+  Clock,
   ExternalLink,
   FileText,
   Loader2,
@@ -56,6 +58,12 @@ import {
   type EtapaProcesso,
 } from "@/lib/types/candidatura.types"
 import { cn } from "@/lib/utils"
+import {
+  DIAS_SEM_MOVIMENTACAO_ALERTA,
+  descreverDias,
+  diasDesde,
+  entradaNaEtapaAtual,
+} from "@/lib/utils/tempo-etapa"
 
 type Aba = "processo" | "agendamentos" | "feedbacks" | "historico"
 
@@ -115,6 +123,8 @@ export function CandidaturaDetailPanel({
   const { candidatura, historico, feedbacks, agendamentos = [] } = detalhe
   const resume = resumeHref(candidatura.curriculoUrl)
   const finalizada = isFinalizada(candidatura.status)
+  const diasNaEtapa = diasDesde(entradaNaEtapaAtual(historico, candidatura.etapaAtual))
+  const parada = !finalizada && diasNaEtapa !== undefined && diasNaEtapa >= DIAS_SEM_MOVIMENTACAO_ALERTA
 
   const tabCounts: Partial<Record<Aba, number>> = {
     agendamentos: agendamentos.filter((item) => item.status === "PENDENTE" || item.status === "CONFIRMADO").length,
@@ -193,6 +203,20 @@ export function CandidaturaDetailPanel({
                 {candidatura.motivoEncerramento ? ` ${candidatura.motivoEncerramento}` : ""}
               </Alert>
             ) : (
+              <>
+              {diasNaEtapa !== undefined && (
+                <p
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium",
+                    parada ? "bg-warning-subtle text-warning-foreground" : "bg-surface text-muted-foreground",
+                  )}
+                >
+                  <Clock className="size-3.5 shrink-0" aria-hidden />
+                  {parada
+                    ? `Sem movimentação ${descreverDias(diasNaEtapa)}. O candidato está aguardando um retorno.`
+                    : `Nesta etapa ${descreverDias(diasNaEtapa)}.`}
+                </p>
+              )}
               <AcoesProcesso
                 candidaturaId={candidatura.id}
                 etapaAtual={candidatura.etapaAtual}
@@ -202,6 +226,7 @@ export function CandidaturaDetailPanel({
                   setPerguntarAgendamento(Boolean(avancou))
                 }}
               />
+              </>
             )}
 
             {showDocuments && (candidatura.cartaApresentacao || resume) && (
@@ -433,14 +458,20 @@ function AgendamentosManager({
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Etapa">
-              <select className="field-input" value={form.etapa} onChange={(event) => setForm({ ...form, etapa: event.target.value as EtapaProcesso })}>
-                {etapasDisponiveis.map((item) => <option key={item} value={item}>{etapaLabel(item, etapasVaga)}</option>)}
-              </select>
+              <Select
+                aria-label="Etapa"
+                value={form.etapa}
+                onValueChange={(value) => setForm({ ...form, etapa: value as EtapaProcesso })}
+                options={etapasDisponiveis.map((item) => ({ value: item, label: etapaLabel(item, etapasVaga) }))}
+              />
             </Field>
             <Field label="Duração">
-              <select className="field-input" value={form.duracaoMinutos} onChange={(event) => setForm({ ...form, duracaoMinutos: Number(event.target.value) })}>
-                {[15, 30, 45, 60, 90, 120].map((minutes) => <option key={minutes} value={minutes}>{minutes} minutos</option>)}
-              </select>
+              <Select
+                aria-label="Duração"
+                value={String(form.duracaoMinutos)}
+                onValueChange={(value) => setForm({ ...form, duracaoMinutos: Number(value) })}
+                options={[15, 30, 45, 60, 90, 120].map((minutes) => ({ value: String(minutes), label: `${minutes} minutos` }))}
+              />
             </Field>
             <Field label="Título" wide>
               <input className="field-input" value={form.titulo} onChange={(event) => setForm({ ...form, titulo: event.target.value })} placeholder="Ex.: Entrevista com RH" />
@@ -549,6 +580,7 @@ function AcoesProcesso({
   const [acao, setAcao] = useState<"nenhuma" | "avancar" | "aprovar" | "reprovar">("nenhuma")
   const [etapa, setEtapa] = useState<EtapaProcesso | "">("")
   const [texto, setTexto] = useState("")
+  const [notaInterna, setNotaInterna] = useState("")
   const avancarEtapa = useAvancarEtapa()
   const decidirCandidatura = useDecidirCandidatura()
   const saving = avancarEtapa.isPending || decidirCandidatura.isPending
@@ -560,6 +592,7 @@ function AcoesProcesso({
     setAcao("nenhuma")
     setEtapa("")
     setTexto("")
+    setNotaInterna("")
     setErro(null)
   }
 
@@ -574,12 +607,20 @@ function AcoesProcesso({
         }
         await avancarEtapa.mutateAsync({
           id: candidaturaId,
-          dto: { etapa, observacao: texto.trim() || undefined },
+          dto: {
+            etapa,
+            observacao: texto.trim() || undefined,
+            notaInterna: notaInterna.trim() || undefined,
+          },
         })
       } else {
         await decidirCandidatura.mutateAsync({
           id: candidaturaId,
-          dto: { status: acao === "aprovar" ? "APROVADA" : "REPROVADA", motivo: texto.trim() || undefined },
+          dto: {
+            status: acao === "aprovar" ? "APROVADA" : "REPROVADA",
+            motivo: texto.trim() || undefined,
+            notaInterna: notaInterna.trim() || undefined,
+          },
         })
       }
 
@@ -656,40 +697,51 @@ function AcoesProcesso({
           ? "O avanço segue a próxima etapa configurada para a vaga. O candidato vê a mudança no acompanhamento."
           : acao === "aprovar"
             ? "O processo será encerrado como aprovado."
-            : "O processo é encerrado. O motivo fica visível no histórico do candidato."}
+            : "O processo é encerrado. O candidato é notificado e vê o motivo no histórico."}
       </p>
 
       <div className="mt-4 flex flex-col gap-4">
         {acao === "avancar" && (
           <Field label="Etapa de destino">
-            <select
-              className="field-input"
+            <Select
+              aria-label="Próxima etapa"
+              placeholder="Selecione"
               value={etapa}
-              onChange={(event) => setEtapa(event.target.value as EtapaProcesso)}
-            >
-              <option value="">Selecione</option>
-              {posteriores.map((item) => (
-                <option key={item} value={item}>
-                  {etapaLabel(item, etapasVaga)}
-                </option>
-              ))}
-            </select>
+              onValueChange={(value) => setEtapa(value as EtapaProcesso)}
+              options={posteriores.map((item) => ({ value: item, label: etapaLabel(item, etapasVaga) }))}
+            />
           </Field>
         )}
 
         <Field
-          label={acao === "avancar" ? "Observação" : "Motivo"}
-          hint="Opcional. Fica registrado no histórico."
+          label={acao === "avancar" ? "Mensagem ao candidato" : "Motivo para o candidato"}
+          hint="Opcional. O candidato vê no histórico, na notificação e no e-mail."
         >
           <textarea
             className="field-input min-h-24 resize-y"
             value={texto}
+            maxLength={2000}
             onChange={(event) => setTexto(event.target.value)}
             placeholder={
               acao === "avancar"
-                ? "Ex.: Aprovado na triagem, entrevista agendada."
-                : "Ex.: Perfil muito sênior para o escopo da vaga."
+                ? "Ex.: Gostamos do seu perfil! A próxima etapa é uma conversa com o time."
+                : acao === "aprovar"
+                  ? "Ex.: Parabéns! Entraremos em contato com os próximos passos."
+                  : "Ex.: Seguimos com perfis com mais experiência em React. Obrigado pela participação!"
             }
+          />
+        </Field>
+
+        <Field
+          label="Nota interna"
+          hint="Opcional. Só a equipe da empresa vê. Não é enviada ao candidato."
+        >
+          <textarea
+            className="field-input min-h-20 resize-y border-dashed"
+            value={notaInterna}
+            maxLength={2000}
+            onChange={(event) => setNotaInterna(event.target.value)}
+            placeholder="Ex.: Bom raciocínio lógico, mas precisa reforçar testes automatizados."
           />
         </Field>
 
@@ -793,19 +845,12 @@ function FeedbacksManager({
 
           <div className="mt-4 flex flex-col gap-4">
             <Field label="Etapa">
-              <select
-                className="field-input"
+              <Select
+                aria-label="Etapa"
                 value={form.etapa}
-                onChange={(event) =>
-                  setForm({ ...form, etapa: event.target.value as EtapaProcesso })
-                }
-              >
-                {etapasDisponiveis.map((item) => (
-                  <option key={item} value={item}>
-                    {etapaLabel(item, etapasVaga)}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(value) => setForm({ ...form, etapa: value as EtapaProcesso })}
+                options={etapasDisponiveis.map((item) => ({ value: item, label: etapaLabel(item, etapasVaga) }))}
+              />
             </Field>
 
             <Field label="Título">
@@ -827,18 +872,15 @@ function FeedbacksManager({
             </Field>
 
             <Field label="Nota" hint="Opcional, de 1 a 5.">
-              <select
-                className="field-input"
+              <Select
+                aria-label="Nota"
                 value={form.nota}
-                onChange={(event) => setForm({ ...form, nota: event.target.value })}
-              >
-                <option value="">Sem nota</option>
-                {[1, 2, 3, 4, 5].map((nota) => (
-                  <option key={nota} value={String(nota)}>
-                    {nota}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(value) => setForm({ ...form, nota: value })}
+                options={[
+                  { value: "", label: "Sem nota" },
+                  ...[1, 2, 3, 4, 5].map((nota) => ({ value: String(nota), label: String(nota) })),
+                ]}
+              />
             </Field>
 
             <div className="flex gap-2">

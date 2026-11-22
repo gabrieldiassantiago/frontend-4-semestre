@@ -38,9 +38,11 @@ export function CompanyLogo({
   size?: CompanyLogoSize
   className?: string
 }) {
+
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
   const label = name?.trim() || "Empresa"
-  const showImage = Boolean(url) && failedUrl !== url
+  const showImage = Boolean(url) && failedUrl !== url;
+
 
   if (showImage) {
     return (

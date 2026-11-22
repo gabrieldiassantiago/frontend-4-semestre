@@ -103,7 +103,7 @@ export function VerifyEmailScreen() {
       const authenticated = await finishRegistration(email, roleParam)
       router.replace(
         authenticated
-          ? profileDestination(roleParam)
+          ? profileDestination(roleParam, true)
           : `${roleParam === "COMPANY" ? "/auth/empresa" : "/auth/candidato"}?setup=1`
       )
     } catch (err: unknown) {
@@ -298,13 +298,13 @@ export function VerifyEmailScreen() {
           padding: 14px 20px;
           border-radius: 12px;
           border: none;
-          background: linear-gradient(135deg, var(--primary, #7c3aed), var(--primary-hover, #6d28d9));
+          background: var(--primary, #6d47f1);
           color: var(--primary-foreground, #ffffff);
           font-size: 15px;
           font-weight: 700;
           cursor: pointer;
-          transition: all 0.2s ease;
-          box-shadow: 0 4px 16px rgba(124, 58, 237, 0.25);
+          transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+          box-shadow: 0 1px 2px rgba(32, 29, 29, 0.08);
           display: flex;
           align-items: center;
           justify-content: center;

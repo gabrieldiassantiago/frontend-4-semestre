@@ -3,7 +3,7 @@
 import { resumeHref } from "@/lib/utils/resume"
 import { etapaLabel } from "@/lib/types/candidatura.types"
 import { ROUTES } from "@/lib/config/routes"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
 import {
@@ -45,37 +45,36 @@ import {
   STATUS_AGENDAMENTO_LABELS,
   etapasDaVaga,
   isFinalizada,
+  type Candidatura,
   type CandidaturaAgendamento,
   type CandidaturaFeedback,
+  type CandidaturaHistorico,
 } from "@/lib/types/candidatura.types"
+import { descreverDias, diasDesde, DIAS_SEM_MOVIMENTACAO_ALERTA, entradaNaEtapaAtual } from "@/lib/utils/tempo-etapa"
 
-const cardBase = "rounded-3xl border border-border/80 bg-card shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)]"
+const cardBase = "rounded-xl border border-border bg-card"
 
 function SectionHeader(
   {
     id,
-    icon: Icon,
     title,
     description,
     aside,
   }: {
     id?: string
-    icon: typeof Clock
+    icon?: typeof Clock
     title: string
     description?: string
     aside?: React.ReactNode
   },
 ) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-4 border-b border-border-subtle pb-4">
       <div className="flex min-w-0 items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-surface text-muted-foreground">
-          <Icon className="size-4" aria-hidden />
-        </span>
         <div className="min-w-0">
           <h2
             id={id}
-            className="scroll-mt-24 text-sm font-semibold leading-6 tracking-tight text-foreground sm:text-base">{title}</h2>
+            className="scroll-mt-36 text-sm font-semibold leading-6 tracking-tight text-foreground sm:text-base">{title}</h2>
           {description && <p className="mt-0.5 text-xs leading-5 text-muted-foreground sm:text-sm">{description}</p>}
         </div>
       </div>
@@ -86,19 +85,144 @@ function SectionHeader(
 
 function EmptyHint(
   {
-    icon: Icon,
     children,
   }: {
-    icon: typeof Clock
+    icon?: typeof Clock
     children: React.ReactNode
   },
 ) {
   return (
     <div
-      className="mt-5 flex items-start gap-3 rounded-2xl bg-surface/80 p-5 text-xs leading-6 text-muted-foreground">
-      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+      className="mt-5 rounded-lg border border-dashed border-border p-5 text-sm leading-6 text-muted-foreground">
       <p>{children}</p>
     </div>
+  )
+}
+
+type TipoEvento = "inscricao" | "etapa" | "aprovada" | "reprovada" | "cancelada" | "feedback" | "agendamento"
+
+interface EventoLinhaDoTempo {
+  id: string
+  em: string
+  tipo: TipoEvento
+  titulo: string
+  detalhe?: string
+  autor?: string
+  href?: string
+}
+
+const EVENTO_ICONE: Record<TipoEvento, typeof Clock> = {
+  inscricao: FileText,
+  etapa: Layers3,
+  aprovada: Check,
+  reprovada: X,
+  cancelada: LogOut,
+  feedback: MessageSquare,
+  agendamento: CalendarClock,
+}
+
+const EVENTO_COR: Record<TipoEvento, string> = {
+  inscricao: "bg-surface text-muted-foreground ring-border",
+  etapa: "bg-primary-subtle text-primary ring-primary/30",
+  aprovada: "bg-success-subtle text-success-foreground ring-success-border",
+  reprovada: "bg-danger-subtle text-danger-foreground ring-danger-border",
+  cancelada: "bg-surface text-muted-foreground ring-border",
+  feedback: "bg-primary-subtle text-primary ring-primary/30",
+  agendamento: "bg-warning-subtle text-warning-foreground ring-warning/30",
+}
+
+/**
+ * Junta histórico de etapas, feedbacks e agendamentos em uma única linha do tempo,
+ * do mais recente para o mais antigo.
+ */
+function montarLinhaDoTempo(
+  historico: CandidaturaHistorico[],
+  feedbacks: CandidaturaFeedback[],
+  agendamentos: CandidaturaAgendamento[],
+  etapasVaga: Candidatura["etapasVaga"],
+): EventoLinhaDoTempo[] {
+  const eventos: EventoLinhaDoTempo[] = []
+
+  for (const item of historico) {
+    if (!item.createdAt) continue
+    const etapa = etapaLabel(item.etapaNova, etapasVaga, item.etapaNovaDescricao)
+    const base = { id: `h-${item.id}`, em: item.createdAt }
+
+    if (!item.statusAnterior) {
+      eventos.push({ ...base, tipo: "inscricao", titulo: "Você se candidatou", detalhe: `O processo começou na etapa ${etapa}.` })
+    } else if (item.statusAnterior !== item.statusNovo && item.statusNovo === "APROVADA") {
+      eventos.push({ ...base, tipo: "aprovada", titulo: "Candidatura aprovada", detalhe: item.observacao, autor: item.autorNome })
+    } else if (item.statusAnterior !== item.statusNovo && item.statusNovo === "REPROVADA") {
+      eventos.push({ ...base, tipo: "reprovada", titulo: "Processo encerrado pela empresa", detalhe: item.observacao, autor: item.autorNome })
+    } else if (item.statusAnterior !== item.statusNovo && item.statusNovo === "CANCELADA") {
+      eventos.push({ ...base, tipo: "cancelada", titulo: "Você desistiu do processo" })
+    } else {
+      eventos.push({ ...base, tipo: "etapa", titulo: `Avançou para ${etapa}`, detalhe: item.observacao, autor: item.autorNome })
+    }
+  }
+
+  for (const feedback of feedbacks) {
+    if (!feedback.createdAt) continue
+    eventos.push({
+      id: `f-${feedback.id}`,
+      em: feedback.createdAt,
+      tipo: "feedback",
+      titulo: `Feedback recebido · ${etapaLabel(feedback.etapa, etapasVaga, feedback.etapaDescricao)}`,
+      detalhe: feedback.titulo,
+      autor: feedback.autorNome,
+      href: "#application-feedback-title",
+    })
+  }
+
+  for (const agendamento of agendamentos) {
+    const em = agendamento.createdAt || agendamento.inicio
+    if (!em) continue
+    const quando = formatDate(agendamento.inicio, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+    const situacao = agendamento.statusDescricao || STATUS_AGENDAMENTO_LABELS[agendamento.status]
+    eventos.push({
+      id: `a-${agendamento.id}`,
+      em,
+      tipo: "agendamento",
+      titulo: `Convite: ${agendamento.titulo}`,
+      detalhe: [quando && `Marcado para ${quando}`, situacao].filter(Boolean).join(" · "),
+      autor: agendamento.criadoPorNome,
+      href: "#application-appointments",
+    })
+  }
+
+  return eventos.sort((a, b) => (Date.parse(b.em) || 0) - (Date.parse(a.em) || 0))
+}
+
+function LinhaDoTempo({ eventos }: { eventos: EventoLinhaDoTempo[] }) {
+  if (!eventos.length)
+    return <EmptyHint icon={History}>Ainda não há movimentações registradas.</EmptyHint>
+
+  return (
+    <ol className="mt-6">
+      {eventos.map((evento, index) => {
+        const Icone = EVENTO_ICONE[evento.tipo]
+        return (
+          <li key={evento.id} className="relative flex gap-4 pb-6 last:pb-0">
+            {index < eventos.length - 1 && <span aria-hidden className="absolute bottom-0 left-[13px] top-8 w-px bg-border" />}
+            <span
+              aria-hidden
+              className={cn("relative grid size-7 shrink-0 place-items-center rounded-full ring-1", EVENTO_COR[evento.tipo])}>
+              <Icone className="size-3.5" />
+            </span>
+            <div className="min-w-0 flex-1 pt-0.5">
+              <h3 className="text-sm font-semibold leading-6">
+                {evento.href ? <a href={evento.href} className="hover:underline">{evento.titulo}</a> : evento.titulo}
+              </h3>
+              {evento.detalhe && <p className="mt-1 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{evento.detalhe}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">
+                <time dateTime={evento.em}>{formatDate(evento.em, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>
+                {evento.autor && ` · ${evento.autor}`}
+              </p>
+            </div>
+          </li>
+        )
+      })}
+    </ol>
   )
 }
 
@@ -468,7 +592,7 @@ function InscricaoRealizada(
   return (
     <section aria-labelledby="application-documents-title" className={cn(cardBase, "p-6")}>
       <div className="flex items-center justify-between gap-3">
-        <h2 id="application-documents-title" className="scroll-mt-24 text-sm font-medium text-muted-foreground">Sua inscrição</h2>
+        <h2 id="application-documents-title" className="scroll-mt-36 text-sm font-medium text-muted-foreground">Sua inscrição</h2>
         <span
           className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-foreground">
           <span className="size-1.5 rounded-full bg-success-foreground" aria-hidden />Enviada
@@ -557,10 +681,10 @@ function ApplicationFeedback(
   },
 ) {
   return (
-    <article className="rounded-2xl border border-border-subtle bg-surface/60 p-5">
+    <article className="rounded-lg border border-border-subtle p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span
-          className="rounded-full border border-border/70 bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground">{etapaLabel(feedback.etapa, undefined, feedback.etapaDescricao)}</span>
+          className="rounded-full border border-border bg-surface px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{etapaLabel(feedback.etapa, undefined, feedback.etapaDescricao)}</span>
         {feedback.createdAt && <time dateTime={feedback.createdAt} className="text-[11px] text-muted-foreground">{formatDate(feedback.createdAt, {
             day: "numeric",
             month: "short",
@@ -571,6 +695,45 @@ function ApplicationFeedback(
       <p className="mt-2 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{feedback.mensagem}</p>
       {(feedback.autorNome || typeof feedback.nota === "number") && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3"><p className="text-[11px] text-muted-foreground">{feedback.autorNome || "Equipe de recrutamento"}</p>{typeof feedback.nota === "number" && <NotaEstrelas nota={feedback.nota} />}</div>}
     </article>
+  )
+}
+
+function SectionTabs({ items }: { items: { id: string; label: string; count?: number }[] }) {
+  const [active, setActive] = useState(items[0].id)
+
+  useEffect(() => {
+    const targets = items.map(item => document.getElementById(item.id)).filter((el): el is HTMLElement => Boolean(el))
+    if (!targets.length) return
+
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
+      if (visible) setActive(visible.target.id)
+    }, { rootMargin: "-120px 0px -55% 0px" })
+
+    targets.forEach(el => observer.observe(el))
+    return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <nav
+      aria-label="Seções da candidatura"
+      className="sticky top-[var(--topbar-offset,76px)] z-10 mt-6 transition-[top] duration-300 ease-out flex gap-6 overflow-x-auto border-b border-border bg-surface [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {items.map(({ id, label, count }) => (
+        <a
+          key={id}
+          href={`#${id}`}
+          aria-current={active === id ? "true" : undefined}
+          onClick={() => setActive(id)}
+          className={cn(
+            "-mb-px inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-0.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary",
+            active === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+          )}>
+          {label}
+          {count !== undefined && <span className={cn("text-xs tabular-nums", active === id ? "text-primary" : "text-subtle-foreground")}>{count}</span>}
+        </a>
+      ))}
+    </nav>
   )
 }
 
@@ -625,11 +788,10 @@ export function ApplicationDetailScreen(
   const currentIndex = etapas.indexOf(candidatura.etapaAtual)
   const currentLabel = etapaLabel(candidatura.etapaAtual, candidatura.etapasVaga, candidatura.etapaAtualDescricao)
   const progress = etapas.length > 0 && currentIndex >= 0 ? Math.round(((currentIndex + 1) / etapas.length) * 100) : 0
-  const statusDot = candidatura.status === "APROVADA" ? "bg-success-foreground" : candidatura.status === "REPROVADA" ? "bg-danger-foreground" : candidatura.status === "CANCELADA" ? "bg-muted-foreground" : "bg-primary"
-  const StatusIcon = candidatura.status === "APROVADA" ? Check : candidatura.status === "REPROVADA" || candidatura.status === "CANCELADA" ? X : Clock
   const statusTitle = encerrada ? STATUS_LABELS[candidatura.status] : currentLabel
   const statusDescription = encerrada ? candidatura.motivoEncerramento || (candidatura.status === "APROVADA" ? "A empresa aprovou sua candidatura neste processo seletivo." : candidatura.status === "REPROVADA" ? "A empresa encerrou sua participação neste processo seletivo." : "Sua participação neste processo seletivo foi cancelada.") : candidatura.etapasVaga?.find(item => item.etapa === candidatura.etapaAtual)?.descricao || ETAPA_HINTS[candidatura.etapaAtual] || "Acompanhe as atualizações da empresa nesta página."
-  const history = [...historico].sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0))
+  const linhaDoTempo = montarLinhaDoTempo(historico, feedbacks, agendamentos, candidatura.etapasVaga)
+  const diasNaEtapa = encerrada ? undefined : diasDesde(entradaNaEtapaAtual(historico, candidatura.etapaAtual))
   const feedbackList = [...feedbacks].sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0))
   const pendingInvites = agendamentos.filter(item => item.status === "PENDENTE").length
 
@@ -648,7 +810,7 @@ export function ApplicationDetailScreen(
   }
 
   return (
-    <main className="application-detail mx-auto w-full max-w-[1240px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="application-detail scroll-smooth mx-auto w-full max-w-[1240px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <nav
         className="mb-5 flex flex-wrap items-center justify-between gap-3"
         aria-label="Navegação da candidatura">
@@ -673,80 +835,46 @@ export function ApplicationDetailScreen(
               url={candidatura.logoUrlEmpresa || vaga?.logoUrlEmpresa}
               name={company}
               size="lg"
-              className="size-14 rounded-2xl sm:size-16" />
+              className="size-14 rounded-lg sm:size-16" />
             <div className="min-w-0"><p className="text-xs leading-5 text-muted-foreground">{company}</p><h1
-                className="mt-1.5 break-words text-2xl font-semibold leading-tight tracking-[-0.04em] sm:text-[28px]">{candidatura.vagaTitulo}</h1><p className="mt-2 text-xs leading-5 text-muted-foreground">Acompanhe sua participação no processo seletivo.</p></div>
+                className="mt-1.5 break-words text-2xl font-semibold leading-tight tracking-[-0.04em] sm:text-[28px]">{candidatura.vagaTitulo}</h1></div>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2"><CandidaturaChatButton
+          <div className="flex shrink-0 flex-wrap items-center gap-2 max-sm:w-full"><CandidaturaChatButton
               candidaturaId={candidatura.id}
               contatoNome={company}
               contatoImagemUrl={candidatura.logoUrlEmpresa || vaga?.logoUrlEmpresa}
               perspectiva="candidato"
               assunto={candidatura.vagaTitulo}
-              className="min-h-10 rounded-xl px-4 text-xs" /><Link
+              className="min-h-10 rounded-lg px-4 text-xs" /><Link
               href={ROUTES.publicJob(candidatura.vagaId)}
-              className="btn-secondary min-h-10 rounded-xl px-4 text-xs">Ver vaga<ArrowUpRight className="size-3.5" aria-hidden /></Link></div>
+              className="btn-secondary min-h-10 rounded-lg px-4 text-xs">Ver vaga<ArrowUpRight className="size-3.5" aria-hidden /></Link></div>
         </div>
         <div
-          className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border-subtle bg-surface/40 px-5 py-4 sm:px-7">
+          className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border-subtle px-5 py-3.5 sm:px-7">
           <div className="flex items-center gap-2"><span className="text-[11px] text-muted-foreground">Situação</span><StatusBadge status={candidatura.status} size="sm" /></div>
-          {candidatura.createdAt && <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><CalendarDays className="size-3.5" aria-hidden />Inscrição em <time dateTime={candidatura.createdAt}>{formatDate(candidatura.createdAt, {
+          {candidatura.createdAt && <p className="text-xs text-muted-foreground">Inscrição em <time dateTime={candidatura.createdAt}>{formatDate(candidatura.createdAt, {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
               })}</time></p>}
-          {currentIndex >= 0 && <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Layers3 className="size-3.5" aria-hidden />Etapa {currentIndex + 1}de {etapas.length}</p>}
+          {currentIndex >= 0 && <p className="text-xs text-muted-foreground">Etapa {currentIndex + 1} de {etapas.length}</p>}
         </div>
       </header>
-      <nav
-        aria-label="Seções da candidatura"
-        className="mt-6 flex gap-6 overflow-x-auto border-b border-border/80 px-1">
-        {[{
-          href: "#application-status-title",
-          label: "Acompanhamento",
-          icon: Layers3,
-        }, {
-          href: "#application-appointments",
-          label: "Agendamentos",
-          icon: CalendarClock,
-          count: agendamentos.length,
-        }, {
-          href: "#application-feedback-title",
-          label: "Feedbacks",
-          icon: MessageSquare,
-          count: feedbacks.length,
-        }, {
-          href: "#application-history-title",
-          label: "Histórico",
-          icon: History,
-        }, {
-          href: "#application-stages-title",
-          label: "Etapas",
-          icon: Layers3,
-        }].map((
-          {
-            href,
-            label,
-            icon: Icon,
-            count,
-          },
-        ) => <a
-          key={href}
-          href={href}
-          className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-t-lg px-1 text-xs font-medium text-muted-foreground transition-colors hover:text-primary"><Icon aria-hidden className="size-3.5" />{label}{count !== undefined && <span className="rounded-md bg-surface px-1.5 py-0.5 text-[10px] tabular-nums">{count}</span>}</a>)}
-      </nav>
+      <SectionTabs
+        items={[
+          { id: "application-status-title", label: "Acompanhamento" },
+          { id: "application-appointments", label: "Agendamentos", count: agendamentos.length },
+          { id: "application-feedback-title", label: "Feedbacks", count: feedbacks.length },
+          { id: "application-history-title", label: "Histórico" },
+          { id: "application-stages-title", label: "Etapas" },
+        ]} />
       <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-6">
-          <section aria-labelledby="application-status-title" className={cn(cardBase, "scroll-mt-24 p-5 sm:p-7")}>
+          <section aria-labelledby="application-status-title" className={cn(cardBase, "scroll-mt-36 p-5 sm:p-7")}>
             <div className="flex items-start gap-4">
-              <span
-                className={cn(
-                  "grid size-12 shrink-0 place-items-center rounded-2xl",
-                  candidatura.status === "APROVADA" ? "bg-success-subtle text-success-foreground" : candidatura.status === "REPROVADA" || candidatura.status === "CANCELADA" ? "bg-surface text-muted-foreground" : "bg-primary-subtle text-primary",
-                )}><StatusIcon aria-hidden className="size-5" strokeWidth={1.6} /></span>
-              <div className="min-w-0 flex-1"><p className="flex items-center gap-2 text-xs text-muted-foreground"><span aria-hidden className={cn("size-1.5 rounded-full", statusDot)} />{encerrada ? "Resultado do processo" : "Sua etapa atual"}</p><h2
+                            <div className="min-w-0 flex-1"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{encerrada ? "Resultado do processo" : "Sua etapa atual"}</p><h2
                   id="application-status-title"
-                  className="mt-2 scroll-mt-24 break-words text-2xl font-semibold leading-tight tracking-[-0.035em] sm:text-[28px]">{statusTitle}</h2><p
+                  className="mt-2 scroll-mt-36 break-words text-2xl font-semibold leading-tight tracking-tight">{statusTitle}</h2><p
                   className="mt-3 max-w-prose whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{statusDescription}</p></div>
             </div>
             {etapas.length > 0 && <div className="mt-6 border-t border-border-subtle pt-5"><div
@@ -764,7 +892,8 @@ export function ApplicationDetailScreen(
                     "h-1.5 min-w-0 flex-1 rounded-full",
                     index <= currentIndex ? candidatura.status === "APROVADA" ? "bg-success" : encerrada ? "bg-border-strong" : "bg-primary" : "bg-border-subtle",
                   )} />)}</div></div>}
-            {candidatura.updatedAt && <p className="mt-4 text-[10px] text-muted-foreground">Última atualização em <time dateTime={candidatura.updatedAt}>{formatDate(candidatura.updatedAt, {
+            {diasNaEtapa !== undefined && <p className="mt-4 flex items-start gap-2 text-sm leading-6 text-muted-foreground"><Clock className="mt-1 size-3.5 shrink-0" aria-hidden /><span>{diasNaEtapa === 0 ? "Você entrou nesta etapa hoje." : `Você está nesta etapa ${descreverDias(diasNaEtapa)}.`}{diasNaEtapa >= DIAS_SEM_MOVIMENTACAO_ALERTA && " Ainda não houve novidades, mas você será notificado assim que a empresa movimentar o processo."}</span></p>}
+            {candidatura.updatedAt && <p className="mt-4 text-xs text-muted-foreground">Última atualização em <time dateTime={candidatura.updatedAt}>{formatDate(candidatura.updatedAt, {
                   day: "numeric",
                   month: "short",
                   year: "numeric",
@@ -772,10 +901,10 @@ export function ApplicationDetailScreen(
           </section>
           {pendingInvites > 0 && <a
             href="#application-appointments"
-            className="group flex items-center gap-3 rounded-2xl border border-warning/20 bg-warning-subtle p-4 text-xs font-medium text-warning-foreground transition-shadow hover:shadow-sm"><span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-card"><CalendarClock className="size-4" aria-hidden /><span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-warning" aria-hidden /></span>{pendingInvites === 1 ? "Você tem um convite aguardando resposta." : "Você tem " + pendingInvites + " convites aguardando resposta."}<ArrowUpRight
+            className="group flex items-center gap-3 rounded-lg border border-warning/30 bg-warning-subtle px-4 py-3 text-sm font-medium text-warning-foreground">{pendingInvites === 1 ? "Você tem um convite aguardando resposta." : "Você tem " + pendingInvites + " convites aguardando resposta."}<ArrowUpRight
               className="ml-auto size-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
               aria-hidden /></a>}
-          <div id="application-appointments" className="scroll-mt-24"><AgendamentosCandidato agendamentos={agendamentos} /></div>
+          <div id="application-appointments" className="scroll-mt-36"><AgendamentosCandidato agendamentos={agendamentos} /></div>
           <section aria-labelledby="application-feedback-title" className={cn(cardBase, "p-5 sm:p-7")}>
             <SectionHeader
               id="application-feedback-title"
@@ -789,31 +918,14 @@ export function ApplicationDetailScreen(
             <SectionHeader
               id="application-history-title"
               icon={History}
-              title="Histórico da candidatura"
-              description="Da atualização mais recente para a mais antiga." />
-            {history.length ? <ol className="mt-6">{history.map((item, index) => {
-                const statusChanged = item.statusAnterior && item.statusAnterior !== item.statusNovo
-
-                return (
-                  <li key={item.id} className="relative flex gap-4 pb-6 last:pb-0">{index < history.length - 1 && <span aria-hidden className="absolute bottom-0 left-[9px] top-6 w-px bg-border" />}<span
-                      aria-hidden
-                      className={cn(
-                        "relative mt-1 size-5 shrink-0 rounded-full border-4",
-                        index === 0 ? "border-primary-subtle bg-primary" : "border-surface bg-border-strong",
-                      )} /><div className="min-w-0 flex-1 -mt-1 pb-1"><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">{statusChanged ? STATUS_LABELS[item.statusNovo] : etapaLabel(item.etapaNova, candidatura.etapasVaga, item.etapaNovaDescricao)}</h3>{!statusChanged && <span className="rounded-full bg-card px-2 py-0.5 text-[11px] text-muted-foreground ring-1 ring-border">{STATUS_LABELS[item.statusNovo]}</span>}{index === 0 && <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-[10px] font-medium text-primary">Mais recente</span>}</div>{item.observacao && <p className="mt-2 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{item.observacao}</p>}{item.createdAt && <time dateTime={item.createdAt} className="mt-2 block text-xs text-muted-foreground">{formatDate(item.createdAt, {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}</time>}</div></li>
-                )
-              })}</ol> : <EmptyHint icon={History}>Ainda não há movimentações registradas no histórico.</EmptyHint>}
+              title="Linha do tempo"
+              description="Etapas, feedbacks e convites, do mais recente para o mais antigo." />
+            <LinhaDoTempo eventos={linhaDoTempo} />
           </section>
         </div>
         <aside className="min-w-0 space-y-6">
           <section aria-labelledby="application-stages-title" className={cn(cardBase, "p-6")}>
-            <h2 id="application-stages-title" className="scroll-mt-24 text-sm font-semibold tracking-tight">Etapas do processo</h2><p className="mt-1 text-xs leading-5 text-muted-foreground">{encerrada ? "A etapa alcançada permanece no histórico." : "Acompanhe seu momento no processo seletivo."}</p>
+            <h2 id="application-stages-title" className="scroll-mt-36 text-sm font-semibold tracking-tight">Etapas do processo</h2><p className="mt-1 text-xs leading-5 text-muted-foreground">{encerrada ? "A etapa alcançada permanece no histórico." : "Acompanhe seu momento no processo seletivo."}</p>
             <ol className="mt-6">{etapas.map((etapa, index) => {
                 const active = index === currentIndex
                 const previous = currentIndex >= 0 && index < currentIndex
@@ -822,7 +934,7 @@ export function ApplicationDetailScreen(
                   <li key={etapa} aria-current={active ? "step" : undefined} className="flex gap-3"><div className="flex flex-col items-center"><span
                         className={cn(
                           "grid size-7 shrink-0 place-items-center rounded-full border text-[11px] font-medium transition-colors",
-                          active ? encerrada ? "border-border-strong bg-surface text-foreground" : "border-primary bg-primary text-primary-foreground ring-4 ring-primary-subtle" : previous ? "border-primary/30 bg-primary-subtle text-primary" : "border-border bg-card text-muted-foreground",
+                          active ? encerrada ? "border-border-strong bg-surface text-foreground" : "border-primary bg-primary text-primary-foreground" : previous ? "border-primary/30 bg-primary-subtle text-primary" : "border-border bg-card text-muted-foreground",
                         )}>{previous ? <Check className="size-3.5" aria-hidden /> : index + 1}</span>{index < etapas.length - 1 && <span className={cn("my-1 w-px flex-1", previous ? "bg-primary/40" : "bg-border")} aria-hidden />}</div><div className="min-w-0 pb-5 pt-1"><p
                         className={cn(
                           "text-xs leading-5",

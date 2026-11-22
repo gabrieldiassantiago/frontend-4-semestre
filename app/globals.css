@@ -6,6 +6,12 @@
   overflow: hidden;
   background-color: var(--border);
 }
+
+
+.container-teste {
+  z-index: -999px;
+}
+
 .skeleton-shimmer::after {
   content: "";
   position: absolute;
@@ -15,18 +21,35 @@
   transform: translateX(-100%);
   animation: skeleton-shimmer 1.8s ease-in-out infinite;
 }
+
 @keyframes skeleton-shimmer {
-  to { transform: translateX(100%); }
+  to {
+    transform: translateX(100%);
+  }
 }
 
 @keyframes selecta-enter {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes selecta-pop {
-  0% { opacity: 0; transform: scale(.98); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(.98);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .motion-enter {
@@ -37,29 +60,31 @@
   animation: selecta-pop 280ms cubic-bezier(.22, 1, .36, 1) both;
 }
 
-.motion-stagger > * {
+.motion-stagger>* {
   animation: selecta-enter 420ms cubic-bezier(.22, 1, .36, 1) both;
   animation-delay: calc(var(--stagger-index, 0) * 55ms);
 }
 
-/* Chat: fundo com pontilhado e brilho suave no canto superior, como nos apps de mensagem modernos. */
+/* Chat: fundo liso, um tom abaixo dos cartões. */
 .chat-canvas {
   background-color: var(--surface);
-  background-image:
-    radial-gradient(color-mix(in oklab, var(--primary) 8%, transparent) 1px, transparent 1px),
-    radial-gradient(ellipse 80% 60% at 100% 0%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 70%);
-  background-size: 22px 22px, 100% 100%;
 }
 
-/* Bolha enviada por quem está logado: gradiente da marca com sombra colorida. */
+/* Bolha enviada por quem está logado: cor sólida da marca. */
 .bubble-mine {
-  background-image: linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 140%);
-  box-shadow: 0 8px 20px -10px color-mix(in oklab, var(--primary) 70%, transparent);
+  background-color: var(--primary);
 }
 
 @keyframes chat-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 .chat-float {
@@ -75,11 +100,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .skeleton-shimmer::after,
   .motion-enter,
   .motion-pop,
-  .motion-stagger > * { animation: none; }
-  .chat-float { animation: none; }
+  .motion-stagger>* {
+    animation: none;
+  }
+
+  .chat-float {
+    animation: none;
+  }
 }
 
 /*
@@ -216,6 +247,7 @@
 }
 
 @layer components {
+
   /*
     Campo de formulário único para toda a aplicação.
     Substitui as classes duplicadas .auth-input e .account-input.
@@ -356,6 +388,7 @@
 }
 
 @layer utilities {
+
   /* Esconde a scrollbar em faixas de navegação/filtros roláveis */
   .no-scrollbar {
     scrollbar-width: none;
@@ -368,6 +401,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -386,6 +420,7 @@
   --muted: #f3f3f1;
   --border-subtle: #efefed;
 }
+
 .company-workspace .field-input {
   min-height: 46px;
   border-radius: 14px;
@@ -393,43 +428,169 @@
   border-color: var(--border);
   font-size: 14px;
 }
-.company-workspace textarea.field-input { line-height: 1.75; }
+
+.company-workspace textarea.field-input {
+  line-height: 1.75;
+}
+
 .company-workspace .btn-primary:hover:not(:disabled),
 .company-workspace .btn-secondary:hover:not(:disabled),
-.company-workspace .btn-ghost:hover:not(:disabled) { transform: none; box-shadow: none; }
-.company-panel { min-width: 0; border: 1px solid var(--border); border-radius: 24px; background: var(--card); box-shadow: 0 2px 8px -4px rgba(32,29,29,.06); }
-.company-panel-heading { border-bottom: 1px solid var(--border); padding: 20px 24px; }
-.company-panel-heading h2 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
-.company-panel-heading p { margin-top: 5px; font-size: 12px; line-height: 1.6; color: var(--muted-foreground); }
-.company-content > main > header h1 { font-weight: 600; }
-.company-profile .field-input:disabled { background: var(--surface); }
+.company-workspace .btn-ghost:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+.company-panel {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: 0 2px 8px -4px rgba(32, 29, 29, .06);
+}
+
+.company-panel-heading {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 24px;
+}
+
+.company-panel-heading h2 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+
+.company-panel-heading p {
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+
+.company-content>main>header h1 {
+  font-weight: 600;
+}
+
+.company-profile .field-input:disabled {
+  background: var(--surface);
+}
+
 @media (max-width: 639px) {
-  .company-panel-heading { padding: 18px 20px; }
-  .company-savebar { align-items: stretch; }
-  .company-savebar > div { width: 100%; }
-  .company-savebar button { flex: 1; }
+  .company-panel-heading {
+    padding: 18px 20px;
+  }
+
+  .company-savebar {
+    align-items: stretch;
+  }
+
+  .company-savebar>div {
+    width: 100%;
+  }
+
+  .company-savebar button {
+    flex: 1;
+  }
 }
 
 /* Página pública de uma vaga: a mesma base visual das áreas internas. */
-.public-job { --radius: .5rem; --surface: #f6f7f9; }
-.public-job-description p,
-.public-job-description li { font-size: 15px; line-height: 1.85; }
-.public-job-description h3 { font-size: 16px; font-weight: 600; text-transform: none; letter-spacing: -.01em; color: var(--foreground); }
-.public-job .btn-primary:hover:not(:disabled),
-.public-job .btn-secondary:hover:not(:disabled) { transform: none; box-shadow: none; }
-.public-job-mobile-action { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
-@media (max-width: 1023px) { .public-job-with-action { padding-bottom: calc(82px + env(safe-area-inset-bottom)); } }
+.public-job {
+  --radius: .5rem;
+  --surface: #f6f7f9;
+}
 
-.application-detail { --radius: .5rem; }
+.public-job-description p,
+.public-job-description li {
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.public-job-description h3 {
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: -.01em;
+  color: var(--foreground);
+}
+
+.public-job .btn-primary:hover:not(:disabled),
+.public-job .btn-secondary:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+.public-job-mobile-action {
+  padding-bottom: max(.75rem, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 1023px) {
+  .public-job-with-action {
+    padding-bottom: calc(82px + env(safe-area-inset-bottom));
+  }
+}
+
+.application-detail {
+  --radius: .5rem;
+}
+
 .application-detail .btn-primary:hover:not(:disabled),
 .application-detail .btn-secondary:hover:not(:disabled),
-.application-detail .btn-ghost:hover:not(:disabled) { transform: none; box-shadow: none; }
-.application-detail summary::marker { color: var(--muted-foreground); }
+.application-detail .btn-ghost:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+.application-detail summary::marker {
+  color: var(--muted-foreground);
+}
 
 /* Candidate profile: flexible columns and comfortable touch controls. */
-.candidate-profile .field-input { min-width: 0; max-width: 100%; min-height: 48px; font-size: 16px; }
-.candidate-profile label, .candidate-profile form, .candidate-profile nav { min-width: 0; }
-.candidate-profile .btn-primary, .candidate-profile .btn-secondary, .candidate-profile .btn-ghost { min-height: 44px; }
-.candidate-profile li { max-width: 100%; overflow-wrap: anywhere; }
-.candidate-profile li > span { max-width: 100%; white-space: normal; }
-@media (max-width: 639px) { .candidate-profile footer > button { flex: 1; } .candidate-profile { padding-top: 24px; } }
+.candidate-profile .field-input {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.candidate-profile label,
+.candidate-profile form,
+.candidate-profile nav {
+  min-width: 0;
+}
+
+.candidate-profile .btn-primary,
+.candidate-profile .btn-secondary,
+.candidate-profile .btn-ghost {
+  min-height: 44px;
+}
+
+.candidate-profile li {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.candidate-profile li>span {
+  max-width: 100%;
+  white-space: normal;
+}
+
+@media (max-width: 639px) {
+  .candidate-profile footer>button {
+    flex: 1;
+  }
+
+  .candidate-profile {
+    padding-top: 24px;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

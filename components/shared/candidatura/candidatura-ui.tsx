@@ -1,4 +1,4 @@
-import { Check, MessageSquareQuote, Star, X } from "lucide-react"
+import { Check, Lock, MessageSquareQuote, Star, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -223,6 +223,17 @@ export function HistoricoTimeline({ historico }: { historico: CandidaturaHistori
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty">
                   {item.observacao}
                 </p>
+              )}
+              {item.notaInterna && (
+                <div className="mt-2 rounded-lg border border-dashed border-border-strong bg-surface px-3 py-2">
+                  <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-subtle-foreground">
+                    <Lock className="size-3" aria-hidden />
+                    Nota interna · só a equipe vê
+                  </p>
+                  <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-foreground text-pretty">
+                    {item.notaInterna}
+                  </p>
+                </div>
               )}
               <p className="mt-1 text-xs text-subtle-foreground">
                 {[item.autorNome, formatDate(item.createdAt)].filter(Boolean).join(" · ")}

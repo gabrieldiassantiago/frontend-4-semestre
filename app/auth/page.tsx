@@ -1,7 +1,7 @@
 import { ROUTES } from "@/lib/config/routes"
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowUpRight, Info, Sparkles } from "lucide-react"
+import { ArrowUpRight, Info } from "lucide-react"
 import { SelectaLogo } from "@/components/ui/selecta-logo"
 import { RoleCard } from "@/components/auth/role-card"
 
@@ -19,19 +19,10 @@ export default async function AuthPage({
   const sessionExpired = expired === "1"
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-surface text-foreground selection:bg-primary/15 selection:text-primary">
-
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] bg-gradient-to-b from-primary/[0.06] via-primary/[0.02] to-transparent"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-24 -z-10 h-72 w-[600px] -translate-x-1/2 rounded-full bg-primary/5 blur-3xl"
-      />
+    <div className="flex min-h-dvh flex-col bg-surface text-foreground selection:bg-primary/15 selection:text-primary">
 
       {/* Header com Glassmorphism */}
-      <header className="sticky top-0 z-20 border-b border-border/60 bg-card/80 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-border bg-card">
         <div className="mx-auto flex h-20 w-full max-w-[1200px] items-center justify-between px-6 sm:px-10">
           <Link
             href="/"
@@ -43,7 +34,7 @@ export default async function AuthPage({
 
           <Link
             href={ROUTES.candidate.jobs}
-            className="group inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/60 px-4 py-2 text-xs font-semibold text-muted-foreground shadow-2xs transition-all hover:border-border hover:bg-muted/60 hover:text-foreground sm:text-sm"
+            className="group inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <span>Explorar vagas</span>
             <ArrowUpRight
@@ -62,14 +53,14 @@ export default async function AuthPage({
           {sessionExpired && (
             <p
               role="status"
-              className="mb-2 inline-flex items-center gap-2 rounded-full border border-warning/30 bg-warning-subtle px-4 py-2 text-xs font-semibold text-warning-foreground sm:text-sm"
+              className="mb-2 inline-flex items-center gap-2 rounded-lg border border-warning/30 bg-warning-subtle px-4 py-2 text-sm font-medium text-warning-foreground"
             >
               <Info className="size-4 shrink-0" aria-hidden />
               Sua sessão expirou. Entre novamente para continuar.
             </p>
           )}
 
-          <h1 className="mt-4 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-[42px] md:leading-[1.15]">
+          <h1 className="mt-2 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Como você deseja usar a Selecta?
           </h1>
 
@@ -81,42 +72,51 @@ export default async function AuthPage({
 
         {/* Grid de Cards de Perfil */}
         <ul
-          className="mt-10 grid w-full gap-5 sm:grid-cols-2 lg:gap-6"
+          className="mt-10 grid w-full gap-4 sm:grid-cols-2 lg:gap-6"
           aria-label="Perfis de acesso"
         >
           <RoleCard
             href="/auth/candidato"
+            index={0}
+            eyebrow="Para profissionais"
             title="Sou candidato"
-            description="Encontre oportunidades alinhadas ao seu perfil, mantenha seu currículo atualizado e acompanhe suas candidaturas em tempo real."
-            cta="Acessar como candidato"
+            description="Encontre oportunidades alinhadas ao seu perfil."
+            features={[
+              "Candidate-se a vagas com um clique",
+              "Currículo e perfil sempre atualizados",
+              "Acompanhe cada etapa em tempo real",
+            ]}
+            cta="Continuar como candidato"
             tone="candidate"
           />
           <RoleCard
             href="/auth/recrutador"
+            index={1}
+            eyebrow="Para empresas"
             title="Sou empresa"
-            description="Publique vagas rapidamente, avalie talentos qualificados e gerencie todos os processos seletivos da sua empresa."
-            cta="Acessar como empresa"
+            description="Contrate com mais agilidade e menos burocracia."
+            features={[
+              "Publique vagas em minutos",
+              "Avalie talentos qualificados",
+              "Gerencie todo o processo seletivo",
+            ]}
+            cta="Continuar como empresa"
             tone="company"
           />
         </ul>
 
-        {/* Callout informativo inferior */}
-        <div className="mt-8 inline-flex items-center gap-2.5 rounded-full border border-border/70 bg-card/70 px-4 py-2 text-xs text-muted-foreground shadow-2xs backdrop-blur-xs sm:text-sm">
-          <Info className="size-4 shrink-0 text-primary" aria-hidden />
-          <span>
-            Já possui cadastro? Basta selecionar o mesmo perfil que você escolheu
-            ao criar sua conta.
-          </span>
-        </div>
+        <p className="mt-8 max-w-md text-center text-sm leading-6 text-muted-foreground">
+          Já tem cadastro? Selecione o mesmo perfil que você escolheu ao criar sua conta.
+        </p>
       </main>
 
       {/* Footer Estruturado */}
-      <footer className="border-t border-border/50 bg-card/40">
+      <footer className="border-t border-border">
         <div className="mx-auto flex w-full max-w-[1200px] flex-col items-center justify-between gap-3 px-6 py-5 text-xs text-muted-foreground sm:flex-row sm:px-10">
           <p className="font-medium">
             Selecta · Plataforma de recrutamento e seleção
           </p>
-          <p className="text-muted-foreground/70">
+          <p className="text-muted-foreground">
             © {new Date().getFullYear()} Selecta. Todos os direitos reservados.
           </p>
         </div>

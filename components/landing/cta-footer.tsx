@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Briefcase } from "lucide-react"
+import { ArrowRight, Briefcase } from "lucide-react"
 
 import { CompanyLogo } from "@/components/shared/company-logo"
 import { SelectaLogo } from "@/components/ui/selecta-logo"
@@ -12,7 +12,7 @@ function PeekCard({ title, company, when, tags, className }: { title: string; co
     <div className={className} aria-hidden>
       <div className="relative pt-3">
         <div className="absolute inset-x-5 top-0 h-10 rounded-t-2xl bg-white/35" />
-        <div className="relative rounded-t-2xl bg-white px-5 pb-20 pt-5 shadow-[0_-12px_40px_-12px_rgba(32,16,110,0.5)]">
+        <div className="relative rounded-t-2xl bg-white px-5 pb-20 pt-5">
           <div className="flex items-center gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-border">
               <CompanyLogo name={company} size="sm" />
@@ -39,17 +39,19 @@ export function CtaSection() {
     <section aria-labelledby="cta-title" className="px-3 py-12 sm:px-6 lg:py-20">
       <div
         data-cta
-        className="relative mx-auto max-w-[1320px] overflow-hidden rounded-[32px] bg-[radial-gradient(130%_140%_at_0%_0%,#8b6dff_0%,#6d47f1_42%,#3b1fae_100%)] px-6 pb-40 pt-20 text-center text-white sm:pb-44 lg:pb-48 lg:pt-24"
+        className="relative mx-auto max-w-[1320px] overflow-hidden rounded-[32px] bg-primary px-6 pb-40 pt-20 text-center text-white sm:pb-44 lg:pb-48 lg:pt-24"
       >
-        <div data-parallax="-14" className="pointer-events-none absolute -left-24 -top-24 size-80 rounded-full bg-white/15 blur-3xl" aria-hidden />
-        <div data-parallax="12" className="pointer-events-none absolute -bottom-32 right-[10%] size-96 rounded-full bg-mint/40 blur-[110px]" aria-hidden />
+        <svg aria-hidden viewBox="0 0 240 240" data-parallax="-16" className="pointer-events-none absolute -right-10 -top-12 size-80 text-white/[0.12] lg:size-[26rem]">
+          <path fill="currentColor" d="M120 0 133 99 240 120 133 133 120 240 104 135 0 120 104 104Z" />
+          <rect x="30" y="30" width="180" height="180" rx="32" fill="none" stroke="currentColor" strokeWidth="2" transform="rotate(12 120 120)" />
+        </svg>
 
         <div className="relative mx-auto max-w-3xl">
           <h2 id="cta-title" data-split aria-label="Dê o primeiro passo rumo ao seu novo emprego" className="relative text-balance text-[34px] font-normal leading-[1.1] tracking-[-0.03em] sm:text-5xl lg:text-[60px]">
-            <span aria-hidden data-float="6" className="absolute -left-2 -top-6 hidden size-14 -rotate-12 place-items-center rounded-2xl bg-strong shadow-xl sm:grid lg:-left-6">
+            <span aria-hidden data-float="6" className="absolute -left-2 -top-6 hidden size-14 -rotate-12 place-items-center rounded-2xl bg-ink sm:grid lg:-left-6">
               <Image src="/images/selecta_solo.svg" alt="" width={30} height={30} className="h-7 w-auto brightness-0 invert" />
             </span>
-            <span aria-hidden data-float="8" className="absolute -right-2 top-0 hidden size-14 rotate-12 place-items-center rounded-2xl bg-white shadow-xl sm:grid lg:-right-6">
+            <span aria-hidden data-float="8" className="absolute -right-2 top-0 hidden size-14 rotate-12 place-items-center rounded-2xl bg-white sm:grid lg:-right-6">
               <Briefcase className="size-7 text-primary" />
             </span>
             {["Dê o primeiro passo rumo", "ao seu novo emprego"].map((line) => (
@@ -67,8 +69,9 @@ export function CtaSection() {
             Comece sua jornada hoje e descubra oportunidades com transparência em cada etapa.
           </p>
           <div data-reveal className="mt-9 flex flex-wrap justify-center gap-3">
-            <Link href={`${ROUTES.auth.candidate}?modo=cadastro`} className="inline-flex h-12 items-center rounded-full bg-mint px-7 text-[15px] font-medium text-ink transition-all hover:-translate-y-0.5 hover:bg-mint-hover hover:shadow-[0_14px_30px_-12px_rgba(0,0,0,0.45)]">
+            <Link href={`${ROUTES.auth.candidate}?modo=cadastro`} data-magnetic className="group inline-flex h-12 items-center gap-3 rounded-full bg-ink pl-6 pr-1.5 text-[15px] font-medium text-white transition-colors hover:bg-primary-deep">
               Sou candidato
+              <span className="grid size-9 place-items-center rounded-full bg-white text-ink transition-transform duration-300 group-hover:translate-x-0.5"><ArrowRight className="size-4" aria-hidden /></span>
             </Link>
             <Link href={`${ROUTES.auth.company}?modo=cadastro`} className="inline-flex h-12 items-center rounded-full border border-white/50 px-7 text-[15px] font-medium text-white transition-colors hover:bg-white/10">
               Sou empresa
@@ -117,7 +120,7 @@ export function LandingFooter() {
         <ul className="flex gap-3">
           {SOCIALS.map((s) => (
             <li key={s.label}>
-              <a href={s.href} target="_blank" rel="noreferrer" aria-label={s.label} className="grid size-12 place-items-center rounded-full border border-border text-foreground transition-all hover:-translate-y-0.5 hover:border-primary hover:text-primary">
+              <a href={s.href} target="_blank" rel="noreferrer" aria-label={s.label} className="grid size-12 place-items-center rounded-full border border-border text-foreground transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-white">
                 <svg viewBox="0 0 24 24" className="size-5 fill-current" aria-hidden><path d={s.path} /></svg>
               </a>
             </li>

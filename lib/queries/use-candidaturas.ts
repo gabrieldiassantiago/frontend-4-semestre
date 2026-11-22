@@ -13,6 +13,7 @@ import {
   criarFeedbackAction,
   decidirCandidaturaAction,
   desistirCandidaturaAction,
+  getAgendamentosEmpresaAction,
   getCandidaturaDetalheAction,
   getCandidaturaEmpresaDetalheAction,
   getCandidaturasEmpresaAction,
@@ -25,6 +26,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { toastSuccess } from "@/lib/toast"
 import { queryKeys } from "./keys"
 import type {
+  AgendamentoEmpresaFilters,
   AvancarEtapaDto,
   CandidaturaAgendamento,
   Candidatura,
@@ -88,6 +90,22 @@ export function useCandidaturasEmpresa(filters?: CandidaturaFilters) {
     loading: query.isPending,
     refreshing: query.isFetching && !query.isPending,
     error: query.error ? getErrorMessage(query.error, "Não foi possível carregar o funil.") : null,
+    refetch: query.refetch,
+  }
+}
+
+/** Agendamentos de todas as vagas da empresa, com filtros opcionais. */
+export function useAgendamentosEmpresa(filters?: AgendamentoEmpresaFilters) {
+  const query = useQuery({
+    queryKey: queryKeys.candidaturas.agendamentosEmpresa(filters),
+    queryFn: async () => unwrap(await getAgendamentosEmpresaAction(filters)),
+    placeholderData: keepPreviousData,
+  })
+  return {
+    agendamentos: query.data ?? [],
+    loading: query.isPending,
+    refreshing: query.isFetching && !query.isPending,
+    error: query.error ? getErrorMessage(query.error, "Não foi possível carregar os agendamentos.") : null,
     refetch: query.refetch,
   }
 }

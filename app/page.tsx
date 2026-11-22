@@ -4,7 +4,7 @@ import { SAMPLE_JOBS } from "@/lib/data/landing"
 import { LandingMotion } from "@/components/landing/landing-motion"
 import { LandingHeader } from "@/components/landing/landing-header"
 import { HeroSection } from "@/components/landing/hero-section"
-import { AboutSection, FeaturesSection, TipsSection, TestimonialsSection } from "@/components/landing/content-sections"
+import { AboutSection, FeaturesSection, HowItWorksSection, TipsSection, TestimonialsSection } from "@/components/landing/content-sections"
 import { JobsSection } from "@/components/landing/jobs-section"
 import { FaqSection } from "@/components/landing/faq-section"
 import { CtaSection, LandingFooter } from "@/components/landing/cta-footer"
@@ -25,6 +25,7 @@ export default async function Home() {
         <HeroSection />
         <AboutSection />
         <FeaturesSection />
+        <HowItWorksSection />
         <JobsSection jobs={jobs} />
         <TipsSection />
         <TestimonialsSection />

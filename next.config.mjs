@@ -10,6 +10,10 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: '**.r2.dev' },
+      { protocol: 'http', hostname: '100.125.85.18', port: '9000', pathname: '/projetointegrador/**' },
+    ],
   },
   allowedDevOrigins: ['192.168.0.42'],
 }

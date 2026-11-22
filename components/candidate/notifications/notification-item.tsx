@@ -25,13 +25,13 @@ export function NotificationItem({
     <li className="group relative">
       <div
         className={cn(
-          "relative flex items-start gap-3.5 transition-colors hover:bg-muted",
-          compact ? "px-4 py-3" : "px-4 py-4 sm:px-5",
-          unread && "bg-primary-subtle/50 hover:bg-primary-subtle",
+          "relative flex items-start transition-colors hover:bg-surface",
+          compact ? "gap-3.5 px-4 py-3" : "gap-4 px-4 py-4 sm:px-6 sm:py-5",
+          unread && "bg-primary-subtle hover:bg-primary-subtle",
         )}
       >
         <span className="relative shrink-0">
-          <span className={cn("grid place-items-center rounded-xl", compact ? "size-9" : "size-10", meta.tone)}>
+          <span className={cn("grid place-items-center rounded-full", compact ? "size-9" : "size-11", meta.tone, unread && "bg-card")}>
             <Icon aria-hidden className={compact ? "size-4" : "size-[18px]"} />
           </span>
           {unread && (
@@ -43,7 +43,8 @@ export function NotificationItem({
           <div className="flex items-baseline justify-between gap-3">
             <p
               className={cn(
-                "min-w-0 text-sm leading-snug text-pretty",
+                "min-w-0 leading-snug text-pretty",
+                compact ? "text-sm" : "text-[15px]",
                 unread ? "font-semibold text-foreground" : "font-medium text-strong-foreground",
               )}
             >
@@ -77,7 +78,7 @@ export function NotificationItem({
           </p>
 
           {!compact && (
-            <p className="mt-2.5 text-xs font-semibold uppercase tracking-wider text-subtle-foreground">{meta.label}</p>
+            <p className={cn("mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-medium", unread ? "bg-card text-primary" : "bg-surface text-strong-foreground")}>{meta.label}</p>
           )}
         </div>
 
@@ -87,7 +88,10 @@ export function NotificationItem({
             onClick={() => onMarkAsRead(notificacao.notificacaoId)}
             aria-label={`Marcar "${notificacao.titulo}" como lida`}
             title="Marcar como lida"
-            className="relative z-10 -mr-1 grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition-[opacity,background-color,color] hover:bg-card hover:text-primary focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+            className={cn(
+              "relative z-10 grid shrink-0 place-items-center rounded-full border border-primary/20 bg-card text-primary transition-[opacity,background-color,color,border-color] hover:border-primary hover:bg-primary hover:text-white focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
+              compact ? "-mr-1 size-8" : "size-10 self-center",
+            )}
           >
             <Check aria-hidden className="size-4" />
           </button>
@@ -99,8 +103,8 @@ export function NotificationItem({
 
 export function NotificationItemSkeleton({ compact = false }: { compact?: boolean }) {
   return (
-    <li aria-hidden className={cn("flex items-start gap-3.5", compact ? "px-4 py-3" : "px-4 py-4 sm:px-5")}>
-      <span className={cn("skeleton-shimmer shrink-0 rounded-xl", compact ? "size-9" : "size-10")} />
+    <li aria-hidden className={cn("flex items-start", compact ? "gap-3.5 px-4 py-3" : "gap-4 px-4 py-4 sm:px-6 sm:py-5")}>
+      <span className={cn("skeleton-shimmer shrink-0 rounded-full", compact ? "size-9" : "size-11")} />
       <span className="flex flex-1 flex-col gap-2 pt-0.5">
         <span className="skeleton-shimmer h-3.5 w-2/3 rounded" />
         <span className="skeleton-shimmer h-3 w-full rounded" />

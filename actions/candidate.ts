@@ -3,8 +3,12 @@
 import { apiFetch } from "@/lib/server/api"
 import type { ActionResult } from "@/lib/actions/result"
 import type {
+  CandidateCertificate,
+  CandidateLanguage,
   CandidateProfile,
+  CreateCertificateDto,
   CreateExperienceDto,
+  CreateLanguageDto,
   CreateProfileDto,
   CreateProjectDto,
   UpdateCandidateProfileDto,
@@ -86,4 +90,47 @@ export async function uploadCandidateAvatarAction(formData: FormData): Promise<A
 
 export async function uploadCandidateResumeAction(formData: FormData): Promise<ActionResult<CandidateProfile>> {
   return withProfile(() => apiFetch<CandidateProfile>(`${ME}/resume`, { method: "PUT", body: formData }))
+}
+
+const CERTIFICATES = `${ME}/certificates`
+const LANGUAGES = `${ME}/languages`
+
+export async function addCandidateCertificateAction(dto: CreateCertificateDto): Promise<ActionResult<CandidateCertificate>> {
+  return withProfile(() => apiFetch<CandidateCertificate>(CERTIFICATES, { method: "POST", body: dto }))
+}
+
+export async function updateCandidateCertificateAction(id: string, dto: CreateCertificateDto): Promise<ActionResult<CandidateCertificate>> {
+  return apiFetch<CandidateCertificate>(`${CERTIFICATES}/${encodeURIComponent(id)}`, { method: "PUT", body: dto })
+}
+
+export async function deleteCandidateCertificateAction(id: string): Promise<ActionResult<void>> {
+  return apiFetch<void>(`${CERTIFICATES}/${encodeURIComponent(id)}`, { method: "DELETE" })
+}
+
+export async function uploadCandidateCertificateFileAction(id: string, formData: FormData): Promise<ActionResult<CandidateCertificate>> {
+  return apiFetch<CandidateCertificate>(`${CERTIFICATES}/${encodeURIComponent(id)}/file`, { method: "PUT", body: formData })
+}
+
+export async function deleteCandidateCertificateFileAction(id: string): Promise<ActionResult<CandidateCertificate>> {
+  return apiFetch<CandidateCertificate>(`${CERTIFICATES}/${encodeURIComponent(id)}/file`, { method: "DELETE" })
+}
+
+export async function addCandidateLanguageAction(dto: CreateLanguageDto): Promise<ActionResult<CandidateLanguage>> {
+  return withProfile(() => apiFetch<CandidateLanguage>(LANGUAGES, { method: "POST", body: dto }))
+}
+
+export async function updateCandidateLanguageAction(id: string, dto: CreateLanguageDto): Promise<ActionResult<CandidateLanguage>> {
+  return apiFetch<CandidateLanguage>(`${LANGUAGES}/${encodeURIComponent(id)}`, { method: "PUT", body: dto })
+}
+
+export async function deleteCandidateLanguageAction(id: string): Promise<ActionResult<void>> {
+  return apiFetch<void>(`${LANGUAGES}/${encodeURIComponent(id)}`, { method: "DELETE" })
+}
+
+export async function uploadCandidateLanguageCertificateAction(id: string, formData: FormData): Promise<ActionResult<CandidateLanguage>> {
+  return apiFetch<CandidateLanguage>(`${LANGUAGES}/${encodeURIComponent(id)}/certificate`, { method: "PUT", body: formData })
+}
+
+export async function deleteCandidateLanguageCertificateAction(id: string): Promise<ActionResult<CandidateLanguage>> {
+  return apiFetch<CandidateLanguage>(`${LANGUAGES}/${encodeURIComponent(id)}/certificate`, { method: "DELETE" })
 }

@@ -14,7 +14,7 @@ function PreviewRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+      <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-primary-subtle text-primary">
         <Icon className="size-4" />
       </span>
       <div className="min-w-0">
@@ -46,7 +46,7 @@ export function ProfilePreview({
     .join(" · ")
 
   return (
-    <section aria-labelledby="profile-preview-title" className="overflow-hidden rounded-card border border-border bg-card">
+    <section aria-labelledby="profile-preview-title" className="overflow-hidden rounded-3xl border border-border/60 bg-card">
       <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-5 py-3 text-xs font-semibold text-muted-foreground">
         <Eye className="size-4" aria-hidden />
         Como a empresa vê você

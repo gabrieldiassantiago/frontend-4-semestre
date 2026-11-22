@@ -1,7 +1,7 @@
 import { ROUTES } from "@/lib/config/routes"
 import React, { useMemo } from "react"
 import Link from "next/link"
-import { ArrowRight, ChevronRight, ShoppingBag, Sparkles } from "lucide-react"
+import { ArrowUpRight, BellRing, UserRound } from "lucide-react"
 import { CompanyLogo } from "@/components/shared/company-logo"
 import type { Vaga } from "@/lib/types/vaga.types"
 
@@ -33,14 +33,14 @@ export function JobsSidebarWidgets({
       }))
   }, [vagas])
   return (
-    <aside className="w-full space-y-5 lg:w-[320px] shrink-0">
+    <aside className="w-full shrink-0 space-y-4 lg:w-[320px]">
       {/* Widget 1: Receba vagas no seu e-mail */}
-      <div className="relative overflow-hidden rounded-3xl border border-purple-100/90 bg-gradient-to-b from-[#f3eeff] via-[#f7f4ff] to-[#faf8ff] p-6 shadow-xs">
-        <div className="flex size-10 items-center justify-center rounded-2xl bg-card/90 text-primary shadow-xs">
-          <Sparkles className="size-5" />
-        </div>
+      <div className="rounded-[28px] bg-primary-subtle p-5">
+        <span className="grid size-10 place-items-center rounded-full bg-card text-primary">
+          <BellRing aria-hidden strokeWidth={1.75} className="size-[18px]" />
+        </span>
 
-        <h3 className="mt-4 text-base font-bold text-foreground">
+        <h3 className="mt-4 text-base font-semibold tracking-tight text-foreground">
           Receba vagas no seu e-mail
         </h3>
         <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
@@ -50,74 +50,72 @@ export function JobsSidebarWidgets({
         <button
           type="button"
           onClick={onOpenAlertsModal}
-          className="group mt-4 flex w-full items-center justify-between rounded-xl bg-card/70 px-4 py-2.5 text-xs font-bold text-primary transition-all hover:bg-card hover:shadow-xs active:scale-[0.98]"
+          className="group mt-4 flex min-h-12 w-full items-center justify-between gap-2 rounded-2xl bg-card py-1.5 pl-4 pr-1.5 text-xs font-semibold text-primary active:scale-[0.98]"
         >
-          <span className="flex items-center gap-1.5">
-            Ativar alertas
-            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          Ativar alertas
+          <span className="grid size-9 place-items-center rounded-xl bg-primary-subtle text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+            <ArrowUpRight aria-hidden className="size-4" />
           </span>
-          <ChevronRight className="size-4 text-purple-300 group-hover:text-primary" />
         </button>
       </div>
 
       {/* Widget 2: Empresas com vagas abertas */}
       {featuredCompanies.length > 0 && (
-        <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-xs">
-          <h3 className="text-sm font-bold text-foreground">Empresas com vagas</h3>
+        <div className="rounded-[28px] border border-border/60 bg-card p-2">
+          <div className="flex items-center justify-between px-3 pb-2 pt-3">
+            <h3 className="text-sm font-semibold tracking-tight text-foreground">Empresas com vagas</h3>
+            <button
+              type="button"
+              onClick={() => onSelectCompany("")}
+              className="text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Ver todas
+            </button>
+          </div>
 
-          <div className="mt-3.5 space-y-2">
+          <div className="flex flex-col gap-1.5">
             {featuredCompanies.map((company) => (
               <button
                 key={company.name}
                 type="button"
                 onClick={() => onSelectCompany(company.name)}
-                className="flex w-full items-center gap-3 rounded-2xl p-2 text-left transition-colors hover:bg-muted active:scale-[0.99]"
+                className="flex w-full items-center gap-3 rounded-[20px] bg-surface p-2.5 text-left transition-colors hover:bg-muted active:scale-[0.99]"
               >
                 <CompanyLogo name={company.name} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-bold text-foreground">
-                    {company.name}
-                  </p>
-                  <p className="text-[11px] text-subtle-foreground">{company.count}</p>
-                </div>
+                <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
+                  {company.name}
+                </span>
+                <span className="mr-1 shrink-0 text-[11px] tabular-nums text-muted-foreground">{company.count}</span>
               </button>
             ))}
           </div>
-
-          <button
-            type="button"
-            onClick={() => onSelectCompany("")}
-            className="mt-3 flex items-center gap-1.5 text-xs font-bold text-primary transition-colors hover:text-primary-hover"
-          >
-            Ver todas as empresas
-            <ArrowRight className="size-3" />
-          </button>
         </div>
       )}
 
       {/* Widget 3: Dicas para você */}
-      <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-xs">
-        <h3 className="text-sm font-bold text-foreground">Dicas para você</h3>
+      <div className="rounded-[28px] border border-border/60 bg-card p-5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold tracking-tight text-foreground">Dica para você</h3>
+          <Link
+            href={ROUTES.candidate.profile}
+            aria-label="Ir para o perfil"
+            className="grid size-9 place-items-center rounded-full border border-border text-strong-foreground transition-colors hover:border-primary hover:bg-primary hover:text-white"
+          >
+            <ArrowUpRight aria-hidden strokeWidth={1.75} className="size-4" />
+          </Link>
+        </div>
 
-        <div className="mt-3 flex items-start gap-3">
-          <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary-subtle text-primary">
-            <ShoppingBag className="size-4" />
-          </div>
+        <div className="mt-4 flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full border border-border text-strong-foreground">
+            <UserRound aria-hidden strokeWidth={1.75} className="size-4" />
+          </span>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-foreground">Complete seu perfil</p>
-            <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
+            <p className="text-sm font-semibold text-foreground">Complete seu perfil</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
               Perfis completos recebem 3x mais visualizações.
             </p>
           </div>
         </div>
-
-        <Link
-          href={ROUTES.candidate.profile}
-          className="mt-3.5 flex items-center gap-1.5 text-xs font-bold text-primary transition-colors hover:text-primary-hover"
-        >
-          Ir para o perfil
-          <ArrowRight className="size-3" />
-        </Link>
       </div>
     </aside>
   )

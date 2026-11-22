@@ -58,7 +58,7 @@ export function TestimonialCarousel({ className }: { className?: string }) {
         </motion.div>
       </AnimatePresence>
 
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
+      <div className="pointer-events-none absolute inset-0 bg-black/50" />
 
       <span className="absolute left-5 top-5 grid size-10 place-items-center rounded-2xl bg-background/95 text-strong shadow-lg backdrop-blur lg:left-7 lg:top-7 lg:size-11">
         <Quote className="size-4 fill-current lg:size-5" aria-hidden />

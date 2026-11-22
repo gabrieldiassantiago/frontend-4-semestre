@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { Settings, UserRound } from "lucide-react"
 import { AppShell, DrawerLogoutButton } from "@/components/layout/shell/app-shell"
 import { NotificationBell } from "@/components/candidate/notifications/notification-bell"
+import { ChatDrawerButton } from "@/components/shared/chat/chat-drawer"
 import { UserMenu } from "@/components/layout/shell/user-menu"
 import { EntityAvatar } from "@/components/ui/entity-avatar"
 import { GlobalJobSearch } from "@/components/candidate/jobs/global-job-search"
@@ -34,7 +35,7 @@ export function CandidateAppShell({ children, currentPath }: { children: React.R
 
   const name = user?.name?.trim() || profile?.userName?.trim() || "Candidato"
   const email = user?.email?.trim() || profile?.userEmail?.trim() || undefined
-  const completion = profile ? getProfileCompletion(profile).value : null
+  const completion = profile ? getProfileCompletion(profile) : null
 
   return (
     <AppShell
@@ -43,17 +44,18 @@ export function CandidateAppShell({ children, currentPath }: { children: React.R
       pathname={currentPath}
       areaLabel="Área do candidato"
       sidebarBottom={({ collapsed, close }) =>
-        completion !== null && <ProfileCompletionCard value={completion} collapsed={collapsed} onNavigate={close} />
+        completion !== null && <ProfileCompletionCard completion={completion} collapsed={collapsed} onNavigate={close} />
       }
       topbarCenter={<GlobalJobSearch />}
       topbarActions={
         <>
+          <ChatDrawerButton perspectiva="candidato" />
           <NotificationBell />
           <UserMenu
             name={name}
             secondary={email}
             triggerLabel="Minha conta"
-            avatar={<EntityAvatar name={name} size="sm" className="rounded-full" />}
+            avatar={<EntityAvatar name={name} src={profile?.profileImageUrl} size="sm" className="rounded-full" />}
             links={ACCOUNT_LINKS}
             onLogout={logout}
           />

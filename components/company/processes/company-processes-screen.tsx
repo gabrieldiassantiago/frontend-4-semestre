@@ -17,6 +17,11 @@ import { VagaPipelineScreen } from "./vaga-pipeline-screen"
 
 type JobFilter = "ativas" | "pausadas" | "todas"
 
+function triagem(vaga: Vaga, items: Candidatura[]) {
+  const first = etapasDaVaga(vaga.etapas)[0]
+  return items.filter((item) => item.status === "EM_ANDAMENTO" && item.etapaAtual === first).length
+}
+
 function VagaSelectionScreen({ vagas, loading }: { vagas: Vaga[]; loading: boolean }) {
   const { candidaturas } = useCandidaturasEmpresa()
   const [query, setQuery] = useState("")
@@ -39,8 +44,16 @@ function VagaSelectionScreen({ vagas, loading }: { vagas: Vaga[]; loading: boole
     return vagas
       .filter((v) => (filter === "ativas" ? v.ativa : filter === "pausadas" ? !v.ativa : true))
       .filter((v) => !term || `${v.titulo} ${v.cidade} ${v.estado}`.toLocaleLowerCase("pt-BR").includes(term))
-      .sort((a, b) => (byJob.get(b.id)?.length ?? 0) - (byJob.get(a.id)?.length ?? 0))
+      .sort((a, b) => triagem(b, byJob.get(b.id) ?? []) - triagem(a, byJob.get(a.id) ?? []) || (byJob.get(b.id)?.length ?? 0) - (byJob.get(a.id)?.length ?? 0))
   }, [vagas, query, filter, byJob])
+
+  const totals = useMemo(() => {
+    const abertas = vagas.filter((v) => v.ativa)
+    const ids = new Set(abertas.map((v) => v.id))
+    const emAndamento = candidaturas.filter((c) => ids.has(c.vagaId) && c.status === "EM_ANDAMENTO")
+    const aguardando = abertas.reduce((sum, v) => sum + triagem(v, byJob.get(v.id) ?? []), 0)
+    return { vagas: abertas.length, emAndamento: emAndamento.length, aguardando }
+  }, [vagas, candidaturas, byJob])
 
   return (
     <PageShell className="max-w-[1380px]">
@@ -49,7 +62,22 @@ function VagaSelectionScreen({ vagas, loading }: { vagas: Vaga[]; loading: boole
         description="Escolha uma vaga para acompanhar o funil e movimentar os candidatos entre as etapas."
       />
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {!loading && vagas.length > 0 && (
+        <dl className="mt-6 grid grid-cols-3 divide-x divide-border rounded-xl border border-border bg-card">
+          {[
+            ["Vagas abertas", totals.vagas],
+            ["Candidatos em andamento", totals.emAndamento],
+            ["Aguardando triagem", totals.aguardando],
+          ].map(([label, value]) => (
+            <div key={label} className="min-w-0 px-4 py-3 sm:px-5 sm:py-4">
+              <dt className="truncate text-xs text-muted-foreground">{label}</dt>
+              <dd className={cn("mt-1 text-2xl font-semibold tabular-nums", label === "Aguardando triagem" && Number(value) > 0 ? "text-primary" : "text-foreground")}>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SegmentedControl
           label="Filtrar vagas"
           value={filter}
@@ -73,7 +101,7 @@ function VagaSelectionScreen({ vagas, loading }: { vagas: Vaga[]; loading: boole
 
       <div className="mt-6">
         {loading ? (
-          <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="rounded-xl border border-border bg-card p-6">
             <VagaSelectionSkeleton rows={3} />
           </div>
         ) : filtered.length === 0 ? (
@@ -88,7 +116,7 @@ function VagaSelectionScreen({ vagas, loading }: { vagas: Vaga[]; loading: boole
             }
           />
         ) : (
-          <ul className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+          <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {filtered.map((vaga) => (
               <li key={vaga.id} className="flex">
                 <JobPipelineCard vaga={vaga} candidaturas={byJob.get(vaga.id) ?? []} />
@@ -111,21 +139,20 @@ function JobPipelineCard({ vaga, candidaturas }: { vaga: Vaga; candidaturas: Can
   return (
     <Link
       href={`${ROUTES.company.processes}?vaga=${encodeURIComponent(vaga.id)}`}
-      className="group flex w-full min-w-0 flex-col rounded-3xl border border-border/80 bg-card p-6 shadow-[0_2px_8px_-4px_rgba(32,29,29,0.08)] transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-[0_16px_40px_-20px_rgba(32,29,29,0.22)] motion-reduce:transform-none"
+      className="group flex w-full min-w-0 flex-col rounded-xl border border-border bg-card p-5 transition-colors duration-200 hover:border-primary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className="mb-5 grid size-11 place-items-center rounded-2xl bg-primary-subtle text-primary"><BriefcaseBusiness aria-hidden className="size-5" strokeWidth={1.5} /></span>
-          <h2 className="break-words text-lg font-semibold leading-7 tracking-tight text-foreground group-hover:text-primary">{vaga.titulo}</h2>
-          <p className="mt-2 flex flex-wrap items-center gap-1 text-xs leading-5 text-muted-foreground">
-            <MapPin aria-hidden className="size-3 shrink-0" />
+                    <h2 className="break-words text-base font-semibold leading-6 text-foreground">{vaga.titulo}</h2>
+          <p className="mt-1 flex flex-wrap items-center gap-1 text-sm leading-5 text-muted-foreground">
+            <MapPin aria-hidden className="size-3.5 shrink-0" />
             {vaga.cidade}, {vaga.estado} · {MODALIDADE_LABELS[vaga.modalidade]}
           </p>
         </div>
         <span
           className={cn(
-            "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold",
-            vaga.ativa ? "bg-success-subtle text-success-foreground" : "bg-muted text-muted-foreground",
+            "inline-flex shrink-0 items-center gap-1.5 text-xs font-medium",
+            vaga.ativa ? "text-success-foreground" : "text-muted-foreground",
           )}
         >
           <span aria-hidden className={cn("size-1.5 rounded-full", vaga.ativa ? "bg-success" : "bg-subtle-foreground")} />
@@ -133,15 +160,15 @@ function JobPipelineCard({ vaga, candidaturas }: { vaga: Vaga; candidaturas: Can
         </span>
       </div>
 
-      <dl className="mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-surface p-4">
+      <dl className="mt-5 grid grid-cols-3 gap-2 border-y border-border-subtle py-4">
         {[
           ["Candidatos", candidaturas.length],
           ["Em andamento", active.length],
           ["Aprovados", approved],
         ].map(([label, value]) => (
           <div key={label} className="min-w-0">
-            <dt className="truncate text-[11px] text-muted-foreground">{label}</dt>
-            <dd className="mt-2 text-2xl font-medium tracking-tight tabular-nums text-foreground">{value}</dd>
+            <dt className="truncate text-xs text-muted-foreground">{label}</dt>
+            <dd className="mt-1 text-xl font-semibold tabular-nums text-foreground">{value}</dd>
           </div>
         ))}
       </dl>
@@ -167,8 +194,7 @@ function JobPipelineCard({ vaga, candidaturas }: { vaga: Vaga; candidaturas: Can
 
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-border-subtle pt-4 text-sm">
         {awaiting > 0 ? (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-subtle-foreground">
-            <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-primary-subtle px-2 py-1 text-xs font-semibold text-primary-subtle-foreground">
             {awaiting} {awaiting === 1 ? "aguarda" : "aguardam"} triagem
           </span>
         ) : (
@@ -176,7 +202,7 @@ function JobPipelineCard({ vaga, candidaturas }: { vaga: Vaga; candidaturas: Can
         )}
         <span className="inline-flex items-center gap-1 font-semibold text-primary">
           Abrir funil
-          <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight aria-hidden className="size-4 transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transform-none" />
         </span>
       </div>
     </Link>

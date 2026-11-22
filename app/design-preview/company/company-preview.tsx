@@ -10,6 +10,7 @@ import { CompanyCandidatesScreen } from "@/components/company/candidates/company
 import { CompanyCandidateDetailScreen } from "@/components/company/candidates/company-candidate-detail-screen"
 import { CompanyProcessesScreen } from "@/components/company/processes/company-processes-screen"
 import { EditVagaForm } from "@/components/company/vagas/edit-vaga/edit-vaga-form"
+import { NovaVagaForm } from "@/components/company/vagas/nova-vaga/nova-vaga-form"
 import { MessagesScreen } from "@/components/shared/chat/messages-screen"
 import { queryKeys } from "@/lib/queries/keys"
 import type { CompanyProfile } from "@/lib/types/company.types"
@@ -126,6 +127,7 @@ function previewClient() {
 const VIEWS: Array<[string, string]> = [
   ["dashboard", "/empresa/dashboard"],
   ["vagas", "/empresa/vagas"],
+  ["nova vaga", "/empresa/vagas/nova"],
   ["editar", "/empresa/vagas/preview-1/editar"],
   ["candidatos", "/empresa/candidatos"],
   ["candidato", "/empresa/candidatos/candidate-preview-1"],
@@ -140,6 +142,7 @@ function Screen({ path }: { path: string }) {
   const parts = url.pathname.split("/").filter(Boolean)
   const section = parts[1]
   if (section === "dashboard") return <CompanyDashboardScreen />
+  if (section === "vagas" && parts[2] === "nova") return <NovaVagaForm />
   if (section === "vagas" && parts[3] === "editar") return <EditVagaForm vaga={jobs.find((job) => job.id === parts[2]) ?? jobs[0]} />
   if (section === "vagas") return <CompanyJobsScreen />
   if (section === "candidatos" && parts[2]) return <CompanyCandidateDetailScreen candidaturaId={parts[2]} />

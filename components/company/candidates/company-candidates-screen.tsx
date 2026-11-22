@@ -1,5 +1,6 @@
 "use client"
 
+import { Select } from "@/components/ui/select"
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { ChevronRight, Search, Users } from "lucide-react"
@@ -87,19 +88,16 @@ export function CompanyCandidatesScreen() {
           ]}
         />
         <div className="flex flex-col gap-3 sm:flex-row">
-          <select
-            className="field-input sm:w-56"
-            value={vagaId}
-            onChange={(event) => setVagaId(event.target.value)}
+          <Select
             aria-label="Filtrar por vaga"
-          >
-            <option value="">Todas as vagas</option>
-            {vagas.map(([id, titulo]) => (
-              <option key={id} value={id}>
-                {titulo}
-              </option>
-            ))}
-          </select>
+            className="sm:w-56"
+            value={vagaId}
+            onValueChange={setVagaId}
+            options={[
+              { value: "", label: "Todas as vagas" },
+              ...vagas.map(([id, titulo]) => ({ value: id, label: titulo })),
+            ]}
+          />
           <InputWithIcon
             wrapperClassName="sm:w-72"
             icon={Search}

@@ -1,11 +1,12 @@
 "use client"
 
+import { Select } from "@/components/ui/select"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ROUTES } from "@/lib/config/routes"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
-import { ArrowLeft, ArrowRight, ChevronDown, Loader2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react"
 import { PageShell } from "@/components/ui/page"
 import { Alert, ErrorState, Skeleton } from "@/components/ui/states"
 import { toastSuccess } from "@/lib/toast"
@@ -28,17 +29,21 @@ import { messageFrom, toForm } from "./profile-form.utils"
 import { BasicStep, EducationStep, LocationStep, ReviewStep, SkillsStep } from "./wizard/wizard-steps"
 import { WizardSidebar } from "./wizard/wizard-sidebar"
 import { WizardComplete } from "./wizard/wizard-complete"
-import { CertificatesStep, type CertificateDraft } from "./wizard/certificates-step"
-import { LanguagesStep, type LanguageDraft } from "./wizard/languages-step"
+import { WizardWelcome } from "./wizard/wizard-welcome"
+import { CertificateEditor } from "./certificate-editor"
+import { LanguageEditor } from "./language-editor"
 
 const FORM_STEPS: ProfileStepId[] = ["basico", "localizacao", "formacao", "skills", "links"]
 
 export function CompleteProfileWizard({
   initialStep = "basico",
   previewMode = false,
+  welcome = false,
 }: {
   initialStep?: ProfileStepId
   previewMode?: boolean
+  /** Conta recém-criada: mostra as boas-vindas antes da primeira etapa. */
+  welcome?: boolean
 }) {
   const router = useRouter()
   const reduceMotion = useReducedMotion()
@@ -59,8 +64,7 @@ export function CompleteProfileWizard({
   const [editorOpen, setEditorOpen] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof UpdateCandidateProfileDto, string>>>({})
   const [concluido, setConcluido] = useState(false)
-  const [certificados, setCertificados] = useState<CertificateDraft[]>([])
-  const [idiomas, setIdiomas] = useState<LanguageDraft[]>([])
+  const [mostrarBoasVindas, setMostrarBoasVindas] = useState(welcome)
 
   // Inicializa o rascunho uma vez por perfil para não apagar o que foi digitado
   // quando a foto, o currículo ou uma experiência atualizam o perfil em cache.
@@ -126,10 +130,24 @@ export function CompleteProfileWizard({
 
   if (concluido) return <WizardComplete completion={completion} />
 
+  if (mostrarBoasVindas) {
+    return (
+      <WizardWelcome
+        name={profile?.userName}
+        photoUrl={profile?.profileImageUrl}
+        onStart={() => {
+          setMostrarBoasVindas(false)
+          // Tira a flag da URL para não repetir as boas-vindas ao recarregar.
+          router.replace(ROUTES.candidate.completeProfile, { scroll: false })
+        }}
+      />
+    )
+  }
+
   const step = PROFILE_STEPS[indice]
   const ultimo = indice === PROFILE_STEPS.length - 1
   const stepStatus = getStepStatus(completion, step.id)
-  const visualCount = step.id === "certificados" ? certificados.length : step.id === "idiomas" ? idiomas.length : null
+  const visualCount = step.id === "certificados" ? (profile?.certificates?.length ?? 0) : step.id === "idiomas" ? (profile?.languages?.length ?? 0) : null
   const canSkip =
     visualCount !== null
       ? visualCount === 0
@@ -246,20 +264,15 @@ export function CompleteProfileWizard({
             </span>
             <label className="relative inline-flex items-center">
               <span className="sr-only">Ir para outra etapa</span>
-              <select
+              <Select
+                aria-label="Ir para outra etapa"
+                variant="pill"
                 value={step.id}
                 disabled={blocked}
-                onChange={(event) => goToStep(event.target.value as ProfileStepId)}
-                className="min-h-11 appearance-none rounded-full border border-border bg-background py-2 pl-4 pr-9 text-sm font-semibold text-foreground"
-              >
-                {PROFILE_STEPS.map((item, index) => (
-                  <option key={item.id} value={item.id}>
-                    {index + 1}. {item.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 size-4 text-muted-foreground" aria-hidden />
-            </label>
+                onValueChange={(value) => goToStep(value as ProfileStepId)}
+                options={PROFILE_STEPS.map((item, index) => ({ value: item.id, label: `${index + 1}. ${item.label}` }))}
+              />
+                          </label>
           </div>
 
           <div className="flex-1 px-5 py-6 sm:px-8 sm:py-8 lg:px-10">
@@ -326,10 +339,10 @@ export function CompleteProfileWizard({
                     </div>
                   )}
 
-                  {!profile && ["experiencias", "projetos", "curriculo"].includes(step.id) && (
+                  {!profile && ["experiencias", "projetos", "curriculo", "certificados", "idiomas"].includes(step.id) && (
                     <div className="flex flex-col items-start gap-4">
                       <Alert tone="info">
-                        Salve seu rascunho para começar a adicionar experiências, projetos ou currículo.
+                        Salve seu rascunho para começar a adicionar experiências, projetos, certificados, idiomas ou currículo.
                       </Alert>
                       <button type="button" className="btn-secondary" disabled={blocked} onClick={() => void salvarRascunho()}>
                         Salvar rascunho
@@ -350,8 +363,12 @@ export function CompleteProfileWizard({
                   {step.id === "curriculo" && profile && (
                     <ResumeUpload profile={profile} onProfileChange={aplicarPerfil} onUploadingChange={setUploading} />
                   )}
-                  {step.id === "certificados" && <CertificatesStep items={certificados} onChange={setCertificados} />}
-                  {step.id === "idiomas" && <LanguagesStep items={idiomas} onChange={setIdiomas} />}
+                  {step.id === "certificados" && profile && (
+                    <CertificateEditor certificates={profile.certificates ?? []} onEditingChange={setEditorOpen} />
+                  )}
+                  {step.id === "idiomas" && profile && (
+                    <LanguageEditor languages={profile.languages ?? []} onEditingChange={setEditorOpen} />
+                  )}
                   {step.id === "revisao" && (
                     <ReviewStep
                       completion={completion}

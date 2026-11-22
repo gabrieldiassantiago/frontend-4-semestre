@@ -15,7 +15,7 @@ export function ProfessionalLinks({ form, onChange, errors = {} }: {
       <input type="url" className="field-input" value={form.linkedinUrl || ""}
         onChange={(event) => onChange({ linkedinUrl: event.target.value })} placeholder="https://linkedin.com/in/seu-perfil" />
     </Field>
-    <details className="rounded-xl border border-border p-4" open={form.githubUrl ? true : undefined}>
+    <details className="rounded-2xl border border-border/60 p-4" open={form.githubUrl ? true : undefined}>
       <summary className="cursor-pointer text-sm font-medium text-muted-foreground">Usa GitHub? Adicione também (opcional)</summary>
       <div className="mt-4"><Field error={errors.githubUrl} label="GitHub">
         <input type="url" className="field-input" value={form.githubUrl || ""}

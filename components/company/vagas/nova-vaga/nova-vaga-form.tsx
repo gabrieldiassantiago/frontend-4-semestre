@@ -6,9 +6,10 @@ import { useQuery } from "@tanstack/react-query"
 import { getEtapasAction, getEtapasSistemaAction } from "@/actions/etapas"
 import { unwrap } from "@/lib/actions/result"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
-import { AlertCircle, CheckCircle2, ExternalLink, X } from "lucide-react"
+import { AlertCircle, CheckCircle2, ChevronDown, ExternalLink, Eye, X } from "lucide-react"
 import { ROUTES } from "@/lib/config/routes"
 import { RouteSkeleton } from "@/components/ui/route-skeleton"
+import { Sheet } from "@/components/ui/sheet"
 import { useCreateVaga, useUpdateVaga } from "@/lib/queries/use-vagas"
 import { useCompanyIdentity } from "@/lib/queries/use-company-profile"
 import { ShareVagaButton } from "@/components/shared/vaga/share-vaga-button"
@@ -21,7 +22,7 @@ import { EDIT_STEPS, FLOW_STEPS, buildDescriptionTemplate, stripHtml, validateSt
 import type { DraftErrors, StepId, VagaDraft } from "./flow/types"
 import { FlowProvider, type FlowMode } from "./flow/flow-context"
 import { STEP_HEADING_ID } from "./flow/primitives"
-import { StepRail } from "./flow/step-rail"
+import { StepTrack } from "./flow/step-rail"
 import { LivePreview } from "./flow/live-preview"
 import { FLOW_GRID, FlowFooter } from "./flow/flow-footer"
 import { StepTitulo } from "./flow/steps/step-titulo"
@@ -122,6 +123,7 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
   const [submitting, setSubmitting] = useState(false)
   const [doneId, setDoneId] = useState<string | null>(null)
   const [editorKey, setEditorKey] = useState(0)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const hasNavigated = useRef(false)
   const submissionLock = useRef(false)
 
@@ -298,105 +300,117 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
   }
 
   const stepProps = { draft, update, errors }
-  const progress = ((current + 1) / steps.length) * 100
   const offset = reduceMotion ? 0 : 40
 
   return (
     <FlowProvider value={{ steps, mode }}>
-      <div className="flex min-h-[calc(100dvh-4rem)] flex-col bg-background">
-        <div className="sticky top-16 z-20 border-b border-border bg-background/90 backdrop-blur-md">
-          <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
-            <Link
-              href={ROUTES.company.jobs}
-              aria-label={editing ? "Sair da edição e voltar para minhas vagas" : "Sair e voltar para minhas vagas"}
-              className="grid size-9 shrink-0 place-items-center rounded-full text-strong-foreground transition-colors hover:bg-muted"
-            >
-              <X className="size-4" aria-hidden />
-            </Link>
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-sm font-semibold text-foreground">
-                {editing ? (
-                  <>
-                    Editar vaga <span className="font-normal text-muted-foreground">· {vaga?.titulo}</span>
-                  </>
-                ) : (
-                  "Nova vaga"
-                )}
-              </h1>
-              <p className="truncate text-xs text-muted-foreground">{companyName}</p>
-            </div>
-            {editing ? (
-              <div className="flex shrink-0 items-center gap-2">
-                <span
-                  aria-live="polite"
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
-                    dirty ? "bg-warning-subtle text-warning-foreground" : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  <span aria-hidden className={cn("size-1.5 rounded-full", dirty ? "bg-warning" : "bg-subtle-foreground")} />
-                  {dirty ? "Alterações não salvas" : "Sem alterações"}
+      {/*
+        Um único cartão (etapas + formulário + prévia) alinhado às margens da topbar.
+        Nada além da topbar do app fica fixo: evita camadas sobrepostas ao rolar.
+      */}
+      <div className="flex min-h-[calc(100dvh-4rem)] flex-col px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 lg:px-8">
+        <h1 className="sr-only">{editing ? `Editar vaga ${vaga?.titulo ?? ""}` : "Nova vaga"}</h1>
+        <div className="flex flex-1 flex-col rounded-[24px] border border-border/60 bg-card sm:rounded-[28px]">
+          <div className="border-b border-border-subtle p-2 sm:px-3">
+            <div className="container-teste flex items-center gap-2 sm:gap-3">
+              <Link
+                href={ROUTES.company.jobs}
+                aria-label={editing ? "Sair da edição e voltar para minhas vagas" : "Sair e voltar para minhas vagas"}
+                className="grid size-10 shrink-0 place-items-center rounded-full text-strong-foreground transition-colors hover:bg-muted"
+              >
+                <X className="size-4" aria-hidden />
+              </Link>
+
+              {/* Celular e tablet: etapa atual + seletor nativo para pular entre etapas já visitadas. */}
+              <label className="relative min-w-0 flex-1 cursor-pointer rounded-xl px-1 py-0.5 lg:hidden">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+                  {editing ? "Editando" : `Passo ${current + 1} de ${steps.length}`}
                 </span>
-                <Link
-                  href={`/vaga/${vaga?.id}`}
-                  target="_blank"
-                  className="hidden min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
+                <span className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                  <span className="truncate">{step.label}</span>
+                  <ChevronDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+                </span>
+                <select
+                  value={current}
+                  onChange={(event) => goTo(Number(event.target.value))}
+                  aria-label={editing ? "Ir para a seção" : "Ir para a etapa"}
+                  className="absolute inset-0 size-full cursor-pointer opacity-0"
                 >
-                  Página pública
-                  <ExternalLink aria-hidden className="size-3.5" />
-                </Link>
-              </div>
-            ) : (
-              <p className="shrink-0 text-xs font-medium text-muted-foreground" aria-live="polite">
-                <span className="font-semibold tabular-nums text-foreground">{current + 1}</span>/{steps.length}
-                <span className="ml-1.5 lg:hidden">· {step.label}</span>
-              </p>
-            )}
-          </div>
-          {editing ? (
-            <nav aria-label="Seções da vaga" className="mx-auto flex w-full max-w-7xl gap-1 overflow-x-auto px-4 pb-2 sm:px-6 lg:hidden">
-              {steps.map((item, index) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-current={index === current ? "step" : undefined}
-                  onClick={() => goTo(index)}
-                  className={cn(
-                    "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-                    index === current ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          ) : (
-            <div
-              className="h-0.5 w-full bg-border-subtle"
-              role="progressbar"
-              aria-label="Progresso da publicação"
-              aria-valuemin={1}
-              aria-valuemax={steps.length}
-              aria-valuenow={current + 1}
-            >
-              <motion.div
-                className="h-full bg-primary"
-                initial={false}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: reduceMotion ? 0 : 0.5, ease: EASE }}
+                  {steps.map((item, index) => (
+                    <option key={item.id} value={index} disabled={index > maxReached}>
+                      {index + 1}. {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {/* Desktop: trilha completa de etapas. */}
+              <StepTrack
+                current={current}
+                maxReached={maxReached}
+                draft={draft}
+                onSelect={goTo}
+                className="hidden min-w-0 flex-1 lg:block"
               />
+
+              {editing && (
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <span
+                    aria-live="polite"
+                    title={dirty ? "Alterações não salvas" : "Sem alterações"}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+                      dirty ? "bg-warning-subtle text-warning-foreground" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    <span aria-hidden className={cn("size-1.5 rounded-full", dirty ? "bg-warning" : "bg-subtle-foreground")} />
+                    <span className="max-sm:sr-only">{dirty ? "Não salvo" : "Salvo"}</span>
+                  </span>
+                  <Link
+                    href={`/vaga/${vaga?.id}`}
+                    target="_blank"
+                    aria-label="Abrir página pública"
+                    className="hidden size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:grid"
+                  >
+                    <ExternalLink aria-hidden className="size-4" />
+                  </Link>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+                aria-label="Ver como o candidato verá a vaga"
+                className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-semibold text-strong-foreground transition-colors hover:border-primary/40 hover:bg-primary-subtle hover:text-primary xl:hidden"
+              >
+                <Eye aria-hidden className="size-4" />
+                <span className="hidden sm:inline">Prévia</span>
+              </button>
             </div>
-          )}
-        </div>
+
+            {/* Progresso segmentado (celular e tablet). */}
+            <div aria-hidden className="mt-2 flex gap-1 px-1 pb-0.5 lg:hidden">
+              {steps.map((item, index) => (
+                <span
+                  key={item.id}
+                  className={cn(
+                    "h-1 flex-1 rounded-full transition-colors duration-300",
+                    index <= current || (editing && index <= maxReached) ? "bg-primary" : "bg-border",
+                    editing && index !== current && "opacity-40",
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+
+        <Sheet open={previewOpen} onClose={() => setPreviewOpen(false)} side="right" title="Como o candidato verá">
+          <div className="p-5">
+            <LivePreview draft={draft} companyName={companyName} logoUrl={company.logoUrl ?? undefined} />
+          </div>
+        </Sheet>
 
         <div className={`${FLOW_GRID} flex-1`}>
-          <aside className="hidden lg:block">
-            <div className="sticky top-36 py-10">
-              <StepRail current={current} maxReached={maxReached} draft={draft} onSelect={goTo} />
-            </div>
-          </aside>
-
-          <main className="min-w-0 py-8 sm:py-12">
+          <main className="min-w-0 py-6 sm:py-10">
             <div className="mx-auto max-w-2xl">
               {visibleError && (
                 <div
@@ -464,25 +478,26 @@ export function VagaFlow({ vaga }: { vaga?: Vaga }) {
                   )}
                 </motion.div>
               </AnimatePresence>
+                <FlowFooter
+                  isFirst={current === 0}
+                  isLast={current === steps.length - 1}
+                  submitting={submitting}
+                  dirty={dirty}
+                  onBack={() => goTo(current - 1)}
+                  onNext={handleNext}
+                  onPublish={handleSubmit}
+                />
             </div>
           </main>
 
           <aside className="hidden xl:block">
-            <div className="sticky top-36 py-10">
+            <div className="sticky top-[calc(var(--topbar-offset,76px)+8px)] py-8 transition-[top] duration-300 ease-out">
               <LivePreview draft={draft} companyName={companyName} logoUrl={company.logoUrl ?? undefined} />
             </div>
           </aside>
         </div>
+        </div>
 
-        <FlowFooter
-          isFirst={current === 0}
-          isLast={current === steps.length - 1}
-          submitting={submitting}
-          dirty={dirty}
-          onBack={() => goTo(current - 1)}
-          onNext={handleNext}
-          onPublish={handleSubmit}
-        />
       </div>
     </FlowProvider>
   )

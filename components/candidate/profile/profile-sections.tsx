@@ -1,5 +1,6 @@
 "use client"
 
+import { Select } from "@/components/ui/select"
 import { ProfessionalLinks } from "./professional-links"
 import { CityAutocomplete } from "./city-autocomplete"
 import { ProfilePhotoField } from "./profile-photo-field"
@@ -179,33 +180,30 @@ export function EducationFields({
         </Field>
 
         <Field label="Semestre atual" error={errors.currentSemester}>
-          <select
-            value={form.currentSemester || ""}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                currentSemester:
-                  event.target.value === ""
-                    ? undefined
-                    : Number(event.target.value),
-              }))
+          <Select
+            aria-label="Semestre atual"
+            placeholder="Selecione o semestre"
+            value={form.currentSemester ? String(form.currentSemester) : ""}
+            onValueChange={(value) =>
+              setForm((current) => ({ ...current, currentSemester: value === "" ? undefined : Number(value) }))
             }
-            className="field-input"><option value="">Selecione o semestre</option>{Array.from({length:20}, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}º semestre</option>)}</select>
+            options={Array.from({ length: 20 }, (_, index) => ({ value: String(index + 1), label: `${index + 1}º semestre` }))}
+          />
         </Field>
 
         <Field label="Previsão de formatura" error={errors.expectedGraduationYear}>
-          <select
-            value={form.expectedGraduationYear || ""}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                expectedGraduationYear:
-                  event.target.value === ""
-                    ? undefined
-                    : Number(event.target.value),
-              }))
+          <Select
+            aria-label="Previsão de formatura"
+            placeholder="Selecione o ano"
+            value={form.expectedGraduationYear ? String(form.expectedGraduationYear) : ""}
+            onValueChange={(value) =>
+              setForm((current) => ({ ...current, expectedGraduationYear: value === "" ? undefined : Number(value) }))
             }
-            className="field-input"><option value="">Selecione o ano</option>{Array.from({length:11}, (_, index) => new Date().getFullYear() + index).map(year => <option key={year} value={year}>{year}</option>)}</select>
+            options={Array.from({ length: 11 }, (_, index) => {
+              const year = String(new Date().getFullYear() + index)
+              return { value: year, label: year }
+            })}
+          />
         </Field>
       </div>
     </div>

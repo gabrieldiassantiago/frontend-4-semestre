@@ -73,7 +73,7 @@ export function JobDetailPanel({
 
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-semibold text-muted-foreground">{company}</p>
-          <h2 className="mt-1 text-xl font-bold leading-snug tracking-tight text-foreground text-pretty">
+          <h2 className="mt-1 text-xl font-semibold leading-snug tracking-tight text-foreground text-pretty">
             {vaga.titulo}
           </h2>
           <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
@@ -82,7 +82,7 @@ export function JobDetailPanel({
               {vaga.cidade ? `${vaga.cidade} - ${vaga.estado}` : vaga.estado || "Brasil"}
             </span>
             {vaga.distanciaKm != null && (
-              <span className="rounded-md bg-primary-subtle px-1.5 py-0.5 text-[10px] font-bold text-primary">
+              <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-[10px] font-semibold text-primary">
                 a {formatDistance(vaga.distanciaKm)}
               </span>
             )}
@@ -118,13 +118,13 @@ export function JobDetailPanel({
       <div className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-5 p-5 sm:p-6">
           {/* Card de Remuneração e Visão Geral */}
-          <div className="rounded-xl border border-border bg-surface/70 p-4 sm:p-5">
+          <div className="rounded-2xl bg-surface p-4 sm:p-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Remuneração
                 </span>
-                <p className="mt-0.5 text-base font-bold text-foreground">
+                <p className="mt-0.5 text-lg font-semibold tracking-tight text-foreground">
                   {vaga.salario > 0 ? (
                     <>
                       {formatCurrency(vaga.salario)}
@@ -150,7 +150,7 @@ export function JobDetailPanel({
 
           {/* Alerta de Candidatura já enviada */}
           {candidatura && (
-            <div className="flex items-center gap-3 rounded-xl border border-success-border bg-success-subtle px-4 py-3">
+            <div className="flex items-center gap-3 rounded-2xl border border-success-border bg-success-subtle px-4 py-3">
               <CheckCircle2 className="size-4 shrink-0 text-success-foreground" aria-hidden />
               <p className="min-w-0 flex-1 text-xs font-semibold text-success-foreground text-pretty">
                 Candidatura enviada · Etapa: {etapaLabel(candidatura.etapaAtual, candidatura.etapasVaga, candidatura.etapaAtualDescricao)}
@@ -162,17 +162,17 @@ export function JobDetailPanel({
           {/* Botões de Ação Principal */}
           <div className="flex flex-col gap-2 sm:flex-row">
             {candidatura ? (
-              <Link href={ROUTES.candidate.application(candidatura.id)} className="btn-primary flex-1">
+              <Link href={ROUTES.candidate.application(candidatura.id)} className="btn-primary flex-1 rounded-full">
                 Acompanhar candidatura
                 <ArrowUpRight className="size-4" aria-hidden />
               </Link>
             ) : vaga.ativa && onApply ? (
-              <button type="button" onClick={onApply} className="btn-primary flex-1 shadow-xs">
+              <button type="button" onClick={onApply} className="btn-primary flex-1 rounded-full">
                 Candidatar-se agora
                 <ArrowRight className="size-4" aria-hidden />
               </button>
             ) : (
-              <Link href={`/vaga/${vaga.id}`} className="btn-primary flex-1">
+              <Link href={`/vaga/${vaga.id}`} className="btn-primary flex-1 rounded-full">
                 Ver vaga completa
                 <ArrowUpRight className="size-4" aria-hidden />
               </Link>
@@ -183,7 +183,7 @@ export function JobDetailPanel({
               onClick={onToggleSave}
               aria-pressed={saved}
               className={cn(
-                "btn-secondary",
+                "btn-secondary rounded-full",
                 saved && "border-primary bg-primary-subtle text-primary font-semibold",
               )}
             >
@@ -204,7 +204,7 @@ export function JobDetailPanel({
 
           {/* Descrição */}
           <section aria-labelledby={`descricao-${vaga.id}`} className="border-t border-border-subtle pt-4">
-            <h3 id={`descricao-${vaga.id}`} className="text-sm font-bold text-foreground">
+            <h3 id={`descricao-${vaga.id}`} className="text-sm font-semibold tracking-tight text-foreground">
               Sobre a oportunidade
             </h3>
             <VagaDescription description={vaga.descricao} className="mt-3" />
@@ -212,7 +212,7 @@ export function JobDetailPanel({
 
           {Boolean(vaga.etapas?.length) && (
             <section className="border-t border-border-subtle pt-4" aria-label="Etapas do processo seletivo">
-              <h3 className="text-sm font-bold text-foreground">Etapas do processo seletivo</h3>
+              <h3 className="text-sm font-semibold tracking-tight text-foreground">Etapas do processo seletivo</h3>
               <ol className="mt-3 space-y-3">
                 {[...(vaga.etapas ?? [])].sort((a, b) => a.ordem - b.ordem).map((etapa, index) => (
                   <li key={etapa.etapa} className="text-sm"><p className="font-medium">{index + 1}. {etapaLabel(etapa.etapa, vaga.etapas)}</p>{etapa.descricao && <p className="mt-1 text-xs text-muted-foreground">{etapa.descricao}</p>}</li>
@@ -228,7 +228,7 @@ export function JobDetailPanel({
             >
               <h3
                 id={`beneficios-${vaga.id}`}
-                className="flex items-center gap-2 text-sm font-bold text-foreground"
+                className="flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground"
               >
                 <Gift className="size-4 text-primary" aria-hidden />
                 Benefícios inclusos

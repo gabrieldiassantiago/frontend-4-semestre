@@ -21,7 +21,6 @@ function readTokenCookie() {
 export function redirectToLogin(queryClient?: { clear: () => void }) {
   queryClient?.clear()
   const from = `${window.location.pathname}${window.location.search}`
-  // Navegação completa: garante que o proxy rode e descarte o cookie vencido.
   window.location.replace(buildLoginRedirect(from))
 }
 

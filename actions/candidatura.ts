@@ -4,6 +4,8 @@ import { buildQuery } from "@/lib/server/api"
 import { processApiFetch as apiFetch } from "@/lib/server/process-api"
 import type { ActionResult } from "@/lib/actions/result"
 import type {
+  AgendamentoEmpresa,
+  AgendamentoEmpresaFilters,
   AvancarEtapaDto,
   CandidaturaAgendamento,
   Candidatura,
@@ -92,6 +94,17 @@ export async function atualizarAgendamentoAction(
 
 export async function cancelarAgendamentoAction(candidaturaId: string, agendamentoId: string, motivo?: string): Promise<ActionResult<void>> {
   return apiFetch<void>(`/empresa/candidaturas/${id(candidaturaId)}/agendamentos/${id(agendamentoId)}${buildQuery({ motivo })}`, { method: "DELETE" })
+}
+
+/** Visão geral dos agendamentos de todas as vagas da empresa ("Meus agendamentos"). */
+export async function getAgendamentosEmpresaAction(filters?: AgendamentoEmpresaFilters): Promise<ActionResult<AgendamentoEmpresa[]>> {
+  const query = buildQuery({
+    status: filters?.status,
+    criadoPorMim: filters?.criadoPorMim,
+    de: filters?.de,
+    ate: filters?.ate,
+  })
+  return apiFetch<AgendamentoEmpresa[]>(`/empresa/agendamentos${query}`)
 }
 
 export async function criarFeedbackAction(candidaturaId: string, dto: CreateFeedbackDto): Promise<ActionResult<CandidaturaFeedback>> {
