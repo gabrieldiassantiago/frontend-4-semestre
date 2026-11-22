@@ -22,10 +22,6 @@ export async function getVagaPublic(id: string): Promise<Vaga | null> {
   }
 }
 
-/**
- * Vagas recentes para a landing. Aceita lista pura ou página (`content`/`vagas`),
- * como o restante do app, e devolve [] em qualquer falha (a página usa um fallback).
- */
 export async function getLatestVagasPublic(limit = 6): Promise<LandingJob[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/vagas?size=${limit}`, {
